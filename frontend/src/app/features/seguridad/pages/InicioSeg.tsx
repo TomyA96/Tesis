@@ -15,8 +15,8 @@ export default function InicioSeg () {
                 <Card title="Usuarios bloqueados" content={8}/>
             </section>
             <section>
-                <div className="flex w-full gap-15 justify-center content bg-white p-6 rounded-xl shadow-md h-fit ">
-                    <div className="w-4/6">
+                <div className="flex w-full  justify-between content bg-white p-8 rounded-xl shadow-md h-fit ">
+                    <div className="w-6/8">
                     <h1 className="font-bold text-2xl mb-4">
                         Resumen de Actividad de Usuarios
                     </h1>

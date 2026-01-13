@@ -1,5 +1,5 @@
 
-type Opcion = {
+export type Opcion = {
     label: string;
     value: string | number;
 };
@@ -7,6 +7,7 @@ type Opcion = {
 type SelectProps = React.SelectHTMLAttributes<HTMLSelectElement> & {
     opciones: Opcion[];
     label?: string;
+    
 };
 
 const Select = ({ label, opciones, className = "", ...props }: SelectProps) => {
