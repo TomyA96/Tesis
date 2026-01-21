@@ -1,4 +1,4 @@
-
+import { cn } from "../../../lib/cn";
 // Definimos las propiedades que acepta el botón
 type BtnProps = React.ButtonHTMLAttributes<HTMLButtonElement> & {
     // variant es opcional (?) y solo puede ser uno de estos valores (|)
@@ -15,13 +15,13 @@ const Btn = ({
   ...props
 }: BtnProps) => {
     // Estilos que siempre tendrá el botón
-  const baseStyles = "rounded-md font-medium transition-all cursor-pointer";
+  const baseStyles = "rounded-md  transition-all cursor-pointer";
 // Estilos según el tipo de botón (variant)
   const variantStyles: Record<string, string> = {
     primary: "bg-blue-600 text-white hover:bg-blue-700",
     secondary: "bg-gray-300 text-black hover:bg-gray-400",
     danger: "bg-red-600 text-white hover:bg-red-700",
-    ghost: "bg-transparent hover:bg-gray-100",
+    ghost: "bg-black text-white hover:bg-gray-400 ",
     outline: "border border-gray-400 text-gray-800 hover:bg-gray-300",
     success: "bg-green-600 text-white hover:bg-green-700",
     warning: "bg-yellow-400 text-black hover:bg-yellow-500",
@@ -36,16 +36,9 @@ const Btn = ({
   };
 
   // Acá concatenamos todas las clases finales del botón
-  const classes =
-    baseStyles +
-    " " +
-    variantStyles[variant] +
-    " " +
-    sizeStyles[size] +
-    " " +
-    className;
 
-  return <button className={classes} {...props} />;
+
+  return <button className={cn(baseStyles , variantStyles[variant], sizeStyles[size], className)} {...props} />;
 };
 
 export default Btn;

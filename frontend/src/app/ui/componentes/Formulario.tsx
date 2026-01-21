@@ -1,12 +1,12 @@
-
+import { cn } from "../../../lib/cn";
 
 type FormularioProps = React.FormHTMLAttributes<HTMLFormElement> & {
     children: React.ReactNode;
 }
 
-const Formulario = ({children, ...props}: FormularioProps) =>{
+const Formulario = ({children, className, ...props}: FormularioProps) =>{
     return(
-        <form className="flex flex-col gap-4" {...props}>
+        <form className={cn("flex flex-col gap-3", className)}  {...props}>
             {children}
         </form>
     );

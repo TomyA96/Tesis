@@ -105,7 +105,7 @@ export default function InicioEventos () {
     console.log("Estado Seleccionado:", estadoSeleccionado, "mesSeleccionado:", mesSeleccionado);
     return(
         <main>
-            <Header title="Eventos" action={
+            <Header encabezado="Eventos" action={
                 <div className="flex items-center gap-4">
                     <CargarDropdown
                     desde={2008}
@@ -119,8 +119,8 @@ export default function InicioEventos () {
                 </div>
             }/>
 
-            <section className="px-6 flex justify-center p-4">
-                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 w-full  h-fit ">
+            <section className="flex justify-center p-4 w-full ">
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-15   h-fit ">
                     <Card title="Eventos Activos" content={3}/>
                     <Card title="Eventos Finalizados" content={5}/>
                     <Card title="Eventos Pendientes" content={2}/>
@@ -137,7 +137,7 @@ export default function InicioEventos () {
                         <FiltroEventos meses={meses} estados={estados} mes={mesSeleccionado} estado={estadoSeleccionado} 
                         onEstadoChange={setEstadoSeleccionado} onMesesChange={setMesSeleccionado} />
                         <GenericTable
-                        columns={["nombre" as "Nombre", "fecha", "estado", "lugar", "entradasVendidas"]}
+                        columns={["nombre", "fecha", "estado", "lugar", "entradasVendidas"]}
                         data={eventosMock}
                         actions={(_row) => (
                             <Btn variant="primary" size="sm">

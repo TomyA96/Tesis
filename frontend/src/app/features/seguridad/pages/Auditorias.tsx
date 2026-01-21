@@ -6,7 +6,7 @@ export default function Auditorias () {
     return(
         <main>
             <section>
-                <Header title="Auditorias"
+                <Header encabezado="Auditorias"
                 
                 />
             </section>

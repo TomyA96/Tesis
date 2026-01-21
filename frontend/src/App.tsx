@@ -1,5 +1,6 @@
 import Sidebar from "./app/ui/navegacion/Sidebar";
-import InicioEventos from "./app/features/eventos/pages/InicioEventos";
+
+import Ventas from "./app/features/eventos/pages/Ventas";
 
 
 function App() {
@@ -11,7 +12,7 @@ function App() {
         <Sidebar/>
         <main  className="flex-1 p-6 overflow-y-auto bg-gray-100">
            
-        <InicioEventos/>
+          <Ventas/>
            
         </main>
         

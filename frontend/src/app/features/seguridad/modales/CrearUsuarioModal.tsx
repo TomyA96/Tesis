@@ -7,14 +7,14 @@ type ModalProps = {
     closeModal: () => void;
 };
 
-const CrearUsuarioModal = ({isOpen, closeModal: onClose}: ModalProps) => {
+const CrearUsuarioModal = ({isOpen, closeModal}: ModalProps) => {
     const perfiles = [
         { label: "Administrador", value: 1 },
         { label: "Usuario", value: 2 }
     ];
 
     return (
-        <Modal isOpen={isOpen} onClose={onClose} title="Crear Nuevo Usuario">
+        <Modal isOpen={isOpen} onClose={closeModal} title="Crear Nuevo Usuario">
             <CrearUsuarioForm perfiles={perfiles} />
         </Modal>
     );

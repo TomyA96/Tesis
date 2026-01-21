@@ -87,7 +87,7 @@ export default function Perfiles  ()  {
     return (
         <main>  
             <section>
-                <Header title="Gestion de Perfiles"
+                <Header encabezado="Gestion de Perfiles"
                 action={
                     <Btn  size="lg" onClick={() => setActivarModal("crearPerfil")}>
                         Crear perfil

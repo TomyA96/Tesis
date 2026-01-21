@@ -33,7 +33,7 @@ export default function Usuarios () {
     return (
         <main>  
             <Header 
-                title="Gestión de usuarios"
+                encabezado="Gestión de usuarios"
                 action={
                 <Btn className=" h-12 p-9" onClick={()=> setActivarModal("crearUsuario")}>
                     Crear Usuario
