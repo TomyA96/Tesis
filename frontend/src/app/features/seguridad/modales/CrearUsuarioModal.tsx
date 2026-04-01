@@ -14,7 +14,7 @@ const CrearUsuarioModal = ({isOpen, closeModal}: ModalProps) => {
     ];
 
     return (
-        <Modal isOpen={isOpen} onClose={closeModal} title="Crear Nuevo Usuario">
+        <Modal isOpen={isOpen} closeModal={closeModal} title="Crear Nuevo Usuario">
             <CrearUsuarioForm perfiles={perfiles} />
         </Modal>
     );

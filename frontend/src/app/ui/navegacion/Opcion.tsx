@@ -1,19 +1,36 @@
-
+import { NavLink } from "react-router-dom";
+import { cn } from "../../../lib/cn";
 type OpcionProps = {
     label: string;
-    onClick: () => void;
+    href: string;
+    
+    
 };
-//Componente para integrar en menu, funciona como opcion seleccionable accediendo a una pantalla del sistema
-const Opcion = ({ label, onClick }: OpcionProps) => {
+
+const Opcion = ({ label, href }: OpcionProps) => {
     return (
-        //Estilo de la opcion en el sidebar
-        <li className="cursor-pointer hover:bg-neutral-700 p-1 text-sm"
-        //Parametros de la opcion
-        onClick={onClick}>
-            <span className="ml-10">{label}</span>
+        <li>
+            <NavLink
+                to={href}
+                className={({ isActive }) => cn(
+                    "cursor-pointer flex items-center gap-2 px-4 py-2 mx-2 rounded-md",  
+                    "text-sm font-medium transition-colors duration-150",
+                    isActive
+                        // Activo: fondo sutil con acento de color
+                        ? "bg-blue-600/20 text-blue-400"
+                        // Inactivo: texto gris claro, hover sutil
+                        : "text-gray-400 hover:bg-white/5 hover:text-gray-100"
+                    )
+                }
+            >
+                {/* Punto indicador — reemplazará al ml-10 hardcodeado */}
+                {/* Es más elegante y visualmente conecta la opción con su menú padre */}
+                
+                {label}
+            </NavLink>
         </li>
     );
-}
+};
 
 export default Opcion;
 

@@ -13,7 +13,7 @@ type ModalProps = {
 
 const EditarPerfilModal = ({isOpen, closeModal, nombrePerfil, id, permisos, permisosPerfil}: ModalProps) => {
     return (
-        <Modal isOpen={isOpen} onClose={closeModal} title="Editar Perfil">
+        <Modal isOpen={isOpen} closeModal={closeModal} title="Editar Perfil">
             <EditarPerfilForm nombrePerfil={nombrePerfil} id={id} permisos={permisos} permisosPerfil={permisosPerfil} onCancel={closeModal} />
         </Modal>
     );

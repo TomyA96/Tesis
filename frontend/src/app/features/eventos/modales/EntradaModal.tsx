@@ -11,7 +11,7 @@ const EntradaModal = ({isOpen, closeModal}: EntradaModalProps) => {
     return (
         <Modal
             isOpen={isOpen}
-            onClose={closeModal}
+            closeModal={closeModal}
             title="Crear Nueva Entrada"
             >
             <EntradaForm />

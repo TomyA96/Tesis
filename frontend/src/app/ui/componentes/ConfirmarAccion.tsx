@@ -13,7 +13,7 @@ type ConfirmarAccionProps = {
 
 const ConfirmarAccion = ({ title, mensaje, onConfirmar, entidad, isOpen, variante , onCancelar }: ConfirmarAccionProps) => {
     return (
-        <Modal isOpen={isOpen} onClose={onCancelar} title={title}>
+        <Modal isOpen={isOpen} closeModal={onCancelar} title={title}>
             <div className=" w-full justify-center min-h-[150px]  flex flex-col">
                 
                 

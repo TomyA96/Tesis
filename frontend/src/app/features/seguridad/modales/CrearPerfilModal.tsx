@@ -11,7 +11,7 @@ type ModalProps = {
 
 const CrearPerfilModal = ({isOpen, closeModal, permisos}: ModalProps) => {
     return (
-        <Modal isOpen={isOpen} onClose={closeModal} title="Crear Perfil">
+        <Modal isOpen={isOpen} closeModal={closeModal} title="Crear Perfil">
             <CrearPerfilForm permisos={permisos} onCancel={closeModal} />
         </Modal>
     );

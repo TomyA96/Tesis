@@ -4,7 +4,8 @@ import ContenedorDatos from "../../../ui/componentes/ContenedorDatos";
 import { useState } from "react";
 import EventoForm from "../forms/EventoForm";
 import ListaEntradas from "../componentes/ListaEntradas";
-
+import { NavLink } from "react-router-dom";
+import { RUTAS } from "../../../constantes/Rutas";
 export type ModoEventoPage = "crear" | "ver" | "editar";
 type EventoEstado = "activo"  | "borrador" | "finalizado" | "cancelado";
 
@@ -19,8 +20,9 @@ type BotonesEvento ={
     onClick?: () => void;
 }
 
-export default function EventoPage({modo="crear", estadoEvento="borrador"}: EventoPageProps) {
+const EventoPage = ({modo="crear", estadoEvento="borrador"}: EventoPageProps) => {
     //Creo el objeto para renderizar los botones según el estado del evento
+    
     const accionesPorEstado: Record<EventoEstado, BotonesEvento[]> = {
         activo: [
             { label: "Editar", variant: "secondary", onClick: () => setModoPage("editar") },
@@ -38,19 +40,20 @@ export default function EventoPage({modo="crear", estadoEvento="borrador"}: Even
         
     };
     const [modoPage, setModoPage] = useState<ModoEventoPage>(modo);
+    console.log("Modo de la página:", modoPage);
     const nombreEvento =" Expo Tecnología 2026"; // Este valor debería venir de las props o del estado
     const acciones = accionesPorEstado[estadoEvento];
-    const contenidoHeader = modoPage === "crear" ? <h1 className="text-2xl">"Crear Evento"</h1> : 
+    const contenidoHeader = (modoPage === "crear") ? <h1 className="text-2xl">"Crear Evento"</h1> : 
     <div className="h-fit">
         <h1 className="text-2xl font-bold">Evento: {nombreEvento}</h1>
         <h1 className="text-2x1 font-medium text-gray-500">Estado: {estadoEvento}</h1>
     </div>;
     
-    console.log("Modo de la página:", modoPage);
+    
     return (
         <main >
             <Header 
-                encabezado={
+                titulo={
                     contenidoHeader
                 }
                 action={acciones.length &&  (
@@ -87,18 +90,15 @@ export default function EventoPage({modo="crear", estadoEvento="borrador"}: Even
                 }*/
             />
             
-                <ContenedorDatos className="grid grid-cols-2 gap-6">
-                    
-                        <EventoForm modo="ver"/>
-                        <ListaEntradas />
-                        <div>
-
-                        </div>
-
-                    
-                    
-                </ContenedorDatos>
+            <ContenedorDatos className="grid grid-cols-2 gap-6">
+                <EventoForm modo="crear"/>
+                <ListaEntradas />    
+                <div>
+                    <NavLink to={RUTAS.eventos.ventasEvento} className="mt-4 min-w-[150px]">Ver Ventas</NavLink>
+                </div>           
+            </ContenedorDatos>
             
         </main>
     );
 }
+export default EventoPage;

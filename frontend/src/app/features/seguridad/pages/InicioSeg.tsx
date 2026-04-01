@@ -1,92 +1,153 @@
-
 import Btn from "../../../ui/componentes/Btn";
 import Card from "../../../ui/componentes/Card";
 import GenericTable from "../../../ui/componentes/GenericTabla";
+import ContenedorDatos from "../../../ui/componentes/ContenedorDatos";
+import Header from "../../../ui/componentes/Header";
+import { useNavigate } from "react-router-dom";
+import { RUTAS } from "../../../constantes/Rutas";
+import { Users, UserCheck, Shield, AlertTriangle } from "lucide-react";
+// ── TIPOS ─────────────────────────────────────────────────────────────────────
+// Definís la forma del objeto fuera del JSX — más limpio y reutilizable.
+// Cuando conectes el backend, este tipo ya está listo para tipar la respuesta.
+type ActividadUsuario = {
+    usuario: string;
+    cantidadAcciones: number;
+    ultimaActividad: string;
+    hora: string;
+};
 
+// ── DATA DE PRUEBA ─────────────────────────────────────────────────────────────
+// Separar la data del JSX hace que el componente sea más legible.
+// Cuando conectes el backend, reemplazás esto por un fetch/hook.
+const actividadData: ActividadUsuario[] = [
+    { usuario: "Andres Gomez",   cantidadAcciones: 6, ultimaActividad: "Crear evento",      hora: "15:50" },
+    { usuario: "Juan Arguello",  cantidadAcciones: 6, ultimaActividad: "Crear evento",      hora: "20:10" },
+    { usuario: "Tomas Arroyo",   cantidadAcciones: 2, ultimaActividad: "Crear producto",    hora: "09:30" },
+    { usuario: "Valentin Diaz",  cantidadAcciones: 6, ultimaActividad: "Registrar compra",  hora: "12:15" },
+];
 
-export default function InicioSeg () {
+const InicioSeg = () => {
+    const navigate = useNavigate();
     return (
-        <main>
-            <h1 className="font-bold text-3xl p-9">Panel de Seguridad</h1>
-            <section className="grid grid-cols-1 md:grid-cols-4 gap-4 md:gap-6 mb-10 w-full  justify-items-center">
-                <Card title="Usuarios creados" content={20}/>
-                <Card title="Usuarios activos" content={8}/>
-                <Card title="Perfiles creados" content={8}/>
-                <Card title="Usuarios bloqueados" content={8}/>
-            </section>
-            <section>
-                <div className="flex w-full  justify-between content bg-white p-8 rounded-xl shadow-md h-fit ">
-                    <div className="w-6/8">
-                    <h1 className="font-bold text-2xl mb-4">
-                        Resumen de Actividad de Usuarios
-                    </h1>
-                        <GenericTable
-                    columns={["Usuario", "Cantidad de acciones", "Ultima actividad", "Hora"]}
-                    data={[
-                        {
-                        Usuario: "Andres Gomez",
-                        "Cantidad de acciones": "6",
-                        "Ultima actividad": "Crear evento",
-                        Hora: "15:50"
-                        },
-                        {
-                        Usuario: "Juan Arguello",
-                        "Cantidad de acciones": "6",
-                        "Ultima actividad": "Crear evento",
-                        Hora: "20:10"
-                        },
-                        {
-                        Usuario: "Toams Arroyo",
-                        "Cantidad de acciones": "2",
-                        "Ultima actividad": "Crear producto",
-                        Hora: "09:30"
-                        },
-                        {
-                        Usuario: "Valentin Diaz",
-                        "Cantidad de acciones": "6",
-                        "Ultima actividad": "Registrar compra",
-                        Hora: "12:15"
-                        },
-                    ]}
-                    actions={(_row) => (
-                        <Btn variant="primary" size="sm">
-                        Ver Actividad
-                        </Btn>
-                    )}
-                    />
-                    </div>
-                    
-                    <div className="flex flex-col gap-4  ">
-                        <Btn size="lg">
-                            Crear Usuario
-                        </Btn>
-                        <Btn size="lg">
-                            Crear Perfil
-                        </Btn>
-                        
-                        <Btn size="lg">
-                            Ver Usuarios
-                        </Btn>
-                        <Btn size="lg">
-                            Ver Perfiles
-                        </Btn>
-                        <Btn size="lg">
-                            Ver Actividad de Usuarios
-                        </Btn >
-                    </div>
+        // gap-8 separa las secciones verticalmente de forma uniforme
+        <main className="flex flex-col gap-8 p-8">
+
+            {/* ── TÍTULO PRINCIPAL ──────────────────────────────────────────── */}
+            {/* Solo un h1 por página — los demás títulos son h2 */}
+            <ContenedorDatos>
+                <Header titulo="Panel de Seguridad"/>
+            </ContenedorDatos>
+            
+
+            {/* ── CARDS DE MÉTRICAS ─────────────────────────────────────────── */}
+            
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4"               >
+                    <Card title="Usuarios creados"    content={20} icono={<Users        className="w-5 h-5" />} colorIcono="blue"   />
+                    <Card title="Usuarios activos"    content={8}  icono={<UserCheck     className="w-5 h-5" />} colorIcono="green"  />
+                    <Card title="Perfiles creados"    content={8}  icono={<Shield        className="w-5 h-5" />} colorIcono="purple" />
+                    <Card title="Alertas de seguridad" content={3} icono={<AlertTriangle className="w-5 h-5" />} colorIcono="orange" />
                 </div>
-                
-            </section>
-            <section>
-                <div>
-                    <h1 className="font-bold text-2xl mb-4">Alertas</h1>
-                    <div>
+            
+
+            {/* ── TABLA + ACCIONES RÁPIDAS ──────────────────────────────────── */}
+            
+                {/* 
+                    ContenedorDatos ya tiene el bg-white, rounded, shadow.
+                    No hace falta repetir esos estilos acá.
+                */}
+                <ContenedorDatos>
+                    <Header titulo="Resumen de Actividad de Usuarios" />
+
+                    <div className="flex gap-8 p-6">
+
+                        {/* Tabla — ocupa el espacio disponible */}
+                        <div className="flex-1 min-w-0">
+                            {/* 
+                                Usamos camelCase en las columnas.
+                                formatColumnName las convierte automáticamente:
+                                "cantidadAcciones" → "Cantidad Acciones"
+                            */}
+                            <GenericTable<ActividadUsuario>
+                                columns={["usuario", "cantidadAcciones", "ultimaActividad", "hora"]}
+                                data={actividadData}
+                                actions={(_row) => (
+                                    <Btn variant="outline" size="sm">
+                                        Ver Actividad
+                                    </Btn>
+                                )}
+                            />
+                        </div>
+                        {/* ── ACCIONES RÁPIDAS ──────────────────────────────── */}
+                        {/* 
+                            Separador visual — divide la tabla de las acciones.
+                            border-l crea una línea vertical sutil.
+                        */}
+                        <div className="border-l border-gray-100 pl-8 flex flex-col gap-3 justify-center min-w-fit">
+                            <p className="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-1">
+                                Acciones rápidas
+                            </p>
+                            {/* 
+                                asChild no existe en tu Btn, por eso usamos Link que envuelve al Btn.
+                                Alternativa: pasarle className directamente al Link.
+                            */}
+                            
+                            <Btn size="md" className="w-full">Crear Usuario</Btn>
                         
+                        
+                            <Btn size="md" className="w-full">Crear Perfil</Btn>
+                           
+
+                            {/* Separador visual entre crear y ver */}
+                            <hr className="border-gray-100 my-1" />
+
+                            
+                            <Btn 
+                            variant="outline" 
+                            size="md" 
+                            className="w-full" 
+                            onClick={() => navigate(RUTAS.seguridad.usuarios)}>
+                                Ver Usuarios
+                            </Btn>
+                            
+                            <Btn 
+                            variant="outline" 
+                            size="md" 
+                            className="w-full" 
+                            onClick={() => navigate(RUTAS.seguridad.perfiles)}>
+                                Ver Perfiles
+                            </Btn>
+                            
+                            
+                            <Btn 
+                            variant="outline" 
+                            size="md" 
+                            className="w-full" 
+                            onClick={() => navigate(RUTAS.seguridad.auditorias,{
+                                        state: { usuarioId: 1}
+                                    })}
+                            >
+                                Ver Actividad
+                            </Btn>
+                            
+                        </div>
                     </div>
-                </div>
-                
-            </section>
+                </ContenedorDatos>
+            
+            {/* ── ALERTAS ───────────────────────────────────────────────────── */}
+            
+                <ContenedorDatos>
+                    <Header titulo="Alertas" />
+                    {/* 
+                        Estado vacío mientras no tenés datos reales.
+                        Cuando conectes el backend, reemplazás esto.
+                    */}
+                    <div className="flex items-center justify-center py-12 text-gray-400 text-sm">
+                        No hay alertas activas
+                    </div>
+                </ContenedorDatos>
+            
         </main>
     );
-}
+};
 
+export default InicioSeg;

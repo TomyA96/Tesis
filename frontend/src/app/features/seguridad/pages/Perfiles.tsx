@@ -5,10 +5,11 @@ import FiltroPerfiles from "../componentes/FiltroPerfiles";
 import CrearPerfilModal from "../modales/CrearPerfilModal";
 import { useState } from "react";
 import EditarPerfilModal from "../modales/EditarPerfilModal";
+import ContenedorDatos from "../../../ui/componentes/ContenedorDatos";
 
 type ModalPerfiles = "crearPerfil" | "editarPerfil" | "eliminarPerfil" |  null;
 
-export default function Perfiles  ()  {
+const Perfiles = () => {
     const [activarModal, setActivarModal] = useState<ModalPerfiles>(null);
     const permisosEjemplo = [
   // 🔐 Seguridad
@@ -85,73 +86,87 @@ export default function Perfiles  ()  {
   },
 ];
     return (
-        <main>  
-            <section>
-                <Header encabezado="Gestion de Perfiles"
+        <main className=" gap-6 px-8 ">  
+            <CrearPerfilModal 
+              isOpen={activarModal === "crearPerfil"} 
+              closeModal={() => setActivarModal(null)} 
+              permisos={permisosEjemplo} 
+            />
+            <EditarPerfilModal 
+              isOpen={activarModal === "editarPerfil"} 
+              closeModal={() => setActivarModal(null)} 
+              nombrePerfil="Operador" id={2} 
+              permisos={permisosEjemplo} 
+              permisosPerfil={[1,3,6,7]} 
+            />
+                
+                
+           
+            <ContenedorDatos>
+                <Header titulo="Gestion de Perfiles"
                 action={
-                    <Btn  size="lg" onClick={() => setActivarModal("crearPerfil")}>
-                        Crear perfil
+                    <Btn onClick={() => setActivarModal("crearPerfil")}>
+                        + Crear perfil
                     </Btn>
                 }
                 />
-            </section>
-            <section>
-                <div className=" w-full gap-15 justify-center content bg-white p-6 rounded-xl shadow-md h-fit ">
+                
+                <div className="px-6 pt-4">
+                  <FiltroPerfiles
+                    areas={[
+                        
+                        {id: 1, nombre: "Seguridad"},
+                        {id: 2, nombre: "Eventos"},
+                        {id:3, nombre:"Administracion"},
+                        {id:4, nombre:"Operaciones"},
+                        {id:5, nombre:"Informes"}
+                        
+                    ]}/>
+                </div>   
+                
+                <GenericTable
+                    columns={["Perfil", "Areas", "Permisos", "Usuarios asignados"]}
+                    data={[
+                        {
+                            "Perfil": "Administrador",
+                            "Areas": "Todas",
+                            "Permisos": "Todos",
+                            "Usuarios asignados": 5
+                        },
+                        {
+                            "Perfil": "Operador", 
+                            "Areas": "Eventos, Productos",
+                            "Permisos": "Crear, Editar",
+                            "Usuarios asignados": 8
+                        },
+                        {   
+                            "Perfil": "Supervisor",
+                            "Areas": "Eventos",     
+                            "Permisos": "Ver",
+                            "Usuarios asignados": 3
+                        }
+                    ]}  
                     
-                        <FiltroPerfiles
-                        areas={[
-                            
-                            {id: 1, nombre: "Seguridad"},
-                            {id: 2, nombre: "Eventos"},
-                            {id:3, nombre:"Administracion"},
-                            {id:4, nombre:"Operaciones"},
-                            {id:5, nombre:"Informes"}
-                            
-                        ]}/>
-                        <CrearPerfilModal isOpen={activarModal === "crearPerfil"} closeModal={() => setActivarModal(null)} permisos={permisosEjemplo} />
-                        <EditarPerfilModal isOpen={activarModal === "editarPerfil"} closeModal={() => setActivarModal(null)} nombrePerfil="Operador" id={2} permisos={permisosEjemplo} permisosPerfil={[1,3,6,7]} />
-                        <GenericTable
-                            columns={["Perfil", "Areas", "Permisos", "Usuarios asignados"]}
-                            data={[
-                                {
-                                    "Perfil": "Administrador",
-                                    "Areas": "Todas",
-                                    "Permisos": "Todos",
-                                    "Usuarios asignados": 5
-                                },
-                                {
-                                    "Perfil": "Operador", 
-                                    "Areas": "Eventos, Productos",
-                                    "Permisos": "Crear, Editar",
-                                    "Usuarios asignados": 8
-                                },
-                                {   
-                                    "Perfil": "Supervisor",
-                                    "Areas": "Eventos",     
-                                    "Permisos": "Ver",
-                                    "Usuarios asignados": 3
-                                }
-                            ]}  
-                            
-                            actions={(_row) => (
-                                <div>
-                                    <Btn size="sm" className="mr-2 min-w-20" onClick={() => setActivarModal("editarPerfil")}>
-                                        Editar
-                                    </Btn>
-                                    <Btn size="sm" className="min-w-20" variant="danger">
-                                        Eliminar
-                                    </Btn>
-                                </div>
-                            )}
-                        />
+                    actions={(_row) => (
+                        <div>
+                            <Btn size="sm" className="mr-2 min-w-20" onClick={() => setActivarModal("editarPerfil")}>
+                                Editar
+                            </Btn>
+                            <Btn size="sm" className="min-w-20" variant="danger">
+                                Eliminar
+                            </Btn>
+                        </div>
+                    )}
+                />
 
                     
 
                             
 
-                </div>
-            </section>
+                
+            </ContenedorDatos>
         </main>
     );
 };
 
+export default Perfiles;

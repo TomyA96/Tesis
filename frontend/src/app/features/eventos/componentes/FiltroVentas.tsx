@@ -28,7 +28,7 @@ const FiltroVentas = () => {
     return (
         <ContenedorFiltros>
             <div className="flex gap-8 items-end">
-                <Input  name="codigoEntrada" type="text" placeholder="Buscar entradas" />
+                <Input  name="codigoEntrada" label="Buscar por código de venta, código de entrada o comprador" type="text" placeholder="Buscar por código de venta, código de entrada o comprador" className="min-w-[500px]" />
                 
                 <Select label="Estado " name="estadoEntrada" opciones={canalVentaOptions} />
                     

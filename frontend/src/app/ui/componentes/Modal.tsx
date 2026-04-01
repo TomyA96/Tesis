@@ -1,19 +1,19 @@
 import Btn from "./Btn";
 type ModalProps ={
     isOpen: boolean;
-    onClose: () => void;
+    closeModal: () => void;
     title?: string;
     children: React.ReactNode;
 };
 
-const Modal = ({isOpen, onClose, title, children}: ModalProps) => {
+const Modal = ({isOpen, closeModal, title, children}: ModalProps) => {
     if (!isOpen) return null;
     return(
         <div className="fixed inset-0 z-50 flex items-center justify-center">
             {/* Overlay */}
             <div
             className="absolute inset-0 bg-black/50"
-            onClick={onClose}
+            onClick={closeModal}
             />
             <div className="relative bg-white rounded-lg   p-6 z-10">
                 <div className="flex justify-between mb-4">
@@ -23,7 +23,7 @@ const Modal = ({isOpen, onClose, title, children}: ModalProps) => {
                     <Btn 
                     variant="danger"
                     size="sm"
-                    onClick={onClose}
+                    onClick={closeModal}
                     >
                         X
                     </Btn>

@@ -13,7 +13,7 @@ const EditarUsuarioModal = ({isOpen, closeModal}: ModalProps) => {
     ];
     const nombreUsuario = "juan.perez"; // Este valor debería venir de las props o del estado   
     return (
-        <Modal isOpen={isOpen} onClose={closeModal} title="Editar Usuario">
+        <Modal isOpen={isOpen} closeModal={closeModal} title="Editar Usuario">
             <EditarUsuarioForm nombre={nombreUsuario} perfiles={perfiles} onCancel={closeModal}/>
         </Modal>
         
