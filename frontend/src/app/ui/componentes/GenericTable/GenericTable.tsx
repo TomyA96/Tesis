@@ -1,5 +1,5 @@
 import type { ReactNode } from "react";
-import { renderCelda } from "../../utils/genericTabla.utils" ;
+import { renderCelda } from "../../../utils/genericTabla.utils";
 /*<T> es genérico — T se reemplaza por el tipo real al usar el componente
   extends Record<string, any> significa: "T debe ser un objeto con propiedades"
   sin esto TypeScript no sabe que puede hacer row["nombre"], row["id"], etc.*/

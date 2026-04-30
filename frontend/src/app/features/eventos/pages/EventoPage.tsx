@@ -4,7 +4,7 @@ import ContenedorDatos from "../../../ui/componentes/ContenedorDatos";
 import { useState } from "react";
 import EventoForm from "../forms/EventoForm";
 import ListaEntradas from "../componentes/ListaEntradas";
-import { NavLink } from "react-router-dom";
+import { Link } from "react-router-dom";
 import { RUTAS } from "../../../constantes/Rutas";
 export type ModoEventoPage = "crear" | "ver" | "editar";
 type EventoEstado = "activo"  | "borrador" | "finalizado" | "cancelado";
@@ -52,7 +52,8 @@ const EventoPage = ({modo="crear", estadoEvento="borrador"}: EventoPageProps) =>
     
     return (
         <main >
-            <Header 
+            <ContenedorDatos className="mb-4">
+                <Header 
                 titulo={
                     contenidoHeader
                 }
@@ -69,9 +70,11 @@ const EventoPage = ({modo="crear", estadoEvento="borrador"}: EventoPageProps) =>
                         ))}
 
                     </div>
-                    )}
+                    )}/>
+            </ContenedorDatos>
+            
                 
-                /*action={estadoEvento === "activo" ? 
+                {/*action={estadoEvento === "activo" ? 
                     <div className="flex gap-8">
                         <Btn variant="secondary" className="min-w-[110px]">Editar</Btn>
                         <Btn variant="ghost" className="min-w-[110px]">Finalizar</Btn>
@@ -87,17 +90,19 @@ const EventoPage = ({modo="crear", estadoEvento="borrador"}: EventoPageProps) =>
                     </div>
                     :
                     ""
-                }*/
-            />
+                }*/}
             
-            <ContenedorDatos className="grid grid-cols-2 gap-6">
-                <EventoForm modo="crear"/>
-                <ListaEntradas />    
+            <div className="grid grid-cols-2 gap-6">
+                <ContenedorDatos>
+                    <EventoForm modo="crear"/>
+                </ContenedorDatos>
+                <ContenedorDatos >
+                    <ListaEntradas />            
+                </ContenedorDatos>
                 <div>
-                    <NavLink to={RUTAS.eventos.ventasEvento} className="mt-4 min-w-[150px]">Ver Ventas</NavLink>
-                </div>           
-            </ContenedorDatos>
-            
+                    <Link to={RUTAS.eventos.ventas(2)} className="mt-4 min-w-[150px]">Ver Ventas</Link>
+                </div>  
+            </div>   
         </main>
     );
 }

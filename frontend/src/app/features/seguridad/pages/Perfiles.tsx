@@ -1,6 +1,6 @@
 import Btn from "../../../ui/componentes/Btn";
 import Header from "../../../ui/componentes/Header";
-import GenericTable from "../../../ui/componentes/GenericTabla";
+import GenericTable from "../../../ui/componentes/GenericTable/GenericTable";
 import FiltroPerfiles from "../componentes/FiltroPerfiles";
 import CrearPerfilModal from "../modales/CrearPerfilModal";
 import { useState } from "react";

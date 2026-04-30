@@ -1,73 +1,108 @@
-# React + TypeScript + Vite
+# Sistema Integral Para Eventos - Frontend
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+Guia rapida para que cualquier companero pueda levantar el proyecto localmente sin friccion.
 
-Currently, two official plugins are available:
+## Stack del proyecto
+- React 19
+- TypeScript
+- Vite 7
+- Tailwind CSS 4
+- React Router 7
+- ESLint 9
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Babel](https://babeljs.io/) (or [oxc](https://oxc.rs) when used in [rolldown-vite](https://vite.dev/guide/rolldown)) for Fast Refresh
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/) for Fast Refresh
+## Prerrequisitos
+Antes de empezar, tener instalado:
+- Node.js `>= 20.19` (recomendado: version LTS actual)
+- npm (viene con Node.js)
+- Git
 
-## React Compiler
+Para verificar versiones:
 
-The React Compiler is currently not compatible with SWC. See [this issue](https://github.com/vitejs/vite-plugin-react/issues/428) for tracking the progress.
-
-## Expanding the ESLint configuration
-
-If you are developing a production application, we recommend updating the configuration to enable type-aware lint rules:
-
-```js
-export default defineConfig([
-  globalIgnores(['dist']),
-  {
-    files: ['**/*.{ts,tsx}'],
-    extends: [
-      // Other configs...
-
-      // Remove tseslint.configs.recommended and replace with this
-      tseslint.configs.recommendedTypeChecked,
-      // Alternatively, use this for stricter rules
-      tseslint.configs.strictTypeChecked,
-      // Optionally, add this for stylistic rules
-      tseslint.configs.stylisticTypeChecked,
-
-      // Other configs...
-    ],
-    languageOptions: {
-      parserOptions: {
-        project: ['./tsconfig.node.json', './tsconfig.app.json'],
-        tsconfigRootDir: import.meta.dirname,
-      },
-      // other options...
-    },
-  },
-])
+```bash
+node -v
+npm -v
+git --version
 ```
 
-You can also install [eslint-plugin-react-x](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-x) and [eslint-plugin-react-dom](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-dom) for React-specific lint rules:
+## Instalacion
+Desde la carpeta `frontend`:
 
-```js
-// eslint.config.js
-import reactX from 'eslint-plugin-react-x'
-import reactDom from 'eslint-plugin-react-dom'
-
-export default defineConfig([
-  globalIgnores(['dist']),
-  {
-    files: ['**/*.{ts,tsx}'],
-    extends: [
-      // Other configs...
-      // Enable lint rules for React
-      reactX.configs['recommended-typescript'],
-      // Enable lint rules for React DOM
-      reactDom.configs.recommended,
-    ],
-    languageOptions: {
-      parserOptions: {
-        project: ['./tsconfig.node.json', './tsconfig.app.json'],
-        tsconfigRootDir: import.meta.dirname,
-      },
-      // other options...
-    },
-  },
-])
+```bash
+npm ci
 ```
+
+`npm ci` instala exactamente las versiones definidas en `package-lock.json`, ideal para que todo el equipo use el mismo entorno.
+
+Si no tienes lockfile actualizado y necesitas una instalacion comun, puedes usar:
+
+```bash
+npm install
+```
+
+## Como correr el proyecto en desarrollo
+Desde `frontend`:
+
+```bash
+npm run dev
+```
+
+Esto levanta Vite en modo desarrollo (normalmente en `http://localhost:5173`).
+
+## Scripts disponibles
+Desde `frontend`:
+
+```bash
+npm run dev      # Servidor de desarrollo
+npm run build    # Compila TypeScript y genera build de produccion
+npm run preview  # Sirve localmente el build de produccion
+npm run lint     # Ejecuta ESLint
+```
+
+## Flujo recomendado para nuevos integrantes
+1. Clonar el repositorio.
+2. Entrar a la carpeta del frontend:
+   ```bash
+   cd frontend
+   ```
+3. Instalar dependencias:
+   ```bash
+   npm ci
+   ```
+4. Levantar entorno local:
+   ```bash
+   npm run dev
+   ```
+5. Antes de subir cambios, validar:
+   ```bash
+   npm run lint
+   npm run build
+   ```
+
+## Dependencias principales
+Se instalan automaticamente con `npm ci`/`npm install`:
+- `react`, `react-dom`
+- `react-router-dom`
+- `tailwindcss`, `@tailwindcss/vite`, `tailwind-merge`
+- `clsx`
+- `lucide-react`
+
+## Dependencias de desarrollo
+Tambien se instalan automaticamente:
+- `vite`, `@vitejs/plugin-react-swc`
+- `typescript`
+- `eslint` y plugins (`@eslint/js`, `typescript-eslint`, `eslint-plugin-react-hooks`, `eslint-plugin-react-refresh`)
+- Tipados (`@types/node`, `@types/react`, `@types/react-dom`)
+
+## Problemas comunes
+- Error de version de Node: actualizar Node.js a una version compatible (20.19+).
+- Dependencias corruptas: borrar `node_modules` y reinstalar:
+  ```bash
+  rm -rf node_modules
+  npm ci
+  ```
+  En PowerShell:
+  ```powershell
+  Remove-Item -Recurse -Force node_modules
+  npm ci
+  ```
+- Puerto ocupado (5173): ejecutar `npm run dev -- --port 5174`.

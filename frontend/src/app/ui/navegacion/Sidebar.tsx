@@ -99,23 +99,20 @@ const Sidebar = () => {
                         area="Informes"
                         icono={<BarChart2 className="w-4 h-4" />}
                         isOpen={activarSeccion === "informes"}
-                        href=""
+                        href={RUTAS.informes.inicio}
                         onToggle={( ) =>toggleSeccion("informes")}
                         opciones={[
-                            { label: "Listado de eventos", href: "" }
+                            { label: "Resumen anual", href: RUTAS.informes.resumenAnual }
                         ]}
                     />
                     <Menu
                         area="Operaciones"
                         icono={<Wrench className="w-4 h-4" />}
                         isOpen={activarSeccion === "operaciones"}
-                        href=""
+                        href={RUTAS.eventos.inicio}
                         onToggle={() => toggleSeccion("operaciones")}
                         opciones={[
-                            { label: "Inicio", href: "" },
-                            { label: "Registro de ventas", href: "" },
-                            { label: "Control de ingreso", href: "" },
-                            { label: "Venta de entradas", href: "" }
+                            { label: "Seleccionar evento", href: RUTAS.eventos.inicio }
                         ]}
                     />
 

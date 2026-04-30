@@ -7,7 +7,7 @@ import { cn } from "../../../lib/cn";
     Cada valor mapea a un fondo + color de texto específico.
     Así cada card puede tener su propio color sin hardcodear estilos.
 */
-type ColorIcono = "blue" | "green" | "purple" | "orange" | "red" | "gray";
+type ColorIcono = "blue" | "green" | "purple" | "orange" | "red" | "gray" | "yellow";
  
 type CardProps = {
     title:       string;
@@ -27,6 +27,7 @@ const coloresIcono: Record<ColorIcono, string> = {
     green:  "bg-emerald-50 text-emerald-500",
     purple: "bg-purple-50  text-purple-500",
     orange: "bg-orange-50  text-orange-500",
+    yellow: "bg-yellow-50  text-yellow-500",
     red:    "bg-red-50     text-red-500",
     gray:   "bg-gray-100   text-gray-500",
 };

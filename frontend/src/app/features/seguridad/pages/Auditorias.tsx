@@ -1,4 +1,4 @@
-import GenericTable from "../../../ui/componentes/GenericTabla";
+import GenericTable from "../../../ui/componentes/GenericTable/GenericTable";
 import Header from "../../../ui/componentes/Header";
 import ContenedorDatos from "../../../ui/componentes/ContenedorDatos";
 import FiltroAuditorias from "../componentes/FiltroAuditorias";

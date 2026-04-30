@@ -1,5 +1,5 @@
 import Btn from "../../../ui/componentes/Btn";
-import GenericTable from "../../../ui/componentes/GenericTabla";
+import GenericTable from "../../../ui/componentes/GenericTable/GenericTable";
 import FiltroUsuarios from "../componentes/FiltroUsuarios";
 import CrearUsuarioModal from "../modales/CrearUsuarioModal";
 import EditarUsuarioModal from "../modales/EditarUsuarioModal";
@@ -7,16 +7,12 @@ import Header from "../../../ui/componentes/Header";
 import ConfirmarAccion from "../../../ui/componentes/ConfirmarAccion";
 import ContenedorDatos from "../../../ui/componentes/ContenedorDatos";
 import { useState } from "react";
+import { usuariosMock } from "../../../data";
+import type { Usuario } from "../../../data/types";
 
 // ── TIPOS ─────────────────────────────────────────────────────────────────────
 // "Usuario" es más claro que "DatosProps" — Props por convención
 // se reserva para las propiedades que recibe un componente React.
-type Usuario = {
-    nombre: string;
-    perfil: string;
-    estado: string;
-    ultimoAcceso: Date;
-};
 
 type ModalUsuarios = "crearUsuario" | "editarUsuario" | "eliminarUsuario" | null;
 
@@ -24,16 +20,7 @@ type ModalUsuarios = "crearUsuario" | "editarUsuario" | "eliminarUsuario" | null
 // Fuera del componente — es estática, no necesita estar adentro.
 // Si estuviera adentro, React la recrearía en cada render innecesariamente.
 // Cuando conectes el backend, reemplazás esto por un hook (ej: useUsuarios).
-const usuariosData: Usuario[] = [
-    { nombre: "Juan Pérez",         perfil: "Admin",      estado: "Activo",   ultimoAcceso: new Date("2025-12-27T10:30:00") },
-    { nombre: "María Gómez",        perfil: "Usuario",    estado: "Inactivo", ultimoAcceso: new Date("2025-12-26T18:15:00") },
-    { nombre: "Carlos López",       perfil: "Supervisor", estado: "Activo",   ultimoAcceso: new Date("2025-12-25T09:00:00") },
-    { nombre: "Lucía Fernández",    perfil: "Usuario",    estado: "Activo",   ultimoAcceso: new Date("2025-12-24T14:45:00") },
-    { nombre: "Martín Rodríguez",   perfil: "Admin",      estado: "Inactivo", ultimoAcceso: new Date("2025-12-23T20:10:00") },
-    { nombre: "Sofía Martínez",     perfil: "Supervisor", estado: "Activo",   ultimoAcceso: new Date("2025-12-22T11:25:00") },
-    { nombre: "Diego Torres",       perfil: "Usuario",    estado: "Activo",   ultimoAcceso: new Date("2025-12-21T08:55:00") },
-    { nombre: "Valentina Castro",   perfil: "Admin",      estado: "Inactivo", ultimoAcceso: new Date("2025-12-20T16:40:00") },
-];
+
 
 const Usuarios = () => {
     const [activarModal, setActivarModal] = useState<ModalUsuarios>(null);
@@ -100,8 +87,8 @@ const Usuarios = () => {
 
                 {/* Tabla */}
                 <GenericTable<Usuario>
-                    columns={["nombre", "perfil", "estado", "ultimoAcceso"]}
-                    data={usuariosData}
+                    columns={["id","nombre", "perfil", "estado", "ultimoAcceso"]}
+                    data={usuariosMock}
                     actions={(_row) => (
                         // flex + gap reemplaza el mr-2 hardcodeado
                         <div className="flex gap-2">

@@ -1,4 +1,4 @@
-import GenericTable from "../../../ui/componentes/GenericTabla";
+import GenericTable from "../../../ui/componentes/GenericTable/GenericTable";
 import Btn from "../../../ui/componentes/Btn";
 type Producto = {
     nombre: string;

@@ -1,6 +1,6 @@
 import Header from "../../../ui/componentes/Header";
 import ContenedorDatos from "../../../ui/componentes/ContenedorDatos";
-import GenericTable from "../../../ui/componentes/GenericTabla";
+import GenericTable from "../../../ui/componentes/GenericTable/GenericTable";
 import Btn from "../../../ui/componentes/Btn";
 import ListarProductosEvento from "../componentes/ListarProductosEvento";
 import { useState } from "react";
@@ -8,6 +8,7 @@ import GastoModal from "../modales/GastoModal";
 import IngresoModal from "../modales/IngresoModal";
 import ModificarListaModal from "../modales/ModificarListaModal";
 import { CalendarDays } from "lucide-react";
+import { useParams } from "react-router-dom";
 
 // ── TIPOS ──────────────────────────────────────────────────────────────────────
 type Estado    = "activo" | "suspendido";
@@ -95,7 +96,7 @@ const AdministrarEvento = ({
 
     // Un solo estado para todos los modales — consistente con el resto del sistema
     const [modalActivo, setModalActivo] = useState<ModalAdministrar>(null);
-
+    const { id } = useParams();
     return (
         <main className="flex flex-col gap-6 p-8">
 

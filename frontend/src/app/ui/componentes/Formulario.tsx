@@ -1,6 +1,6 @@
 import { cn } from "../../../lib/cn";
 
-type FormularioProps = React.FormHTMLAttributes<HTMLFormElement> & {
+type FormularioProps = React.ComponentProps<"form"> & {
     children: React.ReactNode;
 }
 

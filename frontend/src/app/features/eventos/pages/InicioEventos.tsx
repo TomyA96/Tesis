@@ -1,14 +1,15 @@
 import Header from "../../../ui/componentes/Header";
 import Btn from "../../../ui/componentes/Btn";
 import Card from "../../../ui/componentes/Card";
-import GenericTable from "../../../ui/componentes/GenericTabla";
+import GenericTable from "../../../ui/componentes/GenericTable/GenericTable";
 import ContenedorDatos from "../../../ui/componentes/ContenedorDatos";
 import FiltroEventos from "../componentes/FiltroEventos";
 import { useState } from "react";
 import type { EventoEstado } from "../componentes/FiltroEventos";
-import { meses, estados } from "../../../constantes/MesesAños";
+import { MESES, estados } from "../../../constantes/MesesAños";
 import { useNavigate } from "react-router-dom";
 import { RUTAS } from "../../../constantes/Rutas";
+import { CalendarDays } from "lucide-react";
 
 // ── TIPOS ─────────────────────────────────────────────────────────────────────
 // Los tipos se definen acá si son exclusivos de esta feature.
@@ -57,12 +58,12 @@ const DropdownAnio = ({ desde, hasta, value, onChange }: DropdownAnioProps) => {
 
     return (
         <div className="flex items-center gap-2">
-            <label className="text-sm font-medium text-gray-600" htmlFor="selector-anio">
+            <span className="text-sm font-medium text-slate-500">
                 Año:
-            </label>
+            </span>
             <select
                 id="selector-anio"
-                className="border border-gray-300 rounded-md px-3 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                className="rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm font-semibold text-slate-700 shadow-sm outline-none"
                 value={value}
                 onChange={(e) => onChange(Number(e.target.value))}
             >
@@ -113,10 +114,10 @@ const InicioEventos = () => {
             {/* ── CARDS DE MÉTRICAS ─────────────────────────────────────────── */}
             <section aria-label="Resumen de eventos">
                 <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-                    <Card title="Eventos Activos"     content={3} />
-                    <Card title="Eventos Finalizados" content={5} />
-                    <Card title="Eventos Pendientes"  content={2} />
-                    <Card title="Eventos Cancelados"  content={1} />
+                    <Card title="Eventos Activos"    icono={<CalendarDays/>} colorIcono="green"  content={3} />
+                    <Card title="Eventos Finalizados" icono={<CalendarDays/>} content={5} />
+                    <Card title="Eventos Pendientes"  icono={<CalendarDays/>} colorIcono="yellow"  content={2} />
+                    <Card title="Eventos Cancelados"  icono={<CalendarDays/>} colorIcono="red"  content={1} />
                 </div>
             </section>
 
@@ -129,7 +130,7 @@ const InicioEventos = () => {
                         <>
                             <div className="px-6 pt-4">
                                 <FiltroEventos
-                                    meses={meses}
+                                    meses={MESES}
                                     estados={estados}
                                     mes={mesSeleccionado}
                                     estado={estadoSeleccionado}

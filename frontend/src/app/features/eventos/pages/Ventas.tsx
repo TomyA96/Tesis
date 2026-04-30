@@ -1,6 +1,6 @@
 import Btn from "../../../ui/componentes/Btn";
 import ContenedorDatos from "../../../ui/componentes/ContenedorDatos";
-import GenericTable from "../../../ui/componentes/GenericTabla";
+import GenericTable from "../../../ui/componentes/GenericTable/GenericTable";
 import Header from "../../../ui/componentes/Header";
 import FiltroVentas from "../componentes/FiltroVentas";
 

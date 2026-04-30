@@ -1,5 +1,5 @@
 import Header from "../../../ui/componentes/Header";
-import GenericTable from "../../../ui/componentes/GenericTabla";
+import GenericTable from "../../../ui/componentes/GenericTable/GenericTable";
 import ContenedorDatos from "../../../ui/componentes/ContenedorDatos";
 import Btn from "../../../ui/componentes/Btn";
 

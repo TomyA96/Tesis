@@ -1,6 +1,6 @@
 import type { EventoEstado } from "../features/eventos/componentes/FiltroEventos";
 
- export  const meses = [
+ export  const MESES = [
     {label: "Todos", value: 0 },
     { label: "Enero", value: 1 },
     { label: "Febrero", value: 2 },

@@ -59,7 +59,7 @@ const EventoForm = ({ modo }: EventoFormProps) => {
     };
  
     return (
-        <Formulario autoComplete="off">
+        <Formulario autoComplete="off" className="p-6">
  
             {/* ── GRILLA DE CAMPOS ──────────────────────────────────────────── */}
             {/*
@@ -67,7 +67,7 @@ const EventoForm = ({ modo }: EventoFormProps) => {
                 gap-x-6: espacio horizontal entre las dos columnas
                 En móvil (grid-cols-1) todos los campos van uno abajo del otro
             */}
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-x-6">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
  
                 {/*
                     md:col-span-2: este campo ocupa las DOS columnas
@@ -75,29 +75,39 @@ const EventoForm = ({ modo }: EventoFormProps) => {
                     no desaparece. El usuario necesita ver qué evento está mirando.
                 */}
                 <div className="md:col-span-2">
+                    
+                </div>
+ 
+                {/* Fecha y hora de inicio en la misma fila — son la misma información */}
+                <div>
                     <Input
                         label="Nombre del Evento"
                         name="nombre"
                         type="text"
                         required
                         disabled={esModoVer}
-                    />
+                    />  
+                    <div className="grid grid-cols-2 gap-4">
+                        <Input label="Fecha de Inicio" name="fechaIni" type="date" disabled={esModoVer} />
+                        <Input label="Hora de Inicio"  name="horaIni"  type="time" disabled={esModoVer} />
+                    </div>
+                    
+    
+                    {/* Fecha y hora de fin en la misma fila */}
+                    <div className="grid grid-cols-2 gap-4">
+                        <Input label="Fecha de Fin"    name="fechaFin" type="date" disabled={esModoVer} />
+                        <Input label="Hora de Fin"     name="horaFin"  type="time" disabled={esModoVer} />
+                    </div>
+                    
+    
+                    <Input label="Lugar del Evento" name="lugar"     type="text"   disabled={esModoVer} />
+                    <Input label="Capacidad"         name="capacidad" type="number" disabled={esModoVer} />
                 </div>
- 
-                {/* Fecha y hora de inicio en la misma fila — son la misma información */}
-                <Input label="Fecha de Inicio" name="fechaIni" type="date" disabled={esModoVer} />
-                <Input label="Hora de Inicio"  name="horaIni"  type="time" disabled={esModoVer} />
- 
-                {/* Fecha y hora de fin en la misma fila */}
-                <Input label="Fecha de Fin"    name="fechaFin" type="date" disabled={esModoVer} />
-                <Input label="Hora de Fin"     name="horaFin"  type="time" disabled={esModoVer} />
- 
-                <Input label="Lugar del Evento" name="lugar"     type="text"   disabled={esModoVer} />
-                <Input label="Capacidad"         name="capacidad" type="number" disabled={esModoVer} />
+                
  
                 {/* Descripción ocupa las dos columnas */}
                 <div className="md:col-span-2">
-                    <Input label="Descripción" name="descripcion" type="text" disabled={esModoVer} />
+                    <Input label="Descripción" name="descripcion" type="textarea"  disabled={esModoVer} />
                 </div>
  
             </div>

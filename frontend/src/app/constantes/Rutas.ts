@@ -27,12 +27,14 @@ export const RUTAS = {
 
     informes: {
         inicio: "/informes",
-        entradas: (idEvento: number | string) => `/eventos/${idEvento}/informes/entradas`,  
-        consumos: (idEvento: number | string) => `/eventos/${idEvento}/informes/consumos`,  
-        balance: (idEvento: number | string) => `/eventos/${idEvento}/informes/balance`,  
+        resumenAnual: "/informes/resumen-anual",
+        entradas: (idEvento: number | string) => `/eventos/${idEvento}/informes/entradas`,
+        buffet: (idEvento: number | string) => `/eventos/${idEvento}/informes/buffet`,
+        finanzas: (idEvento: number | string) => `/eventos/${idEvento}/informes/finanzas`,
     },
     operaciones: {
         inicio: "/operaciones",
+        ventaEntradas: (idEvento: number | string) => `/eventos/${idEvento}/operaciones/venta-entradas`,
         puerta: (idEvento: number | string) => `/eventos/${idEvento}/operaciones/puerta`,  
         buffet: (idEvento: number | string) => `/eventos/${idEvento}/operaciones/buffet`,  
         accesos: (idEvento: number | string) => `/eventos/${idEvento}/operaciones/accesos`,  

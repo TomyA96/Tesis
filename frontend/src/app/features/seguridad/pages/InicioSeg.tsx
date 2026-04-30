@@ -1,11 +1,13 @@
 import Btn from "../../../ui/componentes/Btn";
 import Card from "../../../ui/componentes/Card";
-import GenericTable from "../../../ui/componentes/GenericTabla";
+import GenericTable from "../../../ui/componentes/GenericTable/GenericTable";
 import ContenedorDatos from "../../../ui/componentes/ContenedorDatos";
 import Header from "../../../ui/componentes/Header";
 import { useNavigate } from "react-router-dom";
 import { RUTAS } from "../../../constantes/Rutas";
 import { Users, UserCheck, Shield, AlertTriangle } from "lucide-react";
+import type { Auditoria } from "../../../../../../app/data/auditorias";
+import { auditoriasMock } from "../../../../../../app/data/auditorias";
 // ── TIPOS ─────────────────────────────────────────────────────────────────────
 // Definís la forma del objeto fuera del JSX — más limpio y reutilizable.
 // Cuando conectes el backend, este tipo ya está listo para tipar la respuesta.
@@ -19,12 +21,8 @@ type ActividadUsuario = {
 // ── DATA DE PRUEBA ─────────────────────────────────────────────────────────────
 // Separar la data del JSX hace que el componente sea más legible.
 // Cuando conectes el backend, reemplazás esto por un fetch/hook.
-const actividadData: ActividadUsuario[] = [
-    { usuario: "Andres Gomez",   cantidadAcciones: 6, ultimaActividad: "Crear evento",      hora: "15:50" },
-    { usuario: "Juan Arguello",  cantidadAcciones: 6, ultimaActividad: "Crear evento",      hora: "20:10" },
-    { usuario: "Tomas Arroyo",   cantidadAcciones: 2, ultimaActividad: "Crear producto",    hora: "09:30" },
-    { usuario: "Valentin Diaz",  cantidadAcciones: 6, ultimaActividad: "Registrar compra",  hora: "12:15" },
-];
+
+ 
 
 const InicioSeg = () => {
     const navigate = useNavigate();
@@ -67,9 +65,9 @@ const InicioSeg = () => {
                                 formatColumnName las convierte automáticamente:
                                 "cantidadAcciones" → "Cantidad Acciones"
                             */}
-                            <GenericTable<ActividadUsuario>
-                                columns={["usuario", "cantidadAcciones", "ultimaActividad", "hora"]}
-                                data={actividadData}
+                            <GenericTable<Auditoria>
+                                columns={["idAuditoria", "idUsuario", "nombreUsuario", "accion", "fecha", "hora", "idEntidadAfectada", "nombreEntidadAfectada"]}
+                                data={auditoriasMock}
                                 actions={(_row) => (
                                     <Btn variant="outline" size="sm">
                                         Ver Actividad
@@ -82,7 +80,7 @@ const InicioSeg = () => {
                             Separador visual — divide la tabla de las acciones.
                             border-l crea una línea vertical sutil.
                         */}
-                        <div className="border-l border-gray-100 pl-8 flex flex-col gap-3 justify-center min-w-fit">
+                        <div className="border-l border-gray-100 pl-8 flex flex-col gap-3  min-w-fit">
                             <p className="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-1">
                                 Acciones rápidas
                             </p>
