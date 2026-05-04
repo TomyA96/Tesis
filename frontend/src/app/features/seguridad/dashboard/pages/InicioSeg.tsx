@@ -1,22 +1,17 @@
-import Btn from "../../../ui/componentes/Btn";
-import Card from "../../../ui/componentes/Card";
-import GenericTable from "../../../ui/componentes/GenericTable/GenericTable";
-import ContenedorDatos from "../../../ui/componentes/ContenedorDatos";
-import Header from "../../../ui/componentes/Header";
+import Btn from "../../../../ui/componentes/Btn";
+import Card from "../../../../ui/componentes/Card";
+import GenericTable from "../../../../ui/componentes/GenericTable/GenericTable";
+import ContenedorDatos from "../../../../ui/componentes/ContenedorDatos";
+import Header from "../../../../ui/componentes/Header";
 import { useNavigate } from "react-router-dom";
-import { RUTAS } from "../../../constantes/Rutas";
+import { RUTAS } from "../../../../constantes/Rutas";
 import { Users, UserCheck, Shield, AlertTriangle } from "lucide-react";
-import type { Auditoria } from "../../../../../../app/data/auditorias";
-import { auditoriasMock } from "../../../../../../app/data/auditorias";
+import { auditoriasMock } from "../../auditorias/auditorias.mock";
+import type { Auditoria } from "../../auditorias/types";
 // ── TIPOS ─────────────────────────────────────────────────────────────────────
 // Definís la forma del objeto fuera del JSX — más limpio y reutilizable.
 // Cuando conectes el backend, este tipo ya está listo para tipar la respuesta.
-type ActividadUsuario = {
-    usuario: string;
-    cantidadAcciones: number;
-    ultimaActividad: string;
-    hora: string;
-};
+
 
 // ── DATA DE PRUEBA ─────────────────────────────────────────────────────────────
 // Separar la data del JSX hace que el componente sea más legible.
@@ -66,7 +61,7 @@ const InicioSeg = () => {
                                 "cantidadAcciones" → "Cantidad Acciones"
                             */}
                             <GenericTable<Auditoria>
-                                columns={["idAuditoria", "idUsuario", "nombreUsuario", "accion", "fecha", "hora", "idEntidadAfectada", "nombreEntidadAfectada"]}
+                                columns={[]}
                                 data={auditoriasMock}
                                 actions={(_row) => (
                                     <Btn variant="outline" size="sm">

@@ -1,5 +1,5 @@
 
-import Modal from "../../../ui/componentes/Modal";
+import Modal from "../../../../ui/componentes/Modal";
 import EditarPerfilForm from "../forms/EditarPerfilForm";
 import type { Permiso } from "../utils/CargarPermisos";
 type ModalProps = {

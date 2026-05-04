@@ -1,4 +1,4 @@
-import Modal from "../../../ui/componentes/Modal";
+import Modal from "../../../../ui/componentes/Modal";
 import CrearPerfilForm from "../forms/CrearPerfilForm";
 import type { Permiso } from "../utils/CargarPermisos";
 

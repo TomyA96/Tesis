@@ -1,7 +1,7 @@
-import Formulario from "../../../ui/componentes/Formulario";
-import Input from "../../../ui/componentes/Input";
-import Btn from "../../../ui/componentes/Btn";
-import Select from "../../../ui/componentes/Select";
+import Formulario from "../../../../ui/componentes/Formulario";
+import Input from "../../../../ui/componentes/Input";
+import Btn from "../../../../ui/componentes/Btn";
+import Select from "../../../../ui/componentes/Select";
 import { useState } from "react";
 
 

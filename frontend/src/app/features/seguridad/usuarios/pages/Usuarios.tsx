@@ -1,26 +1,19 @@
-import Btn from "../../../ui/componentes/Btn";
-import GenericTable from "../../../ui/componentes/GenericTable/GenericTable";
-import FiltroUsuarios from "../componentes/FiltroUsuarios";
-import CrearUsuarioModal from "../modales/CrearUsuarioModal";
-import EditarUsuarioModal from "../modales/EditarUsuarioModal";
-import Header from "../../../ui/componentes/Header";
-import ConfirmarAccion from "../../../ui/componentes/ConfirmarAccion";
-import ContenedorDatos from "../../../ui/componentes/ContenedorDatos";
+import Btn from "../../../../ui/componentes/Btn.tsx";
+import GenericTable from "../../../../ui/componentes/GenericTable/GenericTable";
+import FiltroUsuarios from "../components/FiltroUsuarios";
+import CrearUsuarioModal from "../modals/CrearUsuarioModal.tsx";
+import EditarUsuarioModal from "../modals/EditarUsuarioModal.tsx";
+import Header from "../../../../ui/componentes/Header";
+import ConfirmarAccion from "../../../../ui/componentes/ConfirmarAccion";
+import ContenedorDatos from "../../../../ui/componentes/ContenedorDatos";
 import { useState } from "react";
-import { usuariosMock } from "../../../data";
-import type { Usuario } from "../../../data/types";
+import { usuariosMock } from "../usuarios.mock.ts";
+import type { Usuario } from "../usuarios.mock.ts";
+import { columnasUsuario } from "../usuarios.columns.ts";
 
-// ── TIPOS ─────────────────────────────────────────────────────────────────────
-// "Usuario" es más claro que "DatosProps" — Props por convención
-// se reserva para las propiedades que recibe un componente React.
+// ── TIPOS ────────────────────────────────────────────────────────────────────
 
 type ModalUsuarios = "crearUsuario" | "editarUsuario" | "eliminarUsuario" | null;
-
-// ── DATA DE PRUEBA ─────────────────────────────────────────────────────────────
-// Fuera del componente — es estática, no necesita estar adentro.
-// Si estuviera adentro, React la recrearía en cada render innecesariamente.
-// Cuando conectes el backend, reemplazás esto por un hook (ej: useUsuarios).
-
 
 const Usuarios = () => {
     const [activarModal, setActivarModal] = useState<ModalUsuarios>(null);
@@ -87,7 +80,7 @@ const Usuarios = () => {
 
                 {/* Tabla */}
                 <GenericTable<Usuario>
-                    columns={["id","nombre", "perfil", "estado", "ultimoAcceso"]}
+                    columns={columnasUsuario}
                     data={usuariosMock}
                     actions={(_row) => (
                         // flex + gap reemplaza el mr-2 hardcodeado

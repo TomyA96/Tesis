@@ -1,10 +1,10 @@
 import Dashboard from "../../features/dashboard/pages/Dashboard";
 import InicioAdministracion from "../../features/administracion/pages/InicioAdmin";
 import InicioEventos from "../../features/eventos/pages/InicioEventos";
-import InicioSeg from "../../features/seguridad/pages/InicioSeg";
-import Usuarios from "../../features/seguridad/pages/Usuarios";
-import Perfiles from "../../features/seguridad/pages/Perfiles";
-import Auditorias from "../../features/seguridad/pages/Auditorias";
+import InicioSeg from "../../features/seguridad/dashboard/pages/InicioSeg";
+import Usuarios from "../../features/seguridad/usuarios/pages/Usuarios";
+import Perfiles from "../../features/seguridad/perfiles/pages/Perfiles";
+import Auditorias from "../../features/seguridad/auditorias/pages/Auditorias";
 import ProveedoresPage from "../../features/administracion/pages/Proveedores";
 import EventoPage from "../../features/eventos/pages/EventoPage";
 import { Routes, Route } from "react-router-dom";

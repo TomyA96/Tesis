@@ -1,7 +1,7 @@
-import { usuariosMock } from "./usuarios";
+import { usuariosMock } from "../usuarios/usuarios.mock";
 
 export interface Auditoria {
-  idAuditoria: number;
+  id: number | string;
   idUsuario: number;
   nombreUsuario: string;
   accion: string;
@@ -13,7 +13,7 @@ export interface Auditoria {
 
 export const auditoriasMock: Auditoria[] = [
   {
-    idAuditoria: 1,
+    id: 1,
     idUsuario: usuariosMock[0].id,
     nombreUsuario: usuariosMock[0].nombre,
     accion: "Creo evento",
@@ -23,7 +23,7 @@ export const auditoriasMock: Auditoria[] = [
     nombreEntidadAfectada: "Expo Tecnologia 2026",
   },
   {
-    idAuditoria: 2,
+    id: 2,
     idUsuario: usuariosMock[1].id,
     nombreUsuario: usuariosMock[1].nombre,
     accion: "Actualizo perfil",
@@ -33,7 +33,7 @@ export const auditoriasMock: Auditoria[] = [
     nombreEntidadAfectada: "Supervisor",
   },
   {
-    idAuditoria: 3,
+    id: 3,
     idUsuario: usuariosMock[2].id,
     nombreUsuario: usuariosMock[2].nombre,
     accion: "Asigno proveedor",
@@ -43,7 +43,7 @@ export const auditoriasMock: Auditoria[] = [
     nombreEntidadAfectada: "Catering Los Andes",
   },
   {
-    idAuditoria: 4,
+    id: 4,
     idUsuario: usuariosMock[4].id,
     nombreUsuario: usuariosMock[4].nombre,
     accion: "Registro invitado",
@@ -53,7 +53,7 @@ export const auditoriasMock: Auditoria[] = [
     nombreEntidadAfectada: "Lucia Martinez",
   },
   {
-    idAuditoria: 5,
+    id: 5,
     idUsuario: usuariosMock[5].id,
     nombreUsuario: usuariosMock[5].nombre,
     accion: "Modifico presupuesto",
@@ -63,7 +63,7 @@ export const auditoriasMock: Auditoria[] = [
     nombreEntidadAfectada: "Presupuesto Evento Corporativo",
   },
   {
-    idAuditoria: 6,
+    id: 6,
     idUsuario: usuariosMock[7].id,
     nombreUsuario: usuariosMock[7].nombre,
     accion: "Cambio estado de usuario",
@@ -73,7 +73,7 @@ export const auditoriasMock: Auditoria[] = [
     nombreEntidadAfectada: usuariosMock[11].nombre,
   },
   {
-    idAuditoria: 7,
+    id: 7,
     idUsuario: usuariosMock[9].id,
     nombreUsuario: usuariosMock[9].nombre,
     accion: "Genero reporte",
@@ -83,7 +83,7 @@ export const auditoriasMock: Auditoria[] = [
     nombreEntidadAfectada: "Reporte de Ventas Abril",
   },
   {
-    idAuditoria: 8,
+    id: 8,
     idUsuario: usuariosMock[12].id,
     nombreUsuario: usuariosMock[12].nombre,
     accion: "Edito salon",
@@ -93,7 +93,7 @@ export const auditoriasMock: Auditoria[] = [
     nombreEntidadAfectada: "Salon Principal Norte",
   },
   {
-    idAuditoria: 9,
+    id: 9,
     idUsuario: usuariosMock[16].id,
     nombreUsuario: usuariosMock[16].nombre,
     accion: "Reasigno coordinador",
@@ -103,7 +103,7 @@ export const auditoriasMock: Auditoria[] = [
     nombreEntidadAfectada: "Congreso Medico Regional",
   },
   {
-    idAuditoria: 10,
+    id: 10,
     idUsuario: usuariosMock[18].id,
     nombreUsuario: usuariosMock[18].nombre,
     accion: "Elimino invitado",

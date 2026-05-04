@@ -1,7 +1,7 @@
-import Formulario from "../../../ui/componentes/Formulario";
-import Input from "../../../ui/componentes/Input";
-import Select from "../../../ui/componentes/Select";
-import Btn from "../../../ui/componentes/Btn";
+import Formulario from "../../../../ui/componentes/Formulario";
+import Input from "../../../../ui/componentes/Input";
+import Select from "../../../../ui/componentes/Select";
+import Btn from "../../../../ui/componentes/Btn";
 type PerfilesProps = {
     perfiles: {label: string; value: string | number}[];
 }

@@ -1,6 +1,6 @@
-import Formulario from "../../../ui/componentes/Formulario";
-import Input from "../../../ui/componentes/Input";
-import Btn from "../../../ui/componentes/Btn";
+import Formulario from "../../../../ui/componentes/Formulario";
+import Input from "../../../../ui/componentes/Input";
+import Btn from "../../../../ui/componentes/Btn";
 import {CargarPermisos}  from "../utils/CargarPermisos";
 import type { Permiso } from "../utils/CargarPermisos";
 

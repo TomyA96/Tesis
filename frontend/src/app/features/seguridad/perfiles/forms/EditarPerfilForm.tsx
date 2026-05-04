@@ -1,9 +1,9 @@
-import Formulario from "../../../ui/componentes/Formulario";
-import Input from "../../../ui/componentes/Input";
+import Formulario from "../../../../ui/componentes/Formulario";
+import Input from "../../../../ui/componentes/Input";
 import {CargarPermisos}  from "../utils/CargarPermisos";
 import type { Permiso } from "../utils/CargarPermisos";
 import React, { useState } from "react";
-import Btn from "../../../ui/componentes/Btn";
+import Btn from "../../../../ui/componentes/Btn";
 
 type EditarPerfilFormProps = {
     nombrePerfil: string;
@@ -13,7 +13,7 @@ type EditarPerfilFormProps = {
     permisosPerfil: number[];
 }
 
-const EditarPerfilForm = ({nombrePerfil, id, permisos, permisosPerfil, onCancel}: EditarPerfilFormProps) => {
+const EditarPerfilForm = ({nombrePerfil, permisos, permisosPerfil, onCancel}: EditarPerfilFormProps) => {
     const [permisosSeleccionados, setPermisosSeleccionados] = useState<number[]>(permisosPerfil);
     const [cambiarNombre, setCambiarNombre] = useState(false);
     const permisosAgrupados = CargarPermisos(permisos);

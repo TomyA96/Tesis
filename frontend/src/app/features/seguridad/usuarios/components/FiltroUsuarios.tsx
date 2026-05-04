@@ -1,8 +1,8 @@
 import React from "react";
-import Select from "../../../ui/componentes/Select";
-import Input from "../../../ui/componentes/Input";
-import Btn from "../../../ui/componentes/Btn";
-import ContenedorFiltros from "../../../ui/componentes/ContenedorFiltros";
+import Select from "../../../../ui/componentes/Select";
+import Input from "../../../../ui/componentes/Input";
+import Btn from "../../../../ui/componentes/Btn";
+import ContenedorFiltros from "../../../../ui/componentes/ContenedorFiltros";
 
 type FiltroUsuariosProps = {
     perfiles: { id: number; nombre: string }[];

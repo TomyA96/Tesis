@@ -1,8 +1,8 @@
-import Input from "../../../ui/componentes/Input";
-import Select from "../../../ui/componentes/Select";
-import DateRange from "../../../ui/componentes/DateRange";
-import Btn from "../../../ui/componentes/Btn";
-import ContenedorFiltros from "../../../ui/componentes/ContenedorFiltros";
+import Input from "../../../../ui/componentes/Input";
+import Select from "../../../../ui/componentes/Select";
+import DateRange from "../../../../ui/componentes/DateRange";
+import Btn from "../../../../ui/componentes/Btn";
+import ContenedorFiltros from "../../../../ui/componentes/ContenedorFiltros";
  
 // ── TIPOS ──────────────────────────────────────────────────────────────────────
 // Importar ResultadoAuditoria desde el archivo de tipos cuando lo tengas separado.

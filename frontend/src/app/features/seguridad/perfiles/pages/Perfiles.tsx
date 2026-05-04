@@ -1,13 +1,53 @@
-import Btn from "../../../ui/componentes/Btn";
-import Header from "../../../ui/componentes/Header";
-import GenericTable from "../../../ui/componentes/GenericTable/GenericTable";
-import FiltroPerfiles from "../componentes/FiltroPerfiles";
-import CrearPerfilModal from "../modales/CrearPerfilModal";
+import Btn from "../../../../ui/componentes/Btn";
+import Header from "../../../../ui/componentes/Header";
+import GenericTable from "../../../../ui/componentes/GenericTable/GenericTable";
+import FiltroPerfiles from "../components/FiltroPerfiles";
+import CrearPerfilModal from "../modals/CrearPerfilModal";
 import { useState } from "react";
-import EditarPerfilModal from "../modales/EditarPerfilModal";
-import ContenedorDatos from "../../../ui/componentes/ContenedorDatos";
+import EditarPerfilModal from "../modals/EditarPerfilModal";
+import ContenedorDatos from "../../../../ui/componentes/ContenedorDatos";
+import type { Column } from "../../../../ui/componentes/GenericTable/GenericTable.types";
 
 type ModalPerfiles = "crearPerfil" | "editarPerfil" | "eliminarPerfil" |  null;
+
+type PerfilTabla = {
+    id: number;
+    perfil: string;
+    areas: string;
+    permisos: string;
+    usuariosAsignados: number;
+};
+
+const columnasPerfiles: Column<PerfilTabla>[] = [
+    { key: "perfil", label: "Perfil" },
+    { key: "areas", label: "Areas" },
+    { key: "permisos", label: "Permisos" },
+    { key: "usuariosAsignados", label: "Usuarios asignados" },
+];
+
+const perfilesTabla: PerfilTabla[] = [
+    {
+        id: 1,
+        perfil: "Administrador",
+        areas: "Todas",
+        permisos: "Todos",
+        usuariosAsignados: 5,
+    },
+    {
+        id: 2,
+        perfil: "Operador",
+        areas: "Eventos, Productos",
+        permisos: "Crear, Editar",
+        usuariosAsignados: 8,
+    },
+    {
+        id: 3,
+        perfil: "Supervisor",
+        areas: "Eventos",
+        permisos: "Ver",
+        usuariosAsignados: 3,
+    },
+];
 
 const Perfiles = () => {
     const [activarModal, setActivarModal] = useState<ModalPerfiles>(null);
@@ -124,28 +164,9 @@ const Perfiles = () => {
                     ]}/>
                 </div>   
                 
-                <GenericTable
-                    columns={["Perfil", "Areas", "Permisos", "Usuarios asignados"]}
-                    data={[
-                        {
-                            "Perfil": "Administrador",
-                            "Areas": "Todas",
-                            "Permisos": "Todos",
-                            "Usuarios asignados": 5
-                        },
-                        {
-                            "Perfil": "Operador", 
-                            "Areas": "Eventos, Productos",
-                            "Permisos": "Crear, Editar",
-                            "Usuarios asignados": 8
-                        },
-                        {   
-                            "Perfil": "Supervisor",
-                            "Areas": "Eventos",     
-                            "Permisos": "Ver",
-                            "Usuarios asignados": 3
-                        }
-                    ]}  
+                <GenericTable<PerfilTabla>
+                    columns={columnasPerfiles}
+                    data={perfilesTabla}  
                     
                     actions={(_row) => (
                         <div>

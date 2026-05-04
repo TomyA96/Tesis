@@ -1,7 +1,7 @@
-import Input from "../../../ui/componentes/Input";
-import Select from "../../../ui/componentes/Select";
-import ContenedorFiltros from "../../../ui/componentes/ContenedorFiltros";
-import Btn from "../../../ui/componentes/Btn";
+import Input from "../../../../ui/componentes/Input";
+import Select from "../../../../ui/componentes/Select";
+import ContenedorFiltros from "../../../../ui/componentes/ContenedorFiltros";
+import Btn from "../../../../ui/componentes/Btn";
 type FiltroPerfilesProps = {
     
     areas: { id: number; nombre: string }[];

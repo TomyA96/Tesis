@@ -1,4 +1,4 @@
-import Modal from "../../../ui/componentes/Modal";
+import Modal from "../../../../ui/componentes/Modal";
 import EditarUsuarioForm from "../forms/EditarUsuarioForm";
 
 type ModalProps = {
