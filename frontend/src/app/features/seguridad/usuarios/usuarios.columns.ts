@@ -1,6 +1,7 @@
 import type { Column } from "../../../ui/componentes/GenericTable/GenericTable.types";
 import { perfilesMock } from "../perfiles/perfiles.mock";
 import type { Usuario } from "./usuarios.mock";
+import { renderEstado } from "../../../ui/componentes/GenericTable/genericTabla.utils";
 
 export const columnasUsuario: Column<Usuario>[] = [
   {
@@ -22,6 +23,7 @@ export const columnasUsuario: Column<Usuario>[] = [
   {
     key: "estado",
     label: "Estado",
+    render: renderEstado
   },
   
 ];

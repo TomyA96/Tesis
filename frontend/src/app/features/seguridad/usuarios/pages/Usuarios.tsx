@@ -84,7 +84,7 @@ const Usuarios = () => {
                     data={usuariosMock}
                     actions={(_row) => (
                         // flex + gap reemplaza el mr-2 hardcodeado
-                        <div className="flex gap-2">
+                        <div className="grid grid-cols-2 gap-2">
                             <Btn
                                 size="sm"
                                 variant="outline"
