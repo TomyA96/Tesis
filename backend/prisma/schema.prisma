@@ -4,5 +4,410 @@ generator client {
 
 datasource db {
   provider = "postgresql"
-  url      = env("DATABASE_URL")
+}
+/* --------Enums--------------------------------*/
+enum EstadoUsuario {
+  Activo
+  Inactivo
+  Bloqueado
+}
+
+enum TablaSistema {
+  Usuarios
+  Perfiles
+  PerfilesPermisos
+  Eventos
+  Entradas
+  Proveedores
+  Productos
+  Reembolsos
+  Rubros
+  RubrosProveedores
+}
+
+enum CanalVenta {
+  Online
+  Fisico
+}
+
+enum EstadoEvento {
+  Activo
+  Cancelado
+  Finalizado
+  Suspendido
+  Borrador
+}
+
+enum EstadoEntrada {
+  Disponible
+  Agotada
+  Borrador
+  Anulada
+
+}
+enum EstadoTicket {
+  Disponible
+  Asignado
+  Vendido
+  Usado
+  Anulado
+  Reembolsado
+}
+
+enum EstadoOrden {
+  Pendiente
+  Aprobada
+  Fallida
+  Cancelada
+  
+}
+
+enum EstadoReembolso {
+  Procesado
+  Pendiente
+  Rechazado
+}
+
+enum EstadoPuntoVenta {
+  Activo
+  Inactivo
+}
+
+enum TipoProducto {
+  Comida
+  Bebida
+}
+
+enum EstadoProducto {
+  Disponible
+  Descontinuado
+}
+
+enum EstadoProveedor {
+  Activo
+  Bloqueado
+}
+
+enum TipoRubro {
+  Ingreso
+  Gasto
+  Mixto
+}
+
+enum TipoMovimiento {
+  Ingreso
+  Gasto
+}
+/* --------Fin Enums----------------------------*/
+
+/* --------Tablas Modulo de seguridad-----------*/
+model Usuario {
+  id        Int     @id  @default(autoincrement())
+  usuario       String  @unique
+  nombre        String
+  password      String
+  estado        EstadoUsuario @default(Activo)
+  ultimoAcceso  DateTime?
+
+  perfiles     UsuarioPerfil[]
+  auditorias   Auditoria[]
+  reembolsos   Reembolso[]
+  accesos      Acceso[]
+  ventasBuffet  VentaBuffet[]
+
+  @@map("usuarios")
+}
+
+model Perfil {
+  id          Int     @id  @default(autoincrement())
+  nombre      String
+  descripcion String?
+  usuarios    UsuarioPerfil[]
+  permisos    PermisoPerfil[]
+
+  @@map("perfiles")
+}
+
+model UsuarioPerfil {
+  idUsuario   Int      
+  idPerfil    Int      
+  //asignado    DateTime @default(now())
+
+  perfil   Perfil  @relation(fields: [idPerfil], references: [id])
+  usuario  Usuario @relation(fields: [idUsuario], references: [id])
+
+  @@id([idPerfil, idUsuario])
+  @@map("usuarios_perfiles")
+}
+
+model Permiso {
+  id          Int     @id  @default(autoincrement())
+  codigo      String  @unique
+  descripcion String?
+  perfiles     PermisoPerfil[]
+
+  @@map("permisos")
+}
+
+model PermisoPerfil {
+  idPermiso   Int      
+  idPerfil    Int      
+
+  permiso Permiso @relation(fields: [idPermiso], references: [id])
+  perfil  Perfil  @relation(fields: [idPerfil], references: [id])
+
+  @@id([idPerfil, idPermiso])
+  @@map("permisos_perfiles")
+}
+
+model Auditoria {
+  id          Int   @id  @default(autoincrement())
+  idUsuario   Int   
+  codigo      String
+  descripcion String?
+  fecha       DateTime @default(now())
+  idRegistro  Int
+  tabla       TablaSistema
+
+  usuario Usuario @relation(fields: [idUsuario], references: [id])
+  @@map("auditorias")
+}
+
+/* --------Tablas Modulo de Eventos--------------*/
+
+model Evento {
+  id              Int      @id @default(autoincrement())
+  nombre          String
+  fechaHoraInicio DateTime
+  fechaHoraFin    DateTime?
+  ubicacion       String
+  descripcion     String?
+  estado          EstadoEvento
+  direccion       String?
+  capacidad       Int
+
+  entradas      Entrada[]
+  imagenes      ImagenEvento[]
+  productos     ProductoEvento[]
+  ventasBuffet  VentaBuffet[]
+  movimientos    MovimientoFinanciero[]
+
+  @@map("eventos")
+}
+
+model Entrada {
+  id          Int      @id @default(autoincrement())
+  idEvento    Int
+  descripcion String
+  precio      Decimal
+  esFisica    Boolean
+  estado      EstadoEntrada
+  cantidad    Int
+
+  evento   Evento  @relation(fields: [idEvento], references: [id])
+  tickets   TicketEvento[]
+  
+
+  @@map("entradas")
+}
+
+model Cliente {
+  id          Int      @id @default(autoincrement())
+  nombre      String
+  dni         String   @unique
+  email       String   @unique
+  telefono    String?
+
+  ordenes     OrdenCompra[]
+ 
+  @@map("clientes")
+}
+
+model OrdenCompra {
+  id          Int      @id @default(autoincrement())
+  idCliente   Int?
+  canal       CanalVenta  // quién la creó
+  fechaHora   DateTime @default(now())
+  total       Decimal
+  estado      EstadoOrden
+
+  tickets     TicketEvento[]
+  cliente    Cliente? @relation(fields: [idCliente], references: [id])
+
+  @@map("ordenes_compra")
+}
+
+model TicketEvento {
+  id          Int      @id @default(autoincrement())
+  idEntrada   Int
+  idOrden     Int?
+  idPuntoVenta  Int?
+  codigoQR    String   @unique
+  numero      String   
+  precio      Decimal
+  fechaHora   DateTime @default(now())
+  estado      EstadoTicket
+
+  entrada    Entrada  @relation(fields: [idEntrada], references: [id])
+  orden      OrdenCompra? @relation(fields: [idOrden], references: [id])
+  reembolso  Reembolso?
+  accesos    Acceso?
+  puntoVenta PuntoVenta? @relation(fields: [idPuntoVenta], references: [id])
+
+  @@unique([idEntrada, numero])
+  @@map("tickets_evento")
+}
+
+model Reembolso {
+  id            Int      @id @default(autoincrement())
+  idTicket      Int      @unique
+  idUsuario     Int      // quién lo procesó
+  motivo        String
+  monto         Decimal
+  fechaHora     DateTime @default(now())
+  estado      EstadoReembolso
+
+  ticket    TicketEvento @relation(fields: [idTicket], references: [id])
+  usuario  Usuario       @relation(fields: [idUsuario], references: [id])
+
+  @@map("reembolsos")
+}
+
+model PuntoVenta {
+  id        Int @id @default(autoincrement())
+  nombre    String
+  telefono  String?
+  estado    EstadoPuntoVenta
+
+  tickets   TicketEvento[]
+
+  @@map("puntos_venta")
+}
+
+model Acceso {
+  id          Int      @id @default(autoincrement())
+  idTicket    Int      @unique
+  idUsuario   Int
+  fechaHora   DateTime @default(now())
+
+
+  usuario Usuario @relation(fields: [idUsuario], references: [id])
+  ticket   TicketEvento @relation(fields: [idTicket], references: [id])
+  @@map("accesos")
+}
+
+model ImagenEvento {
+  id          Int      @id @default(autoincrement())
+  idEvento    Int
+  url         String
+
+  evento   Evento  @relation(fields: [idEvento], references: [id])
+
+  @@map("imagenes_evento")
+}
+
+model Producto {
+  id          Int      @id @default(autoincrement())
+  nombre      String
+  tipo        TipoProducto
+  precio      Decimal
+  estado      EstadoProducto
+
+  eventos     ProductoEvento[]
+  detalleVenta DetalleVentaBuffet[]
+
+  @@map("productos")
+}
+
+model ProductoEvento {
+  idProducto    Int
+  idEvento      Int
+
+  producto    Producto @relation(fields: [idProducto], references: [id])
+  evento      Evento @relation(fields: [idEvento], references: [id])
+
+  @@id([idProducto, idEvento])
+
+  @@map("productos_evento")
+}
+
+model VentaBuffet {
+  id          Int      @id @default(autoincrement())
+  idEvento    Int
+  idUsuario   Int
+  fechaHora   DateTime @default(now())
+  total       Decimal
+
+  evento        Evento  @relation(fields: [idEvento], references: [id])
+  usuario       Usuario @relation(fields: [idUsuario], references: [id])
+  detalleVenta  DetalleVentaBuffet[]
+
+  @@map("ventas_buffet")
+}
+
+model DetalleVentaBuffet {
+  idProducto      Int
+  idVentaBuffet   Int
+  cantidad        Int
+  precioUnitario  Decimal
+  subtotal        Decimal
+
+  ventaBuffet     VentaBuffet @relation(fields: [idVentaBuffet], references: [id])
+  producto        Producto @relation(fields: [idProducto], references: [id])
+
+  @@id([idProducto, idVentaBuffet])
+  @@map("detalle_venta_buffet")
+
+}
+
+model Rubro {
+  id          Int      @id @default(autoincrement())
+  nombre      String
+  tipo        TipoRubro
+
+  proveedores ProveedorRubro[]
+  movimientos MovimientoFinanciero[] 
+
+  @@map("rubros")
+}
+
+model Proveedor {
+  id          Int      @id @default(autoincrement())
+  nombre      String
+  email       String?   @unique
+  telefono    String?
+  estado      EstadoProveedor
+
+  rubros      ProveedorRubro[]
+  movimientos MovimientoFinanciero[]
+  @@map("proveedores")
+}
+
+model ProveedorRubro {
+  idProveedor   Int
+  idRubro       Int
+
+  proveedor Proveedor @relation(fields: [idProveedor], references: [id])
+  rubro     Rubro     @relation(fields: [idRubro], references: [id])
+
+  @@id([idProveedor, idRubro])
+  @@map("proveedores_rubros")
+}
+
+model MovimientoFinanciero {
+  id              Int      @id @default(autoincrement())
+  idEvento        Int
+  idRubro         Int
+  idProveedor     Int?
+  nroFactura      String?
+  tipoMovimiento  TipoMovimiento
+  fechaHora       DateTime @default(now())
+  monto           Decimal
+  descripcion     String?
+
+  evento      Evento      @relation(fields: [idEvento], references: [id])
+  rubro       Rubro       @relation(fields: [idRubro], references: [id]) 
+  proveedor   Proveedor?  @relation(fields: [idProveedor], references: [id])
+  
+  @@map("movimientos_financieros")
 }

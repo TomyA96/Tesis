@@ -146,3 +146,48 @@ datasource db {
   provider = "postgresql"
   url      = env("DATABASE_URL")
 }
+
+Herramientas instaladas globalmente en la PC
+HerramientaPara qué sirveCómo se instaló
+Node.js v22Entorno para ejecutar JavaScript/TypeScriptDescarga manual
+PostgreSQL 17Motor de base de datosDescarga manual
+pgAdmin 4Visualizador de PostgreSQLIncluido con PostgreSQL
+NestJS CLIGenerador de archivos de NestJSnpm install -g @nestjs/cli
+
+Proyecto backend — lo que se instaló
+PaquetePara qué sirveCómo se instaló
+NestJSFramework para construir la APInest new backend
+PrismaORM para hablar con PostgreSQLnpm install prisma --save-dev
+Prisma ClientCliente generado para consultar la BDnpm install @prisma/client
+
+Comandos ejecutados en orden
+bash# Crear el proyecto NestJS
+nest new backend
+
+# Entrar a la carpeta backend
+cd backend
+
+# Correr el servidor en modo desarrollo
+npm run start:dev
+
+# Instalar Prisma
+npm install prisma --save-dev
+npm install @prisma/client
+
+# Inicializar Prisma en el proyecto
+npx prisma init
+
+# Generar el Prisma Client
+npx prisma generate
+
+Archivos configurados manualmente
+.env — conexión a la base de datos:
+DATABASE_URL="postgresql://postgres:1234@localhost:5432/eventos_db?schema=public"
+prisma/schema.prisma — configuración de Prisma:
+prismagenerator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
