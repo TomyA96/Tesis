@@ -1,5 +1,7 @@
 import { Injectable } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
+import { CreatePerfilDto } from './dtos/create.perfil.dto';
+import { UpdatePerfilDto } from './dtos/update.perfil.dto';
 
 
 @Injectable()
@@ -14,14 +16,11 @@ export class PerfilesService {
     return this.prisma.perfil.findUnique({ where: { id } });
   }
 
-    create(data: {
-        nombre: string;
-        descripcion?: string;
-    })  {
+    create(data: CreatePerfilDto)  {
         return this.prisma.perfil.create({ data });
     }
   
-    update(id: number, data: { nombre?: string, descripcion?: string }) {
+    update(id: number, data: UpdatePerfilDto) {
         return this.prisma.perfil.update({
             where: { id }, 
             data
