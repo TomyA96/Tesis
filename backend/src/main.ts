@@ -5,9 +5,15 @@ import { ValidationPipe } from '@nestjs/common';
 
 async function bootstrap() {
   const app = await NestFactory.create(AppModule);
+
+  app.enableCors({
+    origin: 'http://localhost:5173',
+  });
+
   app.useGlobalPipes(new ValidationPipe({
     whitelist: true,              // elimina campos no declarados en el DTO
-    forbidNonWhitelisted: true    // rechaza el request si vienen campos extra
+    forbidNonWhitelisted: true,    // rechaza el request si vienen campos extra
+    transform: true
   }
 
   ));

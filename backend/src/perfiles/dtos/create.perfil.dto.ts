@@ -1,4 +1,4 @@
-import { IsNotEmpty, IsString } from 'class-validator';
+import { IsArray, IsInt, IsNotEmpty, IsString, ArrayNotEmpty } from 'class-validator';
 
 export class CreatePerfilDto {
     @IsNotEmpty()
@@ -7,4 +7,9 @@ export class CreatePerfilDto {
 
     @IsString()
     descripcion!: string;
+
+    @IsArray()
+    @ArrayNotEmpty()
+    @IsInt({each: true})
+    idsPermisos!: number[]
 }

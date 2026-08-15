@@ -4,37 +4,19 @@ import Card from "../../../ui/componentes/Card";
 import GenericTable from "../../../ui/componentes/GenericTable/GenericTable";
 import ContenedorDatos from "../../../ui/componentes/ContenedorDatos";
 import FiltroEventos from "../componentes/FiltroEventos";
-import { useState } from "react";
-import type { EventoEstado } from "../componentes/FiltroEventos";
-import { MESES, estados } from "../../../constantes/MesesAños";
+import { useEffect, useState } from "react";
+import { getEventos, opcionesEstadoEvento, type EstadoEvento, type Evento } from "../../../services/eventosService"
+import ConfirmarAccion from "../../../ui/componentes/ConfirmarAccion";
 import { useNavigate } from "react-router-dom";
 import { RUTAS } from "../../../constantes/Rutas";
 import { CalendarDays } from "lucide-react";
+import { columnasEventos } from "../eventos.columns";
+import { deleteEvento } from "../../../services/eventosService";
 
 // ── TIPOS ─────────────────────────────────────────────────────────────────────
 // Los tipos se definen acá si son exclusivos de esta feature.
 // Si Evento se usa en otras features, moverlo a un archivo compartido:
 // src/app/features/eventos/types/evento.ts
-export type Evento = {
-    id: number;
-    nombre: string;
-    fecha: string;
-    estado: EventoEstado;
-    lugar: string;
-    capacidad: number;
-    entradasVendidas: number;
-};
-
-// ── DATA MOCK ─────────────────────────────────────────────────────────────────
-// Fuera del componente — es estática.
-// Cuando conectes el backend, reemplazás esto por un hook: useEventos(año)
-export const eventosMock: Evento[] = [
-    { id: 1, nombre: "Expo Tecnología 2026",   fecha: "2026-03-15", estado: "activo",     capacidad: 1200, entradasVendidas: 850,  lugar: "Centro de Convenciones" },
-    { id: 2, nombre: "Feria Gamer",             fecha: "2026-06-20", estado: "activo",   capacidad: 800,  entradasVendidas: 0,    lugar: "Complejo Arena"         },
-    { id: 3, nombre: "Festival Rock",           fecha: "2025-11-10", estado: "finalizado", capacidad: 5000, entradasVendidas: 4800, lugar: "Parque Central"         },
-    { id: 4, nombre: "Congreso de Marketing",   fecha: "2024-09-05", estado: "cancelado",  capacidad: 600,  entradasVendidas: 120,  lugar: "Hotel Plaza"            },
-    { id: 5, nombre: "Encuentro Startups",      fecha: "2026-08-02", estado: "activo",     capacidad: 300,  entradasVendidas: 210,  lugar: "Hub de Innovación"      },
-];
 
 // ── DROPDOWN DE AÑO ───────────────────────────────────────────────────────────
 // Componente separado — responsabilidad única: mostrar un selector de año.
@@ -81,8 +63,21 @@ const InicioEventos = () => {
     const añoActual = new Date().getFullYear();
     const [añoSeleccionado, setAñoSeleccionado] = useState<number>(añoActual);
     const [mesSeleccionado, setMesSeleccionado] = useState<number>(0);
-    const [estadoSeleccionado, setEstadoSeleccionado] = useState<EventoEstado | "">("");
+    const [eventoSeleccionado, setEventoSeleccionado] = useState<Evento | null>(null);
+    const [estadoSeleccionado, setEstadoSeleccionado] = useState<EstadoEvento | "">("");
+    const [eventos, setEventos] = useState<Evento[]>([])
+    const [confirmandoEliminar, setConfirmandoEliminar] = useState(false);
+    const [error, setError] = useState("")
+
     const navigate = useNavigate();
+
+    useEffect(() => {
+        getEventos()
+            .then((response) => {
+                setEventos(response)
+            })
+            .catch(() => setError("No se pudieron cargar los permisos"));
+    }, [])
     return (
         <main className="flex flex-col gap-6 px-8">
 
@@ -126,26 +121,35 @@ const InicioEventos = () => {
                 <ContenedorDatos>
                     <Header titulo={`Resumen de Eventos — ${añoSeleccionado}`} />
 
-                    {eventosMock.length > 0 ? (
+                    { eventos.length > 0 ? (
                         <>
-                            <div className="px-6 pt-4">
+                            {/*<div className="px-6 pt-4">
                                 <FiltroEventos
                                     meses={MESES}
-                                    estados={estados}
+                                    estados={opcionesEstadoEvento}
                                     mes={mesSeleccionado}
-                                    estado={estadoSeleccionado}
-                                    onEstadoChange={setEstadoSeleccionado}
+                                    estado={("")}
+                                    
                                     onMesesChange={setMesSeleccionado}
                                 />
-                            </div>
+                            </div>*/}
 
                             <GenericTable<Evento>
-                                columns={["nombre", "fecha", "estado", "lugar", "entradasVendidas"]}
-                                data={eventosMock}
-                                actions={(_row) => (
-                                    <Btn variant="outline" size="sm">
-                                        Ver Detalles
-                                    </Btn>
+                                columns={columnasEventos}
+                                data={eventos}
+                                actions={(row) => (
+                                    <div>
+                                        <Btn variant="outline" size="sm">
+                                            Ver Detalles
+                                        </Btn>
+                                        <Btn variant="danger" size="sm" onClick={() => {
+                                            setEventoSeleccionado(row);
+                                            setConfirmandoEliminar(true);
+                                        }}>
+                                            Eliminar
+                                        </Btn>
+                                    </div>
+                                    
                                 )}
                             />
                         </>
@@ -157,6 +161,20 @@ const InicioEventos = () => {
                     )}
                 </ContenedorDatos>
             </section>
+
+            <ConfirmarAccion
+                isOpen={confirmandoEliminar}
+                title="Eliminar evento"
+                mensaje="¿Desea confirmar la eliminación del evento?"
+                entidad={eventoSeleccionado?.nombre || ""}
+                onConfirmar={async () => {
+                    if (!eventoSeleccionado) return;
+                    await deleteEvento(eventoSeleccionado.id);
+                    getEventos().then(setEventos);
+                    setConfirmandoEliminar(false);
+                }}
+                onCancelar={() => setConfirmandoEliminar(false)}
+            />
 
         </main>
     );

@@ -15,9 +15,4 @@ export class PermisoPerfilController {
         return this.permisoPerfilService.findByPerfil(Number(idPerfil));
     }
 
-    @Permisos('perfiles.editar')
-    @Put('perfil/:idPerfil')
-    updatePermisos(@Param('idPerfil') idPerfil: string, @Body() data: { idsPermisos: number[] }) {
-        return this.permisoPerfilService.updatePermisos(Number(idPerfil), data.idsPermisos);
-    }
 }

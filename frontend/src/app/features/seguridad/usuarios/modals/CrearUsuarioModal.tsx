@@ -5,17 +5,14 @@ import CrearUsuarioForm from "../forms/CrearUsuarioForm";
 type ModalProps = {
     isOpen: boolean;
     closeModal: () => void;
+    onCreated: () => void;
 };
 
-const CrearUsuarioModal = ({isOpen, closeModal}: ModalProps) => {
-    const perfiles = [
-        { label: "Administrador", value: 1 },
-        { label: "Usuario", value: 2 }
-    ];
-
+const CrearUsuarioModal = ({isOpen, closeModal, onCreated}: ModalProps) => {
+    
     return (
-        <Modal isOpen={isOpen} closeModal={closeModal} title="Crear Nuevo Usuario">
-            <CrearUsuarioForm perfiles={perfiles} />
+        <Modal isOpen={isOpen} closeModal={closeModal}  title="Crear Nuevo Usuario">
+            <CrearUsuarioForm onCreated={onCreated}/>
         </Modal>
     );
 };

@@ -107,6 +107,7 @@ model Usuario {
   nombre        String
   password      String
   estado        EstadoUsuario @default(Activo)
+  eliminado     Boolean @default(false)
   ultimoAcceso  DateTime?
 
   perfiles     UsuarioPerfil[]
@@ -120,7 +121,7 @@ model Usuario {
 
 model Perfil {
   id          Int     @id  @default(autoincrement())
-  nombre      String
+  nombre      String  @unique
   descripcion String?
   usuarios    UsuarioPerfil[]
   permisos    PermisoPerfil[]
@@ -179,10 +180,10 @@ model Evento {
   id              Int      @id @default(autoincrement())
   nombre          String
   fechaHoraInicio DateTime
-  fechaHoraFin    DateTime?
+  fechaHoraFin    DateTime
   ubicacion       String
   descripcion     String?
-  estado          EstadoEvento
+  estado          EstadoEvento @default(Borrador)
   direccion       String?
   capacidad       Int
 

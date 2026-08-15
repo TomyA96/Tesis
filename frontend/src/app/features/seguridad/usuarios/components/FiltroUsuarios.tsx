@@ -3,6 +3,7 @@ import Select from "../../../../ui/componentes/Select";
 import Input from "../../../../ui/componentes/Input";
 import Btn from "../../../../ui/componentes/Btn";
 import ContenedorFiltros from "../../../../ui/componentes/ContenedorFiltros";
+import { opcionesEstadoUsuario } from "../../../../services/usuariosService";
 
 type FiltroUsuariosProps = {
     perfiles: { id: number; nombre: string }[];
@@ -43,13 +44,13 @@ const FiltroUsuarios = ({ perfiles, estados, onFilterChange }: FiltroUsuariosPro
                 <Select
                     label="Estado"  
                     className="w-1/6"
-                    opciones={[{ label: "Todos", value: "" }, ...estados.map((e) => ({ label: e.nombre, value: e.id }))]}
-                    value={estadoId ?? ""}
+                    opciones={[{ label: "Todos", value: "" }, ...opcionesEstadoUsuario]}
+                    value={[]}
                     onChange={(e) => setEstadoId(e.target.value ? Number(e.target.value) : null)}
                 />
             </div>
             <div className="flex items-end">
-                <Btn >
+                <Btn variant="outline">
                     Limpiar Filtros
                 </Btn>
             </div>

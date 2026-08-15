@@ -22,7 +22,7 @@ const GenericTable = <T extends {id: number | string}>({
           <tr className="bg-gray-50 border-b-2 border-gray-200">
             {columns.map((col) => (
               <th
-                key={String(col.key)}
+                key={col.label}
                 className="px-6 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider"
               >
                 {col.label}   
@@ -53,7 +53,7 @@ const GenericTable = <T extends {id: number | string}>({
                 className="border-b border-gray-100 hover:bg-gray-50 transition-colors last:border-none"
               >
                 {columns.map((col) => (
-                  <td key={String(col.key)} className="px-6 py-4 text-sm text-gray-700">
+                  <td key={col.label} className="px-6 py-4 text-sm text-gray-700">
                     {col.render
                       ? col.render(row[col.key], row)  // si tiene renderer, lo usa
                       : String(row[col.key] ?? "")}    

@@ -1,216 +1,337 @@
 import Formulario from "../../../ui/componentes/Formulario";
 import Input from "../../../ui/componentes/Input";
+import Textarea from "../../../ui/componentes/Textarea";
 import Btn from "../../../ui/componentes/Btn";
+import ConfirmarAccion from "../../../ui/componentes/ConfirmarAccion";
 import type { ModoEventoPage } from "../pages/EventoPage";
-import { useRef, useState } from "react";
-import { ImagePlus, X } from "lucide-react"; // npm install lucide-react (ya lo tenés)
+import {  useState } from "react";
+import { cn } from "../../../../lib/cn";
+
+import { createEvento, updateEvento } from "../../../services/eventosService";
+import type { Evento, UpdateEvento } from "../../../services/eventosService";
  
 type EventoFormProps = {
+    evento?:Evento
     modo: ModoEventoPage;
+    onCreated: (evento: Evento) => void;
+    onUpdated: (evento: Evento) => void;
+    // Solo se usa en modo editar: descarta los cambios y vuelve a "ver".
+    onCancel: () => void;
 };
- 
-const EventoForm = ({ modo }: EventoFormProps) => {
-    // Variable booleana para no repetir modo === "ver" en cada campo
-    // Si el nombre del modo cambia algún día, lo cambiás en un solo lugar
+
+/*
+    La forma que tienen los datos EN EL FORMULARIO, distinta a la de la API:
+    todo es string (es lo que devuelve cualquier input), y el fin del evento
+    se maneja como duración en horas en vez de como una segunda fecha.
+    El onSubmit traduce de esta forma a la que espera el backend.
+*/
+type EventoFormData = {
+    nombre: string;
+    ubicacion: string;
+    direccion: string;
+    descripcion: string;
+    capacidad: string;
+    fechaIni: string;
+    horaIni: string;
+    duracion: string;
+};
+
+// Los inputs date/time exigen dos dígitos: "03", no "3".
+const dosDigitos = (n: number) => String(n).padStart(2, "0");
+
+/*
+    Camino inverso al del onSubmit: convierte el evento que viene de la API
+    a los valores que necesitan los inputs. Sin evento (modo crear) devuelve
+    todo vacío, así que sirve para los dos casos.
+*/
+const eventoAFormulario = (evento?: Evento): EventoFormData => {
+    const base = {
+        nombre: evento?.nombre ?? "",
+        ubicacion: evento?.ubicacion ?? "",
+        direccion: evento?.direccion ?? "",
+        descripcion: evento?.descripcion ?? "",
+        capacidad: String(evento?.capacidad ?? ""),
+    };
+
+    if (!evento) return { ...base, fechaIni: "", horaIni: "", duracion: "" };
+
+    /*
+        Se usan los getters locales (getHours y no getUTCHours) a propósito:
+        el string que llega de la API está en UTC, y estos lo devuelven en la
+        zona del navegador, que es la hora que el usuario realmente cargó.
+    */
+    const inicio = new Date(evento.fechaHoraInicio);
+    const fin = new Date(evento.fechaHoraFin);
+
+    return {
+        ...base,
+        // getMonth() arranca en 0 (enero), por eso el +1
+        fechaIni: `${inicio.getFullYear()}-${dosDigitos(inicio.getMonth() + 1)}-${dosDigitos(inicio.getDate())}`,
+        horaIni: `${dosDigitos(inicio.getHours())}:${dosDigitos(inicio.getMinutes())}`,
+        duracion: String((fin.getTime() - inicio.getTime()) / (60 * 60 * 1000)),
+    };
+};
+
+const EventoForm = ({ modo, onCreated, onUpdated, onCancel, evento }: EventoFormProps) => {
+    /*
+        Estos valores iniciales solo se leen en el primer render. Funciona
+        porque EventoPage le pasa una key distinta a este formulario por cada
+        evento, así que al cambiar de evento se monta uno nuevo.
+    */
+    const [datos, setDatos] = useState<EventoFormData>(eventoAFormulario(evento));
+    const [error, setError] = useState("");
+    const [confirmandoCancelar, setConfirmandoCancelar] = useState(false);
+
+    // Vuelve a los valores del evento original y sale del modo edición.
+    const descartarCambios = () => {
+        setDatos(eventoAFormulario(evento));
+        setError("");
+        setConfirmandoCancelar(false);
+        onCancel();
+    };
+
+    /*
+        Solo tiene sentido confirmar si hay algo que perder: si el usuario entró
+        a editar y no tocó nada, pedirle confirmación es fricción al pedo.
+        Los dos objetos salen de la misma función, así que sus claves están en
+        el mismo orden y la comparación por JSON es confiable acá.
+    */
+    const hayCambios = JSON.stringify(datos) !== JSON.stringify(eventoAFormulario(evento));
+
+    /*
+        Un solo handler para todos los campos: se apoya en el atributo name de
+        cada input, que tiene que coincidir exacto con la clave de EventoFormData.
+        El ...prev es obligatorio: sin él, cada cambio borraría los demás campos.
+    */
+    const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
+        setDatos((prev) => ({ ...prev, [e.target.name]: e.target.value }));
+    };
+
     const esModoVer = modo === "ver";
  
-    // ── ESTADO DE LA IMAGEN ───────────────────────────────────────────────────
-    // preview: URL temporal de la imagen para mostrarla antes de subirla al servidor
-    // null significa que no hay imagen seleccionada todavía
-    const [preview, setPreview] = useState<string | null>(null);
  
-    // dragging: true cuando el usuario arrastra un archivo encima del área
-    // Lo usamos para cambiar los colores y dar feedback visual
-    const [dragging, setDragging] = useState(false);
- 
-    // useRef: nos da acceso directo a un elemento del DOM
-    // Lo necesitamos para poder abrir el selector de archivos al hacer click
-    // en el área personalizada, sin mostrar el input file feo del navegador
-    const inputRef = useRef<HTMLInputElement>(null);
- 
-    // ── FUNCIÓN PARA PROCESAR EL ARCHIVO ─────────────────────────────────────
-    // Se llama tanto cuando el usuario elige desde el explorador
-    // como cuando arrastra y suelta un archivo
-    const handleArchivo = (file: File | null) => {
-        if (!file) return;
-        // Verificamos que sea imagen antes de procesar
-        if (!file.type.startsWith("image/")) return;
- 
-        // URL.createObjectURL crea una URL temporal en memoria del navegador
-        // para mostrar la imagen al instante, sin necesidad de subirla al servidor
-        // Cuando conectes el backend, también enviás el File original al servidor
-        setPreview(URL.createObjectURL(file));
-    };
- 
-    // ── EVENTOS DRAG AND DROP ─────────────────────────────────────────────────
-    const handleDragOver = (e: React.DragEvent) => {
-        e.preventDefault();     // SIN esto, el navegador abre el archivo en una nueva pestaña
-        setDragging(true);
-    };
- 
-    const handleDragLeave = () => setDragging(false);
- 
-    const handleDrop = (e: React.DragEvent) => {
-        e.preventDefault();
-        setDragging(false);
-        // e.dataTransfer.files contiene los archivos que el usuario soltó
-        const file = e.dataTransfer.files[0];
-        handleArchivo(file);
-    };
- 
+    const onSubmit = async (e: React.FormEvent) => {
+        e.preventDefault()
+        setError("")
+
+        const fechaHoraInicio = new Date(`${datos.fechaIni}T${datos.horaIni}`);
+
+        if (Number(datos.duracion) <= 0){
+            setError("Introduzca una duracion valida")
+            return
+        }
+        if (Number(datos.capacidad) <= 0){
+            setError("Introduzca una cantidad de asistentes valida")
+            return
+        }
+
+        /*
+            La duración (en horas) se convierte a fecha de fin sumando
+            milisegundos sobre el inicio. Usamos getTime() + un Date nuevo
+            en vez de setHours(), porque setHours() mutaría fechaHoraInicio.
+        */
+        const fechaHoraFin = new Date(
+            fechaHoraInicio.getTime() + Number(datos.duracion) * 60 * 60 * 1000
+        );
+
+        /*
+            Acá se traduce de la forma del formulario a la que espera la API:
+            los strings pasan a Date y number, y la duración desaparece
+            convertida en fechaHoraFin. El cuerpo es igual para crear y editar.
+        */
+        const datosEvento = {
+            nombre: datos.nombre,
+            ubicacion: datos.ubicacion,
+            direccion: datos.direccion,
+            descripcion: datos.descripcion,
+            capacidad: Number(datos.capacidad),
+            fechaHoraInicio,
+            fechaHoraFin,
+        };
+
+        if (modo === "editar"){
+            /*
+                Se mandan todos los campos, no solo los que cambiaron: reescribir
+                un valor con el mismo valor deja la fila igual, así que no hace
+                falta comparar contra el original antes de enviar.
+            */
+            const newData: UpdateEvento = datosEvento;
+            try{
+                const eventoUpd = await updateEvento(Number(evento?.id), newData)
+                onUpdated(eventoUpd)
+            } catch (err) {
+                setError(err instanceof Error ? err.message : "Error al modificar el evento");
+            }
+        } else {
+            // Solo al crear: no tiene sentido dar de alta un evento ya pasado.
+            if (new Date() >= fechaHoraInicio){
+                setError("La fecha de inicio del evento indicada no es valida")
+                return
+            }
+
+            try{
+                const eventoNew = await createEvento(datosEvento)
+                onCreated(eventoNew);
+            } catch (err) {
+                setError(err instanceof Error ? err.message : "Error al crear el evento");
+            }
+        }
+    }
+   
     return (
-        <Formulario autoComplete="off" className="p-6">
+        <Formulario autoComplete="off" className="p-6" onSubmit={onSubmit}>
  
-            {/* ── GRILLA DE CAMPOS ──────────────────────────────────────────── */}
+            {/* ── CAMPOS ────────────────────────────────────────────────────── */}
             {/*
-                grid-cols-2: dos columnas en pantallas medianas y más grandes
-                gap-x-6: espacio horizontal entre las dos columnas
-                En móvil (grid-cols-1) todos los campos van uno abajo del otro
+                Una sola columna: el formulario ocupa media pantalla (comparte
+                fila con ListaEntradas), así que dos columnas dejarían los
+                campos demasiado angostos. La única excepción son fecha+hora,
+                que van juntas porque representan un mismo dato.
             */}
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
- 
+            <div className="flex flex-col gap-4">
+
+                <Input
+                    label="Nombre del evento"
+                    name="nombre"
+                    type="text"
+                    placeholder="Ej: Expo Tecnología 2026"
+                    required
+                    disabled={esModoVer}
+                    value={datos.nombre}
+                    onChange={handleChange}
+                />
+
+                <Input
+                    label="Lugar"
+                    name="ubicacion"
+                    type="text"
+                    placeholder="Ej: Centro de Convenciones"
+                    required
+                    disabled={esModoVer}
+                    value={datos.ubicacion}
+                    onChange={handleChange}
+                />
+
+                <Input
+                    label="Dirección"
+                    name="direccion"
+                    type="text"
+                    placeholder="Ej: Av. Libertador 1234"
+                    disabled={esModoVer}
+                    value={datos.direccion}
+                    onChange={handleChange}
+                />
+
+                {/* Inicio: fecha y hora son un solo dato partido en dos inputs */}
+                <div className="flex flex-col gap-2">
+                    <span className="text-sm font-semibold text-gray-700">
+                        Inicio del evento
+                    </span>
+                    <div className="grid grid-cols-3 gap-3">
+                        <Input
+                            label="Fecha"
+                            name="fechaIni"
+                            type="date"
+                            required
+                            disabled={esModoVer}
+                            value={datos.fechaIni}
+                            onChange={handleChange}
+                        />
+                        <Input
+                            label="Hora"
+                            name="horaIni"
+                            type="time"
+                            required
+                            disabled={esModoVer}
+                            value={datos.horaIni}
+                            onChange={handleChange}
+                        />
+
+                        <Input
+                            label="Duración (horas)"
+                            name="duracion"
+                            type="number"
+                            min={0.5}
+                            step={0.5}
+                            placeholder="Ej: 6"
+                            required
+                            disabled={esModoVer}
+                            value={datos.duracion}
+                            onChange={handleChange}
+                        />
+                    </div>
+                </div>
+
                 {/*
-                    md:col-span-2: este campo ocupa las DOS columnas
-                    El nombre siempre se muestra — en modo ver está deshabilitado,
-                    no desaparece. El usuario necesita ver qué evento está mirando.
+                    Duración en horas en vez de fecha+hora de fin: el usuario no
+                    tiene que acordarse de cambiar el día en eventos que cruzan
+                    la medianoche. El onSubmit la convierte en fechaHoraFin.
                 */}
-                <div className="md:col-span-2">
-                    
-                </div>
- 
-                {/* Fecha y hora de inicio en la misma fila — son la misma información */}
-                <div>
-                    <Input
-                        label="Nombre del Evento"
-                        name="nombre"
-                        type="text"
-                        required
-                        disabled={esModoVer}
-                    />  
-                    <div className="grid grid-cols-2 gap-4">
-                        <Input label="Fecha de Inicio" name="fechaIni" type="date" disabled={esModoVer} />
-                        <Input label="Hora de Inicio"  name="horaIni"  type="time" disabled={esModoVer} />
-                    </div>
-                    
-    
-                    {/* Fecha y hora de fin en la misma fila */}
-                    <div className="grid grid-cols-2 gap-4">
-                        <Input label="Fecha de Fin"    name="fechaFin" type="date" disabled={esModoVer} />
-                        <Input label="Hora de Fin"     name="horaFin"  type="time" disabled={esModoVer} />
-                    </div>
-                    
-    
-                    <Input label="Lugar del Evento" name="lugar"     type="text"   disabled={esModoVer} />
-                    <Input label="Capacidad"         name="capacidad" type="number" disabled={esModoVer} />
-                </div>
                 
- 
-                {/* Descripción ocupa las dos columnas */}
-                <div className="md:col-span-2">
-                    <Input label="Descripción" name="descripcion" type="textarea"  disabled={esModoVer} />
-                </div>
- 
+
+                <Input
+                    label="Capacidad"
+                    name="capacidad"
+                    type="number"
+                    min={1}
+                    placeholder="Cantidad máxima de asistentes"
+                    required
+                    disabled={esModoVer}
+                    value={datos.capacidad}
+                    onChange={handleChange}
+                />
+
+                <Textarea
+                    label="Descripción"
+                    name="descripcion"
+                    rows={3}
+                    placeholder="Describí brevemente el evento"
+                    disabled={esModoVer}
+                    value={datos.descripcion}
+                    onChange={handleChange}
+                />
+
             </div>
- 
-            {/* ── CAMPO DE IMAGEN ───────────────────────────────────────────── */}
-            {/* Se muestra si estamos en modo edición, o si hay imagen cargada en modo ver */}
-            {(!esModoVer || preview) && (
-                <div className="mt-2">
-                    <p className="text-sm font-medium text-gray-700 mb-2">
-                        Imagen Promocional
-                    </p>
- 
-                    {preview ? (
-                        // ── PREVIEW ───────────────────────────────────────────
-                        // Cuando hay imagen seleccionada, mostramos la preview
-                        // overflow-hidden + rounded-lg: la imagen respeta el borde redondeado
-                        <div className="relative w-full rounded-lg overflow-hidden border border-gray-200">
-                            <img
-                                src={preview}
-                                alt="Preview del evento"
-                                // object-cover: la imagen cubre el área sin deformarse ni estirarse
-                                // h-48: altura fija de 192px
-                                className="w-full h-48 object-cover"
-                            />
-                            {/* Botón para quitar la imagen — solo en modo edición */}
-                            {!esModoVer && (
-                                <button
-                                    type="button"
-                                    onClick={() => setPreview(null)}
-                                    // absolute top-2 right-2: flota sobre la imagen en la esquina
-                                    // rounded-full: lo hace circular
-                                    className="absolute top-2 right-2 bg-white rounded-full p-1 shadow-md hover:bg-gray-100 transition-colors"
-                                >
-                                    <X className="w-4 h-4 text-gray-600" />
-                                </button>
-                            )}
-                        </div>
- 
-                    ) : (
-                        // ── ÁREA DE DRAG AND DROP ─────────────────────────────
-                        // onClick abre el input file oculto usando inputRef
-                        // onDragOver, onDragLeave, onDrop manejan el arrastre
-                        <div
-                            onClick={() => inputRef.current?.click()}
-                            onDragOver={handleDragOver}
-                            onDragLeave={handleDragLeave}
-                            onDrop={handleDrop}
-                            className={`
-                                w-full h-40 rounded-lg
-                                border-2 border-dashed
-                                flex flex-col items-center justify-center gap-2
-                                cursor-pointer transition-colors duration-150
-                                ${dragging
-                                    // Feedback visual cuando el usuario arrastra un archivo encima
-                                    ? "border-blue-400 bg-blue-50"
-                                    // Estado normal
-                                    : "border-gray-300 bg-gray-50 hover:border-gray-400 hover:bg-gray-100"
-                                }
-                            `}
-                        >
-                            <ImagePlus className={`w-8 h-8 ${dragging ? "text-blue-400" : "text-gray-400"}`} />
-                            <p className="text-sm text-gray-500 text-center">
-                                <span className="font-medium text-gray-700">Hacé click</span> o arrastrá una imagen
-                            </p>
-                            <p className="text-xs text-gray-400">PNG, JPG, WEBP</p>
-                        </div>
-                    )}
- 
-                    {/*
-                        Input file OCULTO — className="hidden" lo hace invisible
-                        Lo abrimos programáticamente con inputRef.current?.click()
-                        Así tenemos control total sobre el diseño del área de subida
-                    */}
-                    <input
-                        ref={inputRef}
-                        type="file"
-                        name="imagen"
-                        accept="image/*"
-                        className="hidden"
-                        onChange={(e) => handleArchivo(e.target.files?.[0] ?? null)}
-                    />
-                </div>
-            )}
- 
+
             {/* ── BOTONES ───────────────────────────────────────────────────── */}
+            {error && <span className="text-sm text-red-600">{error}</span>}
+            
+               
+            {/*
+                En modo "ver" no va ningún botón: los campos deshabilitados ya
+                comunican que no se está editando, y las acciones del evento
+                (Editar, Publicar, etc.) viven en el header de la página.
+            */}
             {!esModoVer && (
-                // border-t separa visualmente la zona de acciones del formulario
-                <div className="flex justify-end gap-3 mt-6 pt-4 border-t border-gray-100">
-                    <Btn
-                        variant="cancel"
-                        type="reset"
-                        className="min-w-[140px]"
-                        // type="reset" limpia los inputs del DOM,
-                        // pero el preview está en estado React — lo limpiamos manualmente
-                        onClick={() => setPreview(null)}
-                    >
-                        Cancelar
-                    </Btn>
-                    <Btn type="submit" className="min-w-[140px]">
-                        Guardar Evento
+                <div className={cn("gap-3 mt-6 pt-4 border-t border-gray-100", modo === "editar" ? "grid grid-cols-2" : "flex justify-center")}>
+                    {modo === "editar" && (
+                        <Btn
+                            variant="cancel"
+                            type="button"
+                            className=""
+                            // Si no tocó nada, sale directo sin preguntar.
+                            onClick={() =>
+                                hayCambios ? setConfirmandoCancelar(true) : descartarCambios()
+                            }
+                        >
+                            Cancelar
+                        </Btn>
+                    )}
+                    <Btn type="submit" className="min-w-[240px]">
+                        {modo === "crear" ? "Crear Evento" : "Guardar Cambios"}
                     </Btn>
                 </div>
             )}
+
+            <ConfirmarAccion
+                isOpen={confirmandoCancelar}
+                title="Descartar cambios"
+                mensaje="Se van a perder las modificaciones que no realizadas. ¿Querés continuar?"
+                variante="danger"
+                onConfirmar={descartarCambios}
+                onCancelar={() => setConfirmandoCancelar(false)}
+            />
+            
  
         </Formulario>
     );

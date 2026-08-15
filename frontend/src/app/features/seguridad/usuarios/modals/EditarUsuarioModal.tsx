@@ -1,20 +1,19 @@
 import Modal from "../../../../ui/componentes/Modal";
 import EditarUsuarioForm from "../forms/EditarUsuarioForm";
+import type { Usuario } from "../../../../services/usuariosService";
 
 type ModalProps = {
     isOpen: boolean;
+    usuario: Usuario | null;
     closeModal: () => void;
+    onUpdated: () => void; 
 };
 
-const EditarUsuarioModal = ({isOpen, closeModal}: ModalProps) => {
-    const perfiles = [
-        { label: "Administrador", value: 1 },
-        { label: "Usuario", value: 2 }
-    ];
-    const nombreUsuario = "juan.perez"; // Este valor debería venir de las props o del estado   
+const EditarUsuarioModal = ({isOpen, usuario, closeModal, onUpdated }: ModalProps) => {
+    
     return (
         <Modal isOpen={isOpen} closeModal={closeModal} title="Editar Usuario">
-            <EditarUsuarioForm nombre={nombreUsuario} perfiles={perfiles} onCancel={closeModal}/>
+            {usuario && <EditarUsuarioForm usuario={usuario} onCancel={closeModal} onUpdated={onUpdated}/>}
         </Modal>
         
     );

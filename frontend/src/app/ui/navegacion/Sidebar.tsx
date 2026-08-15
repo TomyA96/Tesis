@@ -4,6 +4,7 @@ import Btn from "../componentes/Btn";
 import { useState } from "react";
 import { RUTAS } from "../../constantes/Rutas";
 import { cn } from "../../../lib/cn";
+import { useAuth } from "../../context/AuthContext";
 // Importamos íconos de lucide-react 
 //npm install lucide-react
 import {
@@ -25,6 +26,9 @@ const Sidebar = () => {
     const toggleSeccion = (seccion: SidebarSeccion) => {
         setActivarSeccion(prev => prev === seccion ? null : seccion);
     };
+
+    const { logout, user } = useAuth();
+
     return (
     <aside className="bg-gray-950
             w-64                        
@@ -120,12 +124,12 @@ const Sidebar = () => {
             </ul>
         </nav>
         <div className="border-t border-white/5 p-4 space-y-3">
-                <InfoUser username="Andres Gomez" perfil="Administrador" />
+                <InfoUser username={user?.nombre ?? ""} perfil="Administrador" />
                 <Btn
                     variant="danger"
                     size="sm"
                     className="w-full flex items-center justify-center gap-2"
-                    onClick={() => {}}
+                    onClick={() => { logout(); }}
                 >
                     <LogOut className="w-4 h-4" />
                     Cerrar Sesión

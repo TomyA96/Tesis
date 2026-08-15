@@ -22,7 +22,41 @@ const permisos = [
     { codigo: 'perfiles.editar', descripcion: 'Editar perfiles' },
     { codigo: 'perfiles.eliminar', descripcion: 'Eliminar perfiles' },
 
-] 
+    // Eventos
+    { codigo: 'eventos.ver', descripcion: 'Ver eventos' },
+    { codigo: 'eventos.crear', descripcion: 'Crear eventos' },
+    { codigo: 'eventos.editar', descripcion: 'Editar eventos' },
+    { codigo: 'eventos.eliminar', descripcion: 'Eliminar eventos' },
+    { codigo: 'eventos.publicar', descripcion: 'Publicar eventos' },
+    { codigo: 'eventos.concluir', descripcion: 'Finalizar, suspender o cancelar eventos' },
+
+    // Entradas
+    { codigo: 'entradas.ver', descripcion: 'Ver entradas' },
+    { codigo: 'entradas.crear', descripcion: 'Crear entradas' },
+    { codigo: 'entradas.editar', descripcion: 'Editar entradas' },
+    { codigo: 'entradas.eliminar', descripcion: 'Eliminar entradas' },
+    { codigo: 'entradas.publicar', descripcion: 'Publicar la venta de entradas' },
+    { codigo: 'entradas.anular', descripcion: 'Anular la venta de entradas' },
+
+    // Rubros
+    { codigo: 'rubros.ver', descripcion: 'Ver rubros' },
+    { codigo: 'rubros.crear', descripcion: 'Crear rubros' },
+    { codigo: 'rubros.editar', descripcion: 'Editar rubros' },
+    { codigo: 'rubros.eliminar', descripcion: 'Eliminar rubros' },
+
+    // Proveedores
+    { codigo: 'proveedores.ver', descripcion: 'Ver proveedores' },
+    { codigo: 'proveedores.crear', descripcion: 'Crear proveedores' },
+    { codigo: 'proveedores.editar', descripcion: 'Editar proveedores' },
+    { codigo: 'proveedores.eliminar', descripcion: 'Eliminar proveedores' },
+
+    // Productos
+    { codigo: 'productos.ver', descripcion: 'Ver productos' },
+    { codigo: 'productos.crear', descripcion: 'Crear productos' },
+    { codigo: 'productos.editar', descripcion: 'Editar productos' },
+    { codigo: 'productos.eliminar', descripcion: 'Eliminar productos' },
+
+]
 
 async function seedPermisos() {
   for (const permiso of permisos) {

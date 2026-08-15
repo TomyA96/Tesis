@@ -1,63 +1,107 @@
 import Formulario from "../../../../ui/componentes/Formulario";
 import Input from "../../../../ui/componentes/Input";
+import Textarea from "../../../../ui/componentes/Textarea";
 import Btn from "../../../../ui/componentes/Btn";
-import {CargarPermisos}  from "../utils/CargarPermisos";
-import type { Permiso } from "../utils/CargarPermisos";
-
+import SelectorPermisos from "../components/SelectorPermisos";
+import type { Permiso } from "../../../../services/permisosService";
+import { useState, type FormEvent } from "react";
+import { createPerfil } from "../../../../services/perfilesService";
 
 
 type CrearPerfilFormProps = {
     permisos: Permiso[];
     onCancel: () => void;
-}
-//funcion para agrupar los permisos por area
+    onCreated: () => void;
+};
 
+const CrearPerfilForm = ({ permisos, onCancel, onCreated }: CrearPerfilFormProps) => {
 
+    
+    
+    const [nombre, setNombre] = useState("");
+    const [descripcion, setDescripcion] = useState("");
+    const [permisosSeleccionados, setPermisosSeleccionados] = useState<number[]>([]);
+    const [error, setError] = useState("");
 
-const CrearPerfilForm = ({permisos, onCancel}:CrearPerfilFormProps) => {
-    const permisosAgrupados = CargarPermisos(permisos);
-    return (
-        <Formulario className="min-w-[800px]" >
-            
-            <div className="">
-                {permisos.length > 0 ? (
-                    
-                <div className="flex flex-col gap-6">
-                    <Input label="Nombre del perfil" name="perfilname" placeholder="Introduzca el nombre del perfil" type="text" required />
-                    <div className="grid grid-cols-4 gap-4 max-h-64 overflow-y-auto border p-4 rounded-md border-gray-200">
-                        {/*Object.entries convierte el objeto en un array de arrays con clave y valor.
-                        el primer map es para recorrer las areas y en el segundo recorro cada permiso que corresponda
-                        al area del objeto */}
-
-                        {Object.entries(permisosAgrupados).map(([area, permisosArea]) => (
-                            <div key={area}>
-                                <h4>
-                                    <strong>{area.toUpperCase()}</strong>
-                                </h4>
-                                <ul>
-                                    {permisosArea.map((permiso) => (
-                                        <li className="flex gap-3 justify-start items-center" key={permiso.id}>
-                                            <Input  type="checkbox" /><label htmlFor="">{permiso.descripcion}</label>
-                                        </li>
-                                    ))}
-                                </ul>
-                            </div>
-                        ))}
-                    </div>
-                    <Btn type="submit">
-                        Crear Perfil
-                    </Btn>
-                    <Btn type="button" variant="secondary" onClick={onCancel}>
-                        Cancelar
-                    </Btn>
-                </div>) : (<div className="p-8 flex justify-center items-center text-center  text-red-500"> <h4>
-                    <strong><h1 className="text-3xl mb-4">Error en la carga de datos!!!</h1> Comunicarse con el administrador...</strong></h4> </div>)
-                
-                }
+    const onSubmit = async (e: FormEvent) => {
+        e.preventDefault();
+        
+        if (nombre.length < 3){
+            setError("Ingrese un nombre valido")
+            return;
+        }
+        if (permisosSeleccionados.length < 1){
+            setError("Debe seleccionar al menos un permiso")
+            return;
+        }
+        try{
+            await createPerfil({nombre, descripcion, idsPermisos: permisosSeleccionados})
+            onCreated(); 
+        } catch (err){
+            setError(err instanceof Error ? err.message : "Error al crear el usuario");
+        }
+    }
+    // Sin catálogo de permisos no tiene sentido mostrar el formulario
+    if (permisos.length === 0) {
+        return (
+            <div className="w-[46rem] max-w-[calc(100vw-4rem)] px-6 py-10 text-center">
+                <p className="text-base font-semibold text-red-600">
+                    No se pudieron cargar los permisos
+                </p>
+                <p className="mt-1 text-sm text-gray-500">
+                    Volvé a intentarlo o comunicate con el administrador.
+                </p>
+                <Btn variant="cancel" type="button" className="mt-6" onClick={onCancel}>
+                    Cerrar
+                </Btn>
             </div>
-            
+        );
+    }
+    
+    return (
+        <Formulario className="w-[46rem] max-w-[calc(100vw-4rem)] gap-5" onSubmit={onSubmit}>
+            <Input
+                label="Nombre del perfil"
+                name="nombre"
+                type="text"
+                placeholder="Ej: Supervisor de eventos"
+                required
+                value={nombre}
+                onChange={(e) => setNombre(e.target.value)}
+            />
+
+            <Textarea
+                label="Descripción"
+                name="descripcion"
+                rows={2}
+                placeholder="Describí brevemente qué hace este perfil"
+                value={descripcion}
+                onChange={(e) => setDescripcion(e.target.value)}
+            />
+
+            <div className="flex flex-col gap-2">
+                <div className="flex items-baseline justify-between">
+                    <span className="text-sm font-medium text-gray-700">Permisos</span>
+                    <span className="text-xs text-gray-500">
+                        {permisosSeleccionados.length} seleccionados
+                    </span>
+                </div>
+
+                <SelectorPermisos
+                    permisos={permisos}
+                    seleccionados={permisosSeleccionados}
+                    onChange={setPermisosSeleccionados}
+                />
+            </div>
+            <span className="text-red-600">{error}</span>
+            <div className="grid grid-cols-2 gap-4 border-t border-gray-200 pt-4">
+                <Btn type="submit">Crear perfil</Btn>
+                <Btn type="button" variant="cancel" onClick={onCancel}>
+                    Cancelar
+                </Btn>
+            </div>
         </Formulario>
     );
-}
+};
 
 export default CrearPerfilForm;

@@ -1,6 +1,6 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, ConflictException } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
-import { EstadoUsuario } from '@prisma/client';
+import {  Prisma } from '@prisma/client';
 import { CreateUsuarioDto } from './dtos/create.usuario.dto';
 import { UpdateUsuarioDto } from './dtos/update.usuario.dto';
 import * as bcrypt from 'bcrypt'
@@ -12,16 +12,19 @@ export class UsuariosService {
     constructor(private prisma: PrismaService) {}
 
     findAll() {
-        return this.prisma.usuario.findMany();
+        return this.prisma.usuario.findMany({
+            where: { eliminado: false },
+        });
     }
 
     findOne(id: number) {
-        return this.prisma.usuario.findUnique({ where: { id } });
+        return this.prisma.usuario.findUnique({ where: { id, eliminado: false  } });
     }
 
     findByUser(usuario: string) {
     return this.prisma.usuario.findUnique({
-        where: { usuario }})
+        where: { usuario, eliminado: false }
+    })
     }
 
     async getPermissionsUser(id: number): Promise<string[]> {
@@ -48,8 +51,15 @@ export class UsuariosService {
     async create(data: CreateUsuarioDto) {
         const hashPassword = await bcrypt.hash(data.password, 10)
 
-            return this.prisma.usuario.create({ data:{...data, password: hashPassword }});
+        try {
+            return await this.prisma.usuario.create({ data: { ...data, password: hashPassword } });
+        } catch (error) {
+            if (error instanceof Prisma.PrismaClientKnownRequestError && error.code === 'P2002') {
+                throw new ConflictException('Ese nombre de usuario ya existe');
+            }
+            throw error;
         }
+    }
     
     update(id: number, data: UpdateUsuarioDto) {
         
@@ -66,8 +76,9 @@ export class UsuariosService {
     }
 
     remove(id: number) {
-        return this.prisma.usuario.delete({
-            where: { id }
+        return this.prisma.usuario.update({
+            where: { id },
+            data: { eliminado: true }
         })
     }
 }

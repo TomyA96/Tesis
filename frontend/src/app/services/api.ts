@@ -23,6 +23,12 @@ async function request<T>(path: string, options: RequestOptions = {}): Promise<T
     });
 
     if (!response.ok) {
+        if (response.status === 401 && !path.includes('/auth/login')) {
+            localStorage.removeItem('token');
+            window.location.href = '/login';
+            throw new Error('Sesión inválida');
+        }
+
         const error = await response.json().catch(() => null);
         throw new Error(error?.message ?? `Error ${response.status}`);
     }

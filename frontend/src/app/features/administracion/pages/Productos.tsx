@@ -1,73 +1,134 @@
 import Btn from "../../../ui/componentes/Btn";
-import ContenedorDatos from "../../../ui/componentes/ContenedorDatos";
-import SeccionProductos from "../componentes/SeccionProductos";
 import Header from "../../../ui/componentes/Header";
- 
-type Producto = {
-    nombre: string;
-    precio: number;
-};
- 
-const comidas: Producto[] = [
-    { nombre: "Empanada de carne",        precio: 450  },
-    { nombre: "Milanesa con papas",       precio: 1200 },
-    { nombre: "Pizza muzza",              precio: 850  },
-    { nombre: "Taco de pollo",            precio: 950  },
-    { nombre: "Choripán",                 precio: 650  },
-    { nombre: "Ensalada de quinoa",       precio: 780  },
-    { nombre: "Sándwich de jamón y queso", precio: 680 },
-    { nombre: "Papas rústicas",           precio: 520  },
-];
- 
-const bebidas: Producto[] = [
-    { nombre: "Cerveza artesanal",        precio: 520 },
-    { nombre: "Gaseosa 500ml",            precio: 320 },
-    { nombre: "Agua saborizada",          precio: 280 },
-    { nombre: "Café espresso",            precio: 250 },
-    { nombre: "Mojito sin alcohol",       precio: 410 },
-    { nombre: "Limonada casera",          precio: 330 },
-    { nombre: "Jugo natural de naranja",  precio: 360 },
-    { nombre: "Té helado",                precio: 300 },
-];
- 
-// ── COMPONENTE INTERNO: SECCIÓN DE CATEGORÍA ──────────────────────────────────
-// Extraemos la sección en su propio componente para no repetir
-// el mismo bloque de JSX dos veces (Comidas y Bebidas son idénticas en estructura)
+import ContenedorDatos from "../../../ui/componentes/ContenedorDatos";
+import GenericTable from "../../../ui/componentes/GenericTable/GenericTable";
+import ConfirmarAccion from "../../../ui/componentes/ConfirmarAccion";
+import CrearProductoModal from "../modales/CrearProductoModal";
+import EditarProductoModal from "../modales/EditarProductoModal";
+import FiltroProductos, {
+    aplicarFiltrosProductos,
+    filtrosProductosVacios,
+    type FiltrosProductos,
+} from "../componentes/FiltroProductos";
+import { columnasProductos } from "../productos.columns";
+import { useState, useEffect, useMemo } from "react";
+import { getProductos, deleteProducto, type Producto } from "../../../services/productosService";
 
- 
-// ── PÁGINA PRINCIPAL ──────────────────────────────────────────────────────────
+// ── TIPOS ────────────────────────────────────────────────────────────────────
+
+type ModalProductos = "crearProducto" | "editarProducto" | "eliminarProducto" | null;
+
+// ── COMPONENTE PRINCIPAL ─────────────────────────────────────────────────────
 const Productos = () => {
+    const [productos, setProductos] = useState<Producto[]>([]);
+    const [productoSeleccionado, setProductoSeleccionado] = useState<Producto | null>(null);
+    const [activarModal, setActivarModal] = useState<ModalProductos>(null);
+    const [filtros, setFiltros] = useState<FiltrosProductos>(filtrosProductosVacios);
+    const [error, setError] = useState("");
+
+    const cargarProductos = () => {
+        return getProductos()
+            .then((response) => {
+                setProductos(response);
+                setError("");
+            })
+            .catch(() => setError("No se pudieron cargar los productos"));
+    };
+
+    useEffect(() => {
+        cargarProductos();
+    }, []);
+
+    /*
+        Una sola tabla con filtro por tipo en vez de dos tablas separadas: si más
+        adelante se suma otro tipo de producto (merchandising, por ejemplo),
+        alcanza con agregarlo al enum y aparece solo en el filtro.
+    */
+    const productosFiltrados = useMemo(
+        () => aplicarFiltrosProductos(productos, filtros),
+        [productos, filtros],
+    );
+
     return (
-        <main className="flex flex-col gap-6 px-6">
+        <main className="gap-6 px-8">
             <ContenedorDatos>
-                <Header titulo="Productos" action={<Btn>+ Agregar Producto</Btn>} />
- 
-                {/*
-                    flex + gap-0: las dos secciones están en fila.
-                    divide-x divide-gray-100: agrega una línea vertical entre ellas
-                    sin necesidad de agregar un div separador manualmente.
-                    px-6 pb-6: padding interno de la zona de tablas
-                */}
-                <div className="flex divide-x divide-gray-100 px-6 pb-6 pt-2">
-                    <div className="flex-1 min-w-0 pr-6">
-                        <SeccionProductos
-                            titulo="Comidas"
-                            data={comidas}
-                            mostrarAcciones
-                        />
-                    </div>
-                    <div className="flex-1 min-w-0 pl-6">
-                        <SeccionProductos
-                            titulo="Bebidas"
-                            data={bebidas}
-                            mostrarAcciones
-                        />
-                    </div>
+                <Header
+                    titulo="Gestión de Productos"
+                    action={<Btn onClick={() => setActivarModal("crearProducto")}>+ Agregar Producto</Btn>}
+                />
+
+                {error && <p className="px-6 pt-4 text-sm text-red-600">{error}</p>}
+
+                <div className="px-6 pt-4">
+                    <FiltroProductos filtros={filtros} onChange={setFiltros} />
                 </div>
- 
+
+                <GenericTable<Producto>
+                    columns={columnasProductos}
+                    data={productosFiltrados}
+                    actions={(row) => (
+                        <div className="grid grid-cols-2 gap-2">
+                            <Btn
+                                size="sm"
+                                variant="outline"
+                                onClick={() => {
+                                    setProductoSeleccionado(row);
+                                    setActivarModal("editarProducto");
+                                }}
+                            >
+                                Editar
+                            </Btn>
+                            <Btn
+                                size="sm"
+                                variant="danger"
+                                onClick={() => {
+                                    setProductoSeleccionado(row);
+                                    setActivarModal("eliminarProducto");
+                                }}
+                            >
+                                Eliminar
+                            </Btn>
+                        </div>
+                    )}
+                />
             </ContenedorDatos>
+
+            {/* ── MODALES ──────────────────────────────────────────────────── */}
+
+            <CrearProductoModal
+                isOpen={activarModal === "crearProducto"}
+                closeModal={() => setActivarModal(null)}
+                onCreated={() => {
+                    cargarProductos();
+                    setActivarModal(null);
+                }}
+            />
+
+            <EditarProductoModal
+                isOpen={activarModal === "editarProducto"}
+                producto={productoSeleccionado}
+                closeModal={() => setActivarModal(null)}
+                onUpdated={() => {
+                    cargarProductos();
+                    setActivarModal(null);
+                }}
+            />
+
+            <ConfirmarAccion
+                isOpen={activarModal === "eliminarProducto"}
+                title="Eliminar producto"
+                mensaje="Desea confirmar la eliminación del producto"
+                entidad={productoSeleccionado?.nombre || ""}
+                onConfirmar={async () => {
+                    if (!productoSeleccionado) return;
+                    await deleteProducto(productoSeleccionado.id);
+                    await cargarProductos();
+                    setActivarModal(null);
+                }}
+                onCancelar={() => setActivarModal(null)}
+            />
         </main>
     );
 };
- 
+
 export default Productos;

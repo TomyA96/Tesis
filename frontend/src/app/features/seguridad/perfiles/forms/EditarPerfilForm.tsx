@@ -1,91 +1,113 @@
 import Formulario from "../../../../ui/componentes/Formulario";
 import Input from "../../../../ui/componentes/Input";
-import {CargarPermisos}  from "../utils/CargarPermisos";
-import type { Permiso } from "../utils/CargarPermisos";
-import React, { useState } from "react";
+import Textarea from "../../../../ui/componentes/Textarea";
 import Btn from "../../../../ui/componentes/Btn";
+import SelectorPermisos from "../components/SelectorPermisos";
+import type { Permiso } from "../../../../services/permisosService";
+import { useState, type FormEvent } from "react";
+import { updatePerfil } from "../../../../services/perfilesService"
+import type { Perfil } from "../../../../services/perfilesService";
 
 type EditarPerfilFormProps = {
-    nombrePerfil: string;
-    onCancel: () => void;
-    id:  number;
+    perfil: Perfil;
     permisos: Permiso[];
     permisosPerfil: number[];
-}
+    onCancel: () => void;
+    onUpdated: () => void;
+};
 
-const EditarPerfilForm = ({nombrePerfil, permisos, permisosPerfil, onCancel}: EditarPerfilFormProps) => {
+const EditarPerfilForm = ({
+    perfil,
+    permisos,
+    permisosPerfil,
+    onCancel,
+    onUpdated: onCreated
+}: EditarPerfilFormProps) => {
+    // Arrancan con los valores actuales del perfil para poder comparar
+    // después qué cambió realmente y mandar solo eso al backend.
+    const [nombre, setNombre] = useState(perfil.nombre);
+    const [descripcion, setDescripcion] = useState(perfil.descripcion ?? "");
     const [permisosSeleccionados, setPermisosSeleccionados] = useState<number[]>(permisosPerfil);
-    const [cambiarNombre, setCambiarNombre] = useState(false);
-    const permisosAgrupados = CargarPermisos(permisos);
-    const [nuevoNombre, setNuevoNombre] = useState(nombrePerfil);
-    const togglePermiso = (idPermiso: number) => {
-        setPermisosSeleccionados((permisoAntes) => (
-            //permisoAntes devuelve true si el idPermiso ya está en el array
-            permisoAntes.includes(idPermiso)
-            //permisoAntes.filter devuelve un nuevo array quitando el permiso clickeado, id 
-            ? permisoAntes.filter(id => id !== idPermiso)
-            //Filters recorre el array uno por uno y devuelve un nuevo array solo con los elementos que cumplan la condicion, id es el indice actual
-        : [...permisoAntes, idPermiso]
-        //...permisoAntes, idPermiso 
-        ));
-    };
-   
+    const [error , setError] = useState("")
+
+    const onSubmit = async (e: FormEvent) => {
+            e.preventDefault();
+            
+            if (nombre.length < 3){
+                setError("Ingrese un nombre valido")
+                return;
+            }
+            if (permisosSeleccionados.length < 1){
+                setError("Debe seleccionar al menos un permiso")
+                return;
+            }
+            try{
+                await updatePerfil(perfil.id , {nombre, descripcion, idsPermisos: permisosSeleccionados})
+                onCreated(); 
+            } catch (err){
+                setError(err instanceof Error ? err.message : "Error al crear el usuario");
+            }
+        }
+
+    if (permisos.length === 0) {
+        return (
+            <div className="w-[46rem] max-w-[calc(100vw-4rem)] px-6 py-10 text-center">
+                <p className="text-base font-semibold text-red-600">
+                    No se pudieron cargar los permisos
+                </p>
+                <p className="mt-1 text-sm text-gray-500">
+                    Volvé a intentarlo o comunicate con el administrador.
+                </p>
+                <Btn variant="cancel" type="button" className="mt-6" onClick={onCancel}>
+                    Cerrar
+                </Btn>
+            </div>
+        );
+    }
 
     return (
-        <Formulario className="min-w-[800px]">
-            <div>
-                {permisos.length > 0 ? (
-                    <div className="flex flex-col gap-6 ">
-                        <div className="flex items-end w-full gap-4">
-                            <Input className="w-full"
-                             label="Nombre del perfil" name="perfilName" 
-                            value={nuevoNombre} type="text" disabled={!cambiarNombre} 
-                            //Onchange evento que se dispara cuando cambia el valor del input
+        <Formulario className="w-[46rem] max-w-[calc(100vw-4rem)] gap-5" onSubmit={onSubmit}>
+            <Input
+                label="Nombre del perfil"
+                name="nombre"
+                type="text"
+                required
+                value={nombre}
+                onChange={(e) => setNombre(e.target.value)}
+            />
 
-                            onChange={(e: React.ChangeEvent<HTMLInputElement>) => setNuevoNombre(e.target.value)} 
-                            //e es el evento que se dispara, e.target.value es el valor actual del input
-                            />
-                            <div>
-                                <Input type="checkbox"  className="w-6 mb-3" checked={cambiarNombre} onChange={() => setCambiarNombre(prev => !prev)}/>
-                                
-                            </div>
-                            
-                        </div>
-                        
+            <Textarea
+                label="Descripción"
+                name="descripcion"
+                rows={2}
+                placeholder="Describí brevemente qué hace este perfil"
+                value={descripcion}
+                onChange={(e) => setDescripcion(e.target.value)}
+            />
 
-                            <div className="grid grid-cols-4 gap-4 max-h-64 overflow-y-auto border p-4 rounded-md border-gray-200">
+            <div className="flex flex-col gap-2">
+                <div className="flex items-baseline justify-between">
+                    <span className="text-sm font-medium text-gray-700">Permisos</span>
+                    <span className="text-xs text-gray-500">
+                        {permisosSeleccionados.length} seleccionados
+                    </span>
+                </div>
 
-                                {Object.entries(permisosAgrupados).map(([area, permisosArea]) => (
-                                    <div key={area}>
-                                        <strong>{area}</strong>
-                                        <ul>
-                                            {permisosArea.map((permiso) => (
-                                                <li className="flex gap-3 justify-start items-center" key={permiso.id}>
-                                                    <Input  type="checkbox" checked={permisosSeleccionados.includes(permiso.id)}
-                                                        onChange={() => togglePermiso(permiso.id)} />
-                                                    <label htmlFor="">{permiso.descripcion}</label>
-                                                </li>
-                                            ))}
-                                        </ul>
-                                    </div>
-                                ))}
-                                <Btn type="submit">
-                                    Crear Perfil
-                                </Btn>
-                                <Btn type="button" variant="secondary" onClick={onCancel}>
-                                    Cancelar
-                                </Btn>
-                            </div>
-                        </div>
-                    
-                    ) : (<div className="p-8 flex justify-center items-center text-center  text-red-500"> <h4>
-                            <strong><h1 className="text-3xl mb-4">Error en la carga de datos!!!</h1> Comunicarse con el administrador...</strong></h4> 
-                        </div>
-                )}
+                <SelectorPermisos
+                    permisos={permisos}
+                    seleccionados={permisosSeleccionados}
+                    onChange={setPermisosSeleccionados}
+                />
             </div>
-            
-        </Formulario>)
-     
+            <span className="text-red-600">{error}</span>
+            <div className="grid grid-cols-2 gap-4 border-t border-gray-200 pt-4">
+                <Btn type="submit">Guardar cambios</Btn>
+                <Btn type="button" variant="cancel" onClick={onCancel}>
+                    Cancelar
+                </Btn>
+            </div>
+        </Formulario>
+    );
 };
 
 export default EditarPerfilForm;

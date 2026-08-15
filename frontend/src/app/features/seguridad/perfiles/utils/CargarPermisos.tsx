@@ -1,9 +1,5 @@
+import type { Permiso } from "../../../../services/permisosService";
 
-export type Permiso = {
-    id: number;
-    codigo: string;
-    descripcion: string;
-}
 export const CargarPermisos = (permisos: Permiso[]) => {
     //Creo un array funcional que recorra los permisos y los agrupe por area
     // Agrupa los permisos por área usando reduce (objeto { area: Permiso[] })

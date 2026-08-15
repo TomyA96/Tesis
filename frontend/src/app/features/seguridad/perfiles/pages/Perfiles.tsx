@@ -3,145 +3,51 @@ import Header from "../../../../ui/componentes/Header";
 import GenericTable from "../../../../ui/componentes/GenericTable/GenericTable";
 import FiltroPerfiles from "../components/FiltroPerfiles";
 import CrearPerfilModal from "../modals/CrearPerfilModal";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import EditarPerfilModal from "../modals/EditarPerfilModal";
 import ContenedorDatos from "../../../../ui/componentes/ContenedorDatos";
-import type { Column } from "../../../../ui/componentes/GenericTable/GenericTable.types";
+import { columnasPerfiles } from "../perfiles.column";
+import type { Perfil } from "../../../../services/perfilesService";
+import { deletePerfil, getPerfiles } from "../../../../services/perfilesService";
+import type { Permiso  } from "../../../../services/permisosService";
+import { getPermisos } from "../../../../services/permisosService";
+import { arrayPermisos} from "../../../../services/permisoPerfilService";
+import ConfirmarAccion from "../../../../ui/componentes/ConfirmarAccion";
+
 
 type ModalPerfiles = "crearPerfil" | "editarPerfil" | "eliminarPerfil" |  null;
 
-type PerfilTabla = {
-    id: number;
-    perfil: string;
-    areas: string;
-    permisos: string;
-    usuariosAsignados: number;
-};
-
-const columnasPerfiles: Column<PerfilTabla>[] = [
-    { key: "perfil", label: "Perfil" },
-    { key: "areas", label: "Areas" },
-    { key: "permisos", label: "Permisos" },
-    { key: "usuariosAsignados", label: "Usuarios asignados" },
-];
-
-const perfilesTabla: PerfilTabla[] = [
-    {
-        id: 1,
-        perfil: "Administrador",
-        areas: "Todas",
-        permisos: "Todos",
-        usuariosAsignados: 5,
-    },
-    {
-        id: 2,
-        perfil: "Operador",
-        areas: "Eventos, Productos",
-        permisos: "Crear, Editar",
-        usuariosAsignados: 8,
-    },
-    {
-        id: 3,
-        perfil: "Supervisor",
-        areas: "Eventos",
-        permisos: "Ver",
-        usuariosAsignados: 3,
-    },
-];
-
 const Perfiles = () => {
+
+    const [perfiles, setPerfiles] = useState<Perfil[]>([]);
+    const [permisos, setPermisos] = useState<Permiso[]>([]);
+    const [perfilSeleccionado, setPerfilSeleccionado] = useState<Perfil | null>(null)
+    const [permisosPerfil, setPermisosPerfil] = useState<number[]>([]);
+
+    const [error, setError] = useState("");
+
+    useEffect(() => {
+        getPerfiles()
+            .then((response) => {
+                setPerfiles(response);
+            })
+            .catch(() => {
+                setError("No se pudieron cargar los perfiles");
+            });
+    }, []);
+
+    useEffect(() => {
+        getPermisos()
+            .then((response) => setPermisos(response))
+            .catch(() => setError("No se pudieron cargar los permisos"));
+    }, []);
+
+
     const [activarModal, setActivarModal] = useState<ModalPerfiles>(null);
-    const permisosEjemplo = [
-  // 🔐 Seguridad
-  {
-    id: 1,
-    codigo: "seguridad.crearUsuario",
-    descripcion: "Crear usuario",
-  },
-  {
-    id: 2,
-    codigo: "seguridad.editarUsuario",
-    descripcion: "Editar usuario",
-  },
-  {
-    id: 3,
-    codigo: "seguridad.eliminarUsuario",
-    descripcion: "Eliminar usuario",
-  },
-  {
-    id: 4,
-    codigo: "seguridad.crearPerfil",
-    descripcion: "Crear perfil",
-  },
-  {
-    id: 5,
-    codigo: "seguridad.editarPerfil",
-    descripcion: "Editar perfil",
-  },
-
-  // 🎉 Eventos
-  {
-    id: 6,
-    codigo: "eventos.crearEvento",
-    descripcion: "Crear evento",
-  },
-  {
-    id: 7,
-    codigo: "eventos.editarEvento",
-    descripcion: "Editar evento",
-  },
-  {
-    id: 8,
-    codigo: "eventos.eliminarEvento",
-    descripcion: "Eliminar evento",
-  },
-
-  // 💰 Finanzas
-  {
-    id: 9,
-    codigo: "finanzas.verIngresos",
-    descripcion: "Ver ingresos",
-  },
-  {
-    id: 10,
-    codigo: "finanzas.verGastos",
-    descripcion: "Ver gastos",
-  },
-  {
-    id: 11,
-    codigo: "finanzas.generarBalance",
-    descripcion: "Generar balance",
-  },
-
-  // 📊 Informes
-  {
-    id: 12,
-    codigo: "informes.verReportes",
-    descripcion: "Ver reportes",
-  },
-  {
-    id: 13,
-    codigo: "informes.exportarReportes",
-    descripcion: "Exportar reportes",
-  },
-];
+    
     return (
         <main className=" gap-6 px-8 ">  
-            <CrearPerfilModal 
-              isOpen={activarModal === "crearPerfil"} 
-              closeModal={() => setActivarModal(null)} 
-              permisos={permisosEjemplo} 
-            />
-            <EditarPerfilModal 
-              isOpen={activarModal === "editarPerfil"} 
-              closeModal={() => setActivarModal(null)} 
-              nombrePerfil="Operador" id={2} 
-              permisos={permisosEjemplo} 
-              permisosPerfil={[1,3,6,7]} 
-            />
                 
-                
-           
             <ContenedorDatos>
                 <Header titulo="Gestion de Perfiles"
                 action={
@@ -151,6 +57,10 @@ const Perfiles = () => {
                 }
                 />
                 
+                {error && (
+                    <p className="px-6 pt-4 text-sm text-red-600">{error}</p>
+                )}
+
                 <div className="px-6 pt-4">
                   <FiltroPerfiles
                     areas={[
@@ -164,28 +74,72 @@ const Perfiles = () => {
                     ]}/>
                 </div>   
                 
-                <GenericTable<PerfilTabla>
+                <GenericTable<Perfil>
                     columns={columnasPerfiles}
-                    data={perfilesTabla}  
+                    data={perfiles}  
                     
-                    actions={(_row) => (
+                    actions={(row) => (
                         <div>
-                            <Btn size="sm" className="mr-2 min-w-20" onClick={() => setActivarModal("editarPerfil")}>
+                            <Btn size="sm" className="mr-2 min-w-20" 
+                              onClick={() => {
+                                arrayPermisos(row.id)
+                                    .then((idsPermisos) => {
+                                        setPermisosPerfil(idsPermisos);
+                                        setPerfilSeleccionado(row);
+                                        setActivarModal("editarPerfil");
+                                    })
+                                    .catch(() => setError("No se pudieron cargar los permisos del perfil"));
+                            }}>
                                 Editar
                             </Btn>
-                            <Btn size="sm" className="min-w-20" variant="danger">
+                            <Btn size="sm" className="min-w-20" variant="danger"
+                              onClick={() => {
+                                setPerfilSeleccionado(row)
+                                setActivarModal("eliminarPerfil")
+                              }}
+                            >
                                 Eliminar
                             </Btn>
                         </div>
                     )}
                 />
 
-                    
-
-                            
-
-                
             </ContenedorDatos>
+
+            <CrearPerfilModal 
+              isOpen={activarModal === "crearPerfil"} 
+              closeModal={() => setActivarModal(null)} 
+              permisos={permisos} 
+              onCreated={()=>{
+                getPerfiles().then(setPerfiles)
+                setActivarModal(null)
+              }}
+            />
+            <EditarPerfilModal 
+              isOpen={activarModal === "editarPerfil"} 
+              closeModal={() => setActivarModal(null)} 
+              perfil={perfilSeleccionado}
+              permisos={permisos}
+              permisosPerfil={permisosPerfil}
+              onUpdated={()=>{
+                getPerfiles().then(setPerfiles)
+                setActivarModal(null)
+              }}
+            />
+
+            <ConfirmarAccion
+              isOpen={activarModal === "eliminarPerfil"}
+              title="Eliminar Perfil"
+              mensaje="Desea eliminar el perfil"
+              entidad={perfilSeleccionado?.nombre || ""}
+              onCancelar={() => setActivarModal(null)}
+              onConfirmar={async () => {
+                if (!perfilSeleccionado) return;
+                await deletePerfil(perfilSeleccionado.id);
+                getPerfiles().then(setPerfiles);
+                setActivarModal(null);
+              }}
+            />
         </main>
     );
 };

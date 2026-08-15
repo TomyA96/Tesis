@@ -26,19 +26,19 @@ export class PerfilesController {
 
     @Permisos('perfiles.crear')
     @Post()
-    create(@Body() data: CreatePerfilDto) {
-        return this.perfilesService.create(data)
+    createPerfil(@Body() data: CreatePerfilDto) {
+        return this.perfilesService.createPerfil(data)
     }
 
     @Permisos('perfiles.editar')
     @Put(':id')
-    update(@Param('id') id: string, @Body() data: UpdatePerfilDto) {
-        return this.perfilesService.update(Number(id), data)
+    updatePerfil(@Param('id') id: string, @Body() data: UpdatePerfilDto) {
+        return this.perfilesService.updatePerfil(Number(id), data)
     }
 
     @Permisos('perfiles.eliminar')
     @Delete(':id')
-    remove(@Param('id') id: string) {
-        return this.perfilesService.remove(Number(id))
+    removePerfil(@Param('id') id: string) {
+        return this.perfilesService.removePerfil(Number(id))
     }
 }

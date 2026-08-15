@@ -1,3 +1,4 @@
+import { useState } from "react";
 import Btn from "./Btn"
 import Modal from "./Modal";
 
@@ -7,20 +8,40 @@ type ConfirmarAccionProps = {
     isOpen: boolean;
     entidad?: string;
     variante?: "danger" | "primary";
-    onConfirmar: () => void;
+    onConfirmar: () => void | Promise<void>;
     onCancelar: () => void;
 }
 
 const ConfirmarAccion = ({ title, mensaje, onConfirmar, entidad, isOpen, variante , onCancelar }: ConfirmarAccionProps) => {
+    const [cargando, setCargando] = useState(false);
+    const [error, setError] = useState("");
+
+    const handleConfirmar = async () => {
+        setError("");
+        setCargando(true);
+        try {
+            await onConfirmar();
+        } catch (err) {
+            setError(err instanceof Error ? err.message : "Ocurrió un error");
+        } finally {
+            setCargando(false);
+        }
+    };
+
     return (
         <Modal isOpen={isOpen} closeModal={onCancelar} title={title}>
-            <div className=" w-full justify-center min-h-[150px]  flex flex-col">
-                
-                
-                <p className=" text-lg p-6">{mensaje}{entidad && <strong className="ml-2">{entidad}</strong>}</p>
-                <div className="flex justify-end gap-4">
-                    <Btn variant={variante ?? "danger"} className="min-w-[105px]" onClick={onConfirmar}>Confirmar</Btn>
-                    <Btn variant="outline" className="min-w-[105px]" onClick={onCancelar}>Cancelar</Btn>
+            <div className=" w-full justify-between min-h-[150px] min-w-[350px] flex flex-col">
+
+
+                <p className=" text-sm p-6">¿{mensaje}{entidad && <strong className="ml-2">{entidad}</strong>}?</p>
+                {error && <p className="px-6 text-sm text-red-600">{error}</p>}
+                <div className="grid grid-cols-2  gap-4 px-6 pb-2">
+                    <Btn variant={variante ?? "danger"} className="min-w-[105px]" onClick={handleConfirmar} disabled={cargando}>
+                        {cargando ? "Confirmando..." : "Confirmar"}
+                    </Btn>
+                    <Btn variant="outline" className="min-w-[105px]" onClick={onCancelar} disabled={cargando}>
+                        Cancelar
+                    </Btn>
                 </div>
             </div>
         </Modal>

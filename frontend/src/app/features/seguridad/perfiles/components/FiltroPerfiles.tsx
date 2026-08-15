@@ -27,7 +27,7 @@ const FiltroPerfiles = ({areas}: FiltroPerfilesProps) => {
                 />
             </div>
             <div className="flex items-end">
-                <Btn >
+                <Btn variant="outline">
                     Limpiar Filtros
                 </Btn>
             </div>
