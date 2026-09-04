@@ -1,52 +1,42 @@
-
-
-import Btn from "../../../ui/componentes/Btn";
-import { cn } from "../../../../lib/cn";
+import Btn, { type Variant } from "../../../ui/componentes/Btn";
+import type { Entrada, EstadoEntrada } from "../../../services/entradasService";
+import Etiqueta, { type ColorEtiqueta } from "../../../ui/componentes/Etiqueta";
+import type { AccionEntrada } from "../utils/accionesParaEntradas";
  
 // ── TIPOS ──────────────────────────────────────────────────────────────────────
-type TipoEntrada  = "online" | "fisica";
-type EstadoLote   = "borrador" | "publicado" | "deshabilitado";
- 
+
+ const configAccion: Record<AccionEntrada, { label: string; variant: Variant; }> = {
+    editar:       { label: "Editar",       variant: "outline",  },
+    publicar:     { label: "Publicar",     variant: "success",  },
+    habilitar:    { label: "Habilitar",    variant: "outline",  },
+    deshabilitar: { label: "Deshabilitar", variant: "warning",  },
+    eliminar:     { label: "Eliminar",     variant: "danger",   },
+    imprimir:     { label: "Imprimir",     variant: "secondary", },
+};
 type LoteEntradaProps = {
-    nombre:      string;
-    cantidadVendida:    number;    // vendidas
-    cantidadTotal:   number;    // total
-    precio:      number;
-    estado:      EstadoLote;
-    tipoEntrada: TipoEntrada;
+    entrada: Entrada;
     // Callbacks — el componente avisa al padre qué acción se hizo
     // El padre decide qué hacer (abrir modal, llamar API, etc.)
-    onEditar?:    () => void;
-    onDeshabilitar?: () => void;
-    onEliminar?: () => void;   // opcional — física no tiene eliminar
-    onPublicar?: () => void;   // opcional — solo online
-    onImprimir?: () => void;   // opcional — solo física
+    acciones: AccionEntrada[];
+    cantidadTotal: number;
+    cantidadVendida:number;
+    onEditar: () => void;
+    onPublicar: () => void;
+    onHabilitar: () => void;
+    onDeshabilitar: () => void;
+    onEliminar: () => void;
+    onImprimir: () => void;
 };
  
 // ── BADGE DE ESTADO ────────────────────────────────────────────────────────────
 // Mismo patrón que en el resto del sistema
-const BadgeEstadoLote = ({ estado }: { estado: EstadoLote }) => {
-    const estilos: Record<EstadoLote, string> = {
-        borrador:      "bg-gray-100    text-gray-600",
-        publicado:     "bg-emerald-100 text-emerald-700",
-        deshabilitado: "bg-red-100     text-red-600",
+    
+    const colorEstadoEtiqueta: Record<EstadoEntrada | "Impreso", ColorEtiqueta> = {
+        Borrador:    "indigo",
+        Disponible:  "verde",
+        Impreso:     "azul",
     };
  
-    const etiquetas: Record<EstadoLote, string> = {
-        borrador:      "Borrador",
-        publicado:     "Publicado",
-        deshabilitado: "Deshabilitado",
-    };
- 
-    return (
-        <span className={cn(
-            "inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium",
-            estilos[estado]
-        )}>
-            {etiquetas[estado]}
-        </span>
-    );
-};
  
 // ── FILA DE DATO ───────────────────────────────────────────────────────────────
 /*
@@ -63,21 +53,17 @@ const FilaDato = ({ label, children }: { label: string; children: React.ReactNod
 );
  
 // ── COMPONENTE PRINCIPAL ───────────────────────────────────────────────────────
-const LoteEntrada = ({
-    nombre,
-    cantidadVendida,
-    cantidadTotal,
-    precio,
-    estado,
-    tipoEntrada,
-    onEditar,
-    onEliminar,
-    onPublicar,
-    onImprimir,
-}: LoteEntradaProps) => {
- 
-    const esOnline = tipoEntrada === "online";
- 
+const LoteEntrada = ({entrada, acciones, cantidadTotal, cantidadVendida, onEditar, onPublicar, onHabilitar, onDeshabilitar, onEliminar, onImprimir}: LoteEntradaProps) => {
+
+    const handlers: Record<AccionEntrada, () => void> = {
+        editar: onEditar,
+        publicar: onPublicar,
+        habilitar: onHabilitar,
+        deshabilitar: onDeshabilitar,
+        eliminar: onEliminar,
+        imprimir: onImprimir,
+    };
+
     return (
         <div className="flex justify-between items-center gap-6 border border-gray-200 rounded-xl p-5 bg-white hover:shadow-sm transition-shadow duration-200">
  
@@ -88,9 +74,11 @@ const LoteEntrada = ({
                 <div className="flex items-center gap-3">
                     {/* h3 — es un subtítulo dentro de un componente, no título de página */}
                     <h3 className="font-semibold text-base text-gray-900 truncate">
-                        {nombre}
+                        {entrada.descripcion}
                     </h3>
-                    <BadgeEstadoLote estado={estado} />
+                    <Etiqueta color={entrada.esFisica && entrada.cantidadTicket > 0 ? colorEstadoEtiqueta["Impreso"] : colorEstadoEtiqueta[entrada.estado]}>
+                        {entrada.esFisica && entrada.cantidadTicket > 0 ? "Tickets Impresos" : entrada.estado}
+                    </Etiqueta>
                 </div>
  
                 {/*
@@ -101,7 +89,7 @@ const LoteEntrada = ({
                     <FilaDato label="Cantidad">
                         {/* Barra de progreso visual para mostrar ocupación */}
                         <div className="flex items-center gap-2">
-                            <span>{cantidadVendida}/{cantidadTotal}</span>
+                            <span>{cantidadVendida}/{entrada.cantidad || cantidadTotal}</span>
                             {/*
                                 La barra muestra visualmente qué porcentaje está vendido
                                 style inline solo para el width dinámico — Tailwind no
@@ -125,54 +113,20 @@ const LoteEntrada = ({
                             style: "currency",
                             currency: "ARS",
                             maximumFractionDigits: 0,
-                        }).format(precio)}
+                        }).format(entrada.precio)}
                     </FilaDato>
                 </dl>
             </div>
  
             {/* ── ACCIONES ──────────────────────────────────────────────────── */}
-            {/*
-                Editar es común a los dos tipos — se muestra siempre.
-                El resto de botones depende del tipoEntrada.
-                Esto evita repetir el botón Editar en dos bloques distintos.
-            */}
             <div className="flex flex-col gap-2">
-                <Btn variant="outline" size="sm" onClick={onEditar}>
-                    Editar Lote
-                </Btn>
- 
-                {/* Botones exclusivos de online */}
-                {esOnline && (
-                    <>
-                        <Btn
-                            variant="success"
-                            size="sm"
-                            onClick={onPublicar}
-                        >
-                            {estado === "publicado" ? "Deshabilitar" : "Publicar"}
-                        </Btn>
-                        <Btn
-                            variant="danger"
-                            size="sm"
-                            onClick={onEliminar}
-                        >
-                            Eliminar Lote
-                        </Btn>
-                    </>
-                )}
- 
-                {/* Botones exclusivos de física */}
-                {!esOnline && (
-                    <Btn
-                        variant="outline"
-                        size="sm"
-                        onClick={onImprimir}
-                    >
-                        Imprimir
+                {acciones.map((accion) =>
+                    <Btn key={accion} size="sm" variant={configAccion[accion].variant} onClick={handlers[accion]}>
+                        {configAccion[accion].label}
                     </Btn>
                 )}
             </div>
- 
+     
         </div>
     );
 };

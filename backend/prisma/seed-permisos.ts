@@ -35,8 +35,8 @@ const permisos = [
     { codigo: 'entradas.crear', descripcion: 'Crear entradas' },
     { codigo: 'entradas.editar', descripcion: 'Editar entradas' },
     { codigo: 'entradas.eliminar', descripcion: 'Eliminar entradas' },
-    { codigo: 'entradas.publicar', descripcion: 'Publicar la venta de entradas' },
-    { codigo: 'entradas.anular', descripcion: 'Anular la venta de entradas' },
+    { codigo: 'entradas.publicar', descripcion: 'Publicar entradas' },
+    { codigo: 'entradas.imprimir', descripcion: 'Generar tickets físicos' },
 
     // Rubros
     { codigo: 'rubros.ver', descripcion: 'Ver rubros' },

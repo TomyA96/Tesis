@@ -1,4 +1,3 @@
-import type { EventoEstado } from "../features/eventos/componentes/FiltroEventos";
 
  export  const MESES = [
     {label: "Todos", value: 0 },
@@ -14,11 +13,4 @@ import type { EventoEstado } from "../features/eventos/componentes/FiltroEventos
     { label: "Octubre", value: 10 },
     { label: "Noviembre", value: 11 },
     { label: "Diciembre", value: 12 },
-];
-export const estados: { label: string; value: EventoEstado | "" }[] = [
-    { label: "Todos", value: "" },
-    { label: "Activo", value: "activo" },
-    { label: "Finalizado", value: "finalizado" },
-    { label: "Pendiente", value: "pendiente" },
-    { label: "Cancelado", value: "cancelado" },
 ];

@@ -1,9 +1,9 @@
 import Btn from "../../../../ui/componentes/Btn";
+import LinkBtn from "../../../../ui/componentes/LinkBtn";
 import Card from "../../../../ui/componentes/Card";
 import GenericTable from "../../../../ui/componentes/GenericTable/GenericTable";
 import ContenedorDatos from "../../../../ui/componentes/ContenedorDatos";
 import Header from "../../../../ui/componentes/Header";
-import { useNavigate } from "react-router-dom";
 import { RUTAS } from "../../../../constantes/Rutas";
 import { Users, UserCheck, Shield, AlertTriangle } from "lucide-react";
 import { auditoriasMock } from "../../auditorias/auditorias.mock";
@@ -20,7 +20,6 @@ import type { Auditoria } from "../../auditorias/types";
  
 
 const InicioSeg = () => {
-    const navigate = useNavigate();
     return (
         // gap-8 separa las secciones verticalmente de forma uniforme
         <main className="flex flex-col gap-8 p-8">
@@ -79,49 +78,41 @@ const InicioSeg = () => {
                             <p className="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-1">
                                 Acciones rápidas
                             </p>
-                            {/* 
-                                asChild no existe en tu Btn, por eso usamos Link que envuelve al Btn.
-                                Alternativa: pasarle className directamente al Link.
-                            */}
-                            
                             <Btn size="md" className="w-full">Crear Usuario</Btn>
-                        
-                        
+
+
                             <Btn size="md" className="w-full">Crear Perfil</Btn>
-                           
+
 
                             {/* Separador visual entre crear y ver */}
                             <hr className="border-gray-100 my-1" />
 
-                            
-                            <Btn 
-                            variant="outline" 
-                            size="md" 
-                            className="w-full" 
-                            onClick={() => navigate(RUTAS.seguridad.usuarios)}>
+                            <LinkBtn
+                            variant="outline"
+                            size="md"
+                            className="w-full"
+                            to={RUTAS.seguridad.usuarios}>
                                 Ver Usuarios
-                            </Btn>
-                            
-                            <Btn 
-                            variant="outline" 
-                            size="md" 
-                            className="w-full" 
-                            onClick={() => navigate(RUTAS.seguridad.perfiles)}>
+                            </LinkBtn>
+
+                            <LinkBtn
+                            variant="outline"
+                            size="md"
+                            className="w-full"
+                            to={RUTAS.seguridad.perfiles}>
                                 Ver Perfiles
-                            </Btn>
-                            
-                            
-                            <Btn 
-                            variant="outline" 
-                            size="md" 
-                            className="w-full" 
-                            onClick={() => navigate(RUTAS.seguridad.auditorias,{
-                                        state: { usuarioId: 1}
-                                    })}
+                            </LinkBtn>
+
+                            <LinkBtn
+                            variant="outline"
+                            size="md"
+                            className="w-full"
+                            to={RUTAS.seguridad.auditorias}
+                            state={{ usuarioId: 1 }}
                             >
                                 Ver Actividad
-                            </Btn>
-                            
+                            </LinkBtn>
+
                         </div>
                     </div>
                 </ContenedorDatos>

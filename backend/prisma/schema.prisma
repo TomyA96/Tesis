@@ -40,13 +40,10 @@ enum EstadoEvento {
 
 enum EstadoEntrada {
   Disponible
-  Agotada
   Borrador
-  Anulada
-
 }
 enum EstadoTicket {
-  Disponible
+  Impreso
   Asignado
   Vendido
   Usado
@@ -202,8 +199,9 @@ model Entrada {
   descripcion String
   precio      Decimal
   esFisica    Boolean
-  estado      EstadoEntrada
-  cantidad    Int
+  estado      EstadoEntrada @default(Borrador)
+  cantidad    Int?
+  habilitada  Boolean @default(true)
 
   evento   Evento  @relation(fields: [idEvento], references: [id])
   tickets   TicketEvento[]

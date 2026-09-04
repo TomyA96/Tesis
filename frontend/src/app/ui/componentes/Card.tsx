@@ -40,7 +40,7 @@ const Card = ({ title, content, icono, colorIcono = "blue" }: CardProps) => {
             transition-shadow: anima el cambio de sombra suavemente
             gap-4: espacio entre el ícono y los datos
         */
-        <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-5 flex items-center gap-4 hover:shadow-md transition-shadow duration-200">
+        <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-5 flex items-center gap-4 hover:shadow-lg transition-shadow duration-200">
  
             {/* ── ÍCONO ─────────────────────────────────────────────────────── */}
             {/* Solo se renderiza si se pasó un ícono */}
@@ -73,7 +73,7 @@ const Card = ({ title, content, icono, colorIcono = "blue" }: CardProps) => {
                     truncate: si el título es muy largo, se corta con "..."
                     en lugar de romper el layout de la card
                 */}
-                <span className="text-sm text-gray-500 mt-1 truncate">
+                <span className="text-sm text-gray-500 mt-1 truncate  ">
                     {title}
                 </span>
             </div>

@@ -1,14 +1,11 @@
 import Header from "../../../ui/componentes/Header";
 import ContenedorDatos from "../../../ui/componentes/ContenedorDatos";
 import CardEvent from "../componentes/CardEvent";
-import Btn from "../../../ui/componentes/Btn";
-import { useNavigate } from "react-router-dom";
+import LinkBtn from "../../../ui/componentes/LinkBtn";
 import { RUTAS } from "../../../constantes/Rutas";
 
 
 const InicioAdministracionPage = () => {
-    const navigate = useNavigate();
-
     return (
         <main>
             
@@ -26,15 +23,15 @@ const InicioAdministracionPage = () => {
                         <p className="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-1">
                                 Administrar
                         </p>
-                        <Btn className="w-[150px]" variant="outline" size="sm" onClick={() => navigate(RUTAS.administracion.productos)}>
+                        <LinkBtn className="w-[150px]" variant="outline" size="sm" to={RUTAS.administracion.productos}>
                             Productos
-                        </Btn>
-                        <Btn className="w-[150px]" variant="outline" size="sm" onClick={() => navigate(RUTAS.administracion.proveedores)}>
+                        </LinkBtn>
+                        <LinkBtn className="w-[150px]" variant="outline" size="sm" to={RUTAS.administracion.proveedores}>
                             Proveedores
-                        </Btn>
-                        <Btn className="w-[150px]" variant="outline" size="sm" onClick={() => navigate(RUTAS.administracion.rubros)}>
+                        </LinkBtn>
+                        <LinkBtn className="w-[150px]" variant="outline" size="sm" to={RUTAS.administracion.rubros}>
                             Rubros
-                        </Btn>
+                        </LinkBtn>
                         
                     </div>
                 </div>

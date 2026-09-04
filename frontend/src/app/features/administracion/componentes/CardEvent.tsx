@@ -2,8 +2,8 @@
 // CardEvent.tsx
 // ═══════════════════════════════════════════════════════════════════════════════
 import Btn from "../../../ui/componentes/Btn";
+import LinkBtn from "../../../ui/componentes/LinkBtn";
 import { CalendarDays } from "lucide-react";
-import { useNavigate } from "react-router-dom";
 import { RUTAS } from "../../../constantes/Rutas";
 import GastoModal from "../modales/GastoModal";
 import IngresoModal from "../modales/IngresoModal";import { useState } from "react";
@@ -43,7 +43,6 @@ const BadgeEstadoEvento = ({ estado }: { estado: Estado }) => {
 };
  
 const CardEvent = ({ nombre, fecha, estado }: EventProps) => {
-    const navigate = useNavigate();
     const [modalActivo, setModalActivo] = useState<ModalRegistar>(null);
  
     return (
@@ -108,9 +107,9 @@ const CardEvent = ({ nombre, fecha, estado }: EventProps) => {
                             Registrar Ingreso
                         </Btn>
                     </div>
-                    <Btn variant="primary" size="sm" className="w-full" onClick={() => navigate(RUTAS.administracion.administrarEvento(2))}>
+                    <LinkBtn variant="primary" size="sm" className="w-full" to={RUTAS.administracion.administrarEvento(2)}>
                         Administrar Evento
-                    </Btn>
+                    </LinkBtn>
                 </div>
  
             </div>

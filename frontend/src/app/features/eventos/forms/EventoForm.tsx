@@ -9,6 +9,7 @@ import { cn } from "../../../../lib/cn";
 
 import { createEvento, updateEvento } from "../../../services/eventosService";
 import type { Evento, UpdateEvento } from "../../../services/eventosService";
+import { fechaAInputs, combinarFechaHora, calcularDuracionHoras, sumarDuracion } from "../utils/fechaHora";
  
 type EventoFormProps = {
     evento?:Evento
@@ -36,9 +37,6 @@ type EventoFormData = {
     duracion: string;
 };
 
-// Los inputs date/time exigen dos dígitos: "03", no "3".
-const dosDigitos = (n: number) => String(n).padStart(2, "0");
-
 /*
     Camino inverso al del onSubmit: convierte el evento que viene de la API
     a los valores que necesitan los inputs. Sin evento (modo crear) devuelve
@@ -55,20 +53,15 @@ const eventoAFormulario = (evento?: Evento): EventoFormData => {
 
     if (!evento) return { ...base, fechaIni: "", horaIni: "", duracion: "" };
 
-    /*
-        Se usan los getters locales (getHours y no getUTCHours) a propósito:
-        el string que llega de la API está en UTC, y estos lo devuelven en la
-        zona del navegador, que es la hora que el usuario realmente cargó.
-    */
     const inicio = new Date(evento.fechaHoraInicio);
     const fin = new Date(evento.fechaHoraFin);
+    const { fecha, hora } = fechaAInputs(inicio);
 
     return {
         ...base,
-        // getMonth() arranca en 0 (enero), por eso el +1
-        fechaIni: `${inicio.getFullYear()}-${dosDigitos(inicio.getMonth() + 1)}-${dosDigitos(inicio.getDate())}`,
-        horaIni: `${dosDigitos(inicio.getHours())}:${dosDigitos(inicio.getMinutes())}`,
-        duracion: String((fin.getTime() - inicio.getTime()) / (60 * 60 * 1000)),
+        fechaIni: fecha,
+        horaIni: hora,
+        duracion: calcularDuracionHoras(inicio, fin),
     };
 };
 
@@ -108,13 +101,13 @@ const EventoForm = ({ modo, onCreated, onUpdated, onCancel, evento }: EventoForm
     };
 
     const esModoVer = modo === "ver";
- 
+    const puedeEditarFecha = modo === "crear" || (modo === "editar" && evento?.estado === "Borrador");
  
     const onSubmit = async (e: React.FormEvent) => {
         e.preventDefault()
         setError("")
 
-        const fechaHoraInicio = new Date(`${datos.fechaIni}T${datos.horaIni}`);
+        const fechaHoraInicio = combinarFechaHora(datos.fechaIni, datos.horaIni);
 
         if (Number(datos.duracion) <= 0){
             setError("Introduzca una duracion valida")
@@ -125,37 +118,35 @@ const EventoForm = ({ modo, onCreated, onUpdated, onCancel, evento }: EventoForm
             return
         }
 
-        /*
-            La duración (en horas) se convierte a fecha de fin sumando
-            milisegundos sobre el inicio. Usamos getTime() + un Date nuevo
-            en vez de setHours(), porque setHours() mutaría fechaHoraInicio.
-        */
-        const fechaHoraFin = new Date(
-            fechaHoraInicio.getTime() + Number(datos.duracion) * 60 * 60 * 1000
-        );
+        const fechaHoraFin = sumarDuracion(fechaHoraInicio, Number(datos.duracion));
 
         /*
-            Acá se traduce de la forma del formulario a la que espera la API:
-            los strings pasan a Date y number, y la duración desaparece
-            convertida en fechaHoraFin. El cuerpo es igual para crear y editar.
+            Los campos comunes a crear y editar. La fecha se agrega aparte en
+            cada rama: create la necesita siempre (CreateEvento la exige como
+            obligatoria), update solo si puedeEditarFecha — y TypeScript no
+            puede deducir que en la rama de "crear" ese booleano es siempre
+            true, así que compartir un solo objeto con la fecha condicionada
+            terminaba tipándola como opcional también para create.
         */
-        const datosEvento = {
+        const datosBase = {
             nombre: datos.nombre,
             ubicacion: datos.ubicacion,
             direccion: datos.direccion,
             descripcion: datos.descripcion,
             capacidad: Number(datos.capacidad),
-            fechaHoraInicio,
-            fechaHoraFin,
         };
 
         if (modo === "editar"){
             /*
                 Se mandan todos los campos, no solo los que cambiaron: reescribir
                 un valor con el mismo valor deja la fila igual, así que no hace
-                falta comparar contra el original antes de enviar.
+                falta comparar contra el original antes de enviar. La fecha es la
+                excepción: si no es editable en este estado, se omite del todo.
             */
-            const newData: UpdateEvento = datosEvento;
+            const newData: UpdateEvento = {
+                ...datosBase,
+                ...(puedeEditarFecha && { fechaHoraInicio, fechaHoraFin }),
+            };
             try{
                 const eventoUpd = await updateEvento(Number(evento?.id), newData)
                 onUpdated(eventoUpd)
@@ -170,7 +161,7 @@ const EventoForm = ({ modo, onCreated, onUpdated, onCancel, evento }: EventoForm
             }
 
             try{
-                const eventoNew = await createEvento(datosEvento)
+                const eventoNew = await createEvento({ ...datosBase, fechaHoraInicio, fechaHoraFin })
                 onCreated(eventoNew);
             } catch (err) {
                 setError(err instanceof Error ? err.message : "Error al crear el evento");
@@ -233,7 +224,7 @@ const EventoForm = ({ modo, onCreated, onUpdated, onCancel, evento }: EventoForm
                             name="fechaIni"
                             type="date"
                             required
-                            disabled={esModoVer}
+                            disabled={esModoVer || !puedeEditarFecha}
                             value={datos.fechaIni}
                             onChange={handleChange}
                         />
@@ -242,7 +233,7 @@ const EventoForm = ({ modo, onCreated, onUpdated, onCancel, evento }: EventoForm
                             name="horaIni"
                             type="time"
                             required
-                            disabled={esModoVer}
+                            disabled={esModoVer || !puedeEditarFecha}
                             value={datos.horaIni}
                             onChange={handleChange}
                         />
@@ -251,11 +242,11 @@ const EventoForm = ({ modo, onCreated, onUpdated, onCancel, evento }: EventoForm
                             label="Duración (horas)"
                             name="duracion"
                             type="number"
-                            min={0.5}
-                            step={0.5}
+                            min={1}
+                            step={1}
                             placeholder="Ej: 6"
                             required
-                            disabled={esModoVer}
+                            disabled={esModoVer || !puedeEditarFecha} 
                             value={datos.duracion}
                             onChange={handleChange}
                         />
@@ -304,6 +295,9 @@ const EventoForm = ({ modo, onCreated, onUpdated, onCancel, evento }: EventoForm
             */}
             {!esModoVer && (
                 <div className={cn("gap-3 mt-6 pt-4 border-t border-gray-100", modo === "editar" ? "grid grid-cols-2" : "flex justify-center")}>
+                    <Btn type="submit" className="min-w-[240px]">
+                        {modo === "crear" ? "Crear Evento" : "Guardar Cambios"}
+                    </Btn>
                     {modo === "editar" && (
                         <Btn
                             variant="cancel"
@@ -317,9 +311,7 @@ const EventoForm = ({ modo, onCreated, onUpdated, onCancel, evento }: EventoForm
                             Cancelar
                         </Btn>
                     )}
-                    <Btn type="submit" className="min-w-[240px]">
-                        {modo === "crear" ? "Crear Evento" : "Guardar Cambios"}
-                    </Btn>
+                    
                 </div>
             )}
 
@@ -331,8 +323,6 @@ const EventoForm = ({ modo, onCreated, onUpdated, onCancel, evento }: EventoForm
                 onConfirmar={descartarCambios}
                 onCancelar={() => setConfirmandoCancelar(false)}
             />
-            
- 
         </Formulario>
     );
 };

@@ -68,3 +68,25 @@ export function updateEvento(id: number, data: UpdateEvento){
 export function deleteEvento(id: number){
     return api.delete<Evento>(`/eventos/${id}`)
 }
+
+// El endpoint no espera ningún dato (el id de la URL alcanza), pero
+// api.put exige un segundo argumento — se manda un objeto vacío.
+export function publicarEvento(id: number) {
+    return api.put<Evento>(`/eventos/${id}/publicar`, {});
+}
+
+export function cancelarEvento(id: number) {
+    return api.put<Evento>(`/eventos/${id}/cancelar`, {});
+}
+
+export function suspenderEvento(id: number) {
+    return api.put<Evento>(`/eventos/${id}/suspender`, {});
+}
+
+export function finalizarEvento(id: number) {
+    return api.put<Evento>(`/eventos/${id}/finalizar`, {});
+}
+
+export function reprogramarEvento(id: number, data: { fechaHoraInicio: Date; fechaHoraFin: Date }) {
+    return api.put<Evento>(`/eventos/${id}/reprogramar`, data);
+}

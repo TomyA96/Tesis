@@ -30,7 +30,7 @@ const ConfirmarAccion = ({ title, mensaje, onConfirmar, entidad, isOpen, variant
 
     return (
         <Modal isOpen={isOpen} closeModal={onCancelar} title={title}>
-            <div className=" w-full justify-between min-h-[150px] min-w-[350px] flex flex-col">
+            <div className=" w-full justify-between min-h-[150px] max-w-[450px] flex flex-col">
 
 
                 <p className=" text-sm p-6">¿{mensaje}{entidad && <strong className="ml-2">{entidad}</strong>}?</p>

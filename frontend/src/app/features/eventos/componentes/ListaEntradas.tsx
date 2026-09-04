@@ -2,96 +2,147 @@ import Btn from "../../../ui/componentes/Btn";
 import ContenedorDatos from "../../../ui/componentes/ContenedorDatos";
 import Header from "../../../ui/componentes/Header";
 import LoteEntrada from "./LoteEntrada";
-import CrearEntradaModal from "../modales/EntradaModal";
+import EntradaModal from "../modales/EntradaModal";
+import ConfirmarAccion from "../../../ui/componentes/ConfirmarAccion";
 import { useState } from "react";
-
-// ── TIPOS ──────────────────────────────────────────────────────────────────────
-// Importar desde LoteEntrada si los exportás desde ahí,
-// o redefinirlos acá si este es el punto de entrada de los datos
-type TipoEntrada = "online" | "fisica";
-type EstadoLote  = "borrador" | "publicado" | "deshabilitado";
-
-type Lote = {
-    id:        string;
-    nombre:    string;
-    cantidadVendida:  number;
-    cantidadTotal: number;
-    precio:    number;
-    estado:    EstadoLote;
-    tipoEntrada: TipoEntrada;
-};
-
-type ListaEntradasProps = {
-    // El padre pasa los lotes — este componente solo los muestra
-    lotes?: Lote[];
-};
+import { deleteEntrada, deshabilitarEntrada, habilitarEntrada, imprimirEntrada, publicarEntrada, type Entrada } from "../../../services/entradasService";
+import type { EstadoEvento } from "../../../services/eventosService";
+import { accionesDeEntradas } from "../utils/accionesParaEntradas";
+import { RUTAS } from "../../../constantes/Rutas";
+import LinkBtn from "../../../ui/componentes/LinkBtn";
 
 // ── TIPO DE MODAL ──────────────────────────────────────────────────────────────
 // Mismo patrón que el resto del sistema
-type ModalEntradas = "crearEntrada" | null;
+type ModalEntradas = "entrada" | null;
 
-// ── DATA MOCK ──────────────────────────────────────────────────────────────────
-// Fuera del componente — cuando el padre pase lotes reales, esto desaparece
-const lotesMock: Lote[] = [
-    { id: "lot-1", nombre: "Generales 1",  cantidadVendida: 10, cantidadTotal: 100, precio: 6000,  estado: "publicado", tipoEntrada: "online" },
-    { id: "lot-2", nombre: "Generales 2",  cantidadVendida: 5,  cantidadTotal: 50,  precio: 6000,  estado: "publicado", tipoEntrada: "online" },
-    { id: "lot-3", nombre: "VIP",          cantidadVendida: 2,  cantidadTotal: 20,  precio: 12000, estado: "publicado", tipoEntrada: "online" },
-    { id: "lot-4", nombre: "Estudiante",   cantidadVendida: 15, cantidadTotal: 150, precio: 3000,  estado: "publicado", tipoEntrada: "online" },
-];
+type ListarEntradasProps = {
+    entradas:Entrada[],
+    estadoEvento: EstadoEvento,
+    idEvento: number,
+    capacidad: number;
+    onEntradaGuardada: () => void;
+}
+
 
 // ── COMPONENTE PRINCIPAL ───────────────────────────────────────────────────────
-const ListaEntradas = ({ lotes = lotesMock }: ListaEntradasProps) => {
+const ListaEntradas = ({entradas, idEvento, estadoEvento, capacidad, onEntradaGuardada}:ListarEntradasProps) => {
     // Mismo patrón que el resto del sistema
     const [modalActivo, setModalActivo] = useState<ModalEntradas>(null);
+    const [entradaSeleccionada, setEntradaSeleccionada] = useState<Entrada | undefined>(undefined)
+    // Separado de entradaSeleccionada: esa es "cuál estoy editando" (para el
+    // form), esta es "cuál estoy por borrar" (para el diálogo) — son dos
+    // flujos distintos, mezclarlos en un solo estado los haría interferir.
+    const [entradaAEliminar, setEntradaAEliminar] = useState<Entrada | null>(null)
+    // Mismo motivo que entradaAEliminar: imprimir es irreversible y tiene
+    // costo real (papel, tickets físicos comprometidos) — necesita su propio
+    // diálogo, no alcanza con disparar la acción directo al click.
+    const [entradaAImprimir, setEntradaAImprimir] = useState<Entrada | null>(null)
 
     return (
         <>
-            {/* ── MODAL ─────────────────────────────────────────────────────────
-                Arriba, fuera del layout visual — igual que en todas las páginas
-            ──────────────────────────────────────────────────────────────────── */}
-            <CrearEntradaModal
-                isOpen={modalActivo === "crearEntrada"}
-                closeModal={() => setModalActivo(null)}
-            />
-
             <ContenedorDatos>
                 <Header
                     titulo="Lista de Entradas"
                     action={
-                        <Btn onClick={() => setModalActivo("crearEntrada")}>
-                            + Agregar Entrada
-                        </Btn>
+                        <div className="flex gap-2">
+                            {estadoEvento !== "Finalizado" && estadoEvento !== "Cancelado" && (
+                                <Btn size="sm" onClick={() => {
+                                    setModalActivo("entrada");
+                                    setEntradaSeleccionada(undefined);
+                                }}>
+                                    + Crear Entrada
+                                </Btn>
+                            )}
+                            { estadoEvento !== "Borrador" &&
+                                <LinkBtn to={RUTAS.eventos.ventas(Number(idEvento))} variant="outline" size="sm" className="min-w-[110px]">Ver Ventas</LinkBtn>
+                            }
+                        </div>
                     }
                 />
 
                 {/* ── LISTA DE LOTES ─────────────────────────────────────────── */}
-                {lotes.length === 0 ? (
+                {entradas.length === 0 ? (
                     // Estado vacío — mismo patrón que GenericTable
                     <div className="flex items-center justify-center py-12 text-gray-400 text-sm">
                         No hay entradas configuradas para este evento
                     </div>
                 ) : (
                     <div className="flex flex-col gap-3 p-6 pt-2">
-                        {lotes.map((lote) => (
-                            <LoteEntrada
-                                key={lote.id}
-                                nombre={lote.nombre}
-                                cantidadVendida={lote.cantidadVendida}
-                                cantidadTotal={lote.cantidadTotal}
-                                precio={lote.precio}
-                                estado={lote.estado}
-                                tipoEntrada={lote.tipoEntrada}
-                                // Los callbacks por ahora vacíos — cuando conectes
-                                // el backend los completás con las llamadas a la API
-                                onEditar={()    => {}}
-                                onEliminar={()  => {}}
-                                onPublicar={()  => {}}
-                                onImprimir={()  => {}}
-                            />
-                        ))}
-                    </div>
-                )}
+                        {entradas.map((lote) => {
+                            
+                            const acciones = accionesDeEntradas(estadoEvento, lote, lote.cantidadTicket > 0);
+                            const onPublicar = () => publicarEntrada(lote.id).then(onEntradaGuardada);
+                            const onHabilitar = () => habilitarEntrada(lote.id).then(onEntradaGuardada);
+                            const onDeshabilitar = () => deshabilitarEntrada(lote.id).then(onEntradaGuardada);
+                            const onImprimir = () => setEntradaAImprimir(lote);
+                            const onEliminar = () => {
+                                if (lote.estado === "Borrador") {
+                                    deleteEntrada(lote.id).then(onEntradaGuardada);
+                                } else {
+                                    setEntradaAEliminar(lote);
+                                }
+                            };
+                            const onEditar = () => {
+                                setEntradaSeleccionada(lote);
+                                setModalActivo("entrada");
+                            };
+                            return(<LoteEntrada key={lote.id}
+                                entrada={lote}
+                                acciones={acciones}
+                                cantidadTotal={capacidad}
+                                cantidadVendida={lote.cantidadTicket || 0}
+                                onEditar={onEditar}
+                                onPublicar={onPublicar}
+                                onHabilitar={onHabilitar}
+                                onDeshabilitar={onDeshabilitar}
+                                onEliminar={onEliminar}
+                                onImprimir={onImprimir}
+                            />);
+                        })}
+                    </div>)}
+              
             </ContenedorDatos>
+
+                     
+            <EntradaModal
+                isOpen={modalActivo === "entrada"}
+                closeModal={() => setModalActivo(null)}
+                entrada={entradaSeleccionada}
+                idEvento={Number(idEvento)}
+                onSaved={() => {
+                    setModalActivo(null)
+                    onEntradaGuardada()
+                }}
+            />
+
+            <ConfirmarAccion
+                isOpen={entradaAEliminar !== null}
+                title="Eliminar entrada"
+                mensaje="Esta acción no se puede deshacer, confirmás que querés eliminar la entrada"
+                entidad={entradaAEliminar?.descripcion}
+                onConfirmar={async () => {
+                    if (!entradaAEliminar) return;
+                    await deleteEntrada(entradaAEliminar.id);
+                    onEntradaGuardada();
+                    setEntradaAEliminar(null);
+                }}
+                onCancelar={() => setEntradaAEliminar(null)}
+            />
+
+            <ConfirmarAccion
+                isOpen={entradaAImprimir !== null}
+                title="Imprimir entrada"
+                mensaje="Esta acción no se puede deshacer una vez que se generan los tickets fisicos. ¿Desea continuar?"
+                entidad={""}
+                variante="primary"
+                onConfirmar={async () => {
+                    if (!entradaAImprimir) return;
+                    await imprimirEntrada(entradaAImprimir.id);
+                    onEntradaGuardada();
+                    setEntradaAImprimir(null);
+                }}
+                onCancelar={() => setEntradaAImprimir(null)}
+            />
         </>
     );
 };

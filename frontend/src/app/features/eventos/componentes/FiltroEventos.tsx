@@ -2,45 +2,56 @@ import ContenedorFiltros from "../../../ui/componentes/ContenedorFiltros";
 import Input from "../../../ui/componentes/Input";
 import Select from "../../../ui/componentes/Select";
 import Btn from "../../../ui/componentes/Btn";
+import { opcionesEstadoEvento, type EstadoEvento, type Evento } from "../../../services/eventosService";
+import { MESES } from "../../../constantes/MesesAños";
 
-import type { Opcion } from "../../../ui/componentes/Select";
-
-export type EventoEstado = "activo" | "finalizado" | "pendiente" | "cancelado";
-
-type FiltroEventosProps = {
-    meses: Opcion[];
-    estados: Opcion[];
-    mes: number;
-    estado: EventoEstado | "";
-    onMesesChange: (mes: number) => void;
-    onEstadoChange: (estado: EventoEstado | "" ) => void;
-
+export type FiltrosEventos = {
+    texto: string,
+    mes: number | 0,
+    estado: EstadoEvento | "",
 };
 
-const FiltroEventos = ({meses, estados, mes, estado, onMesesChange, onEstadoChange}: FiltroEventosProps) => {
+export const filtrosEventosVacios: FiltrosEventos = { texto: "", mes: 0, estado: "" };
+
+type FiltroEventosProps = {
+    filtros: FiltrosEventos;
+    onChange: (filtros: FiltrosEventos) => void;
+};
+
+export const aplicarFiltrosEventos = (eventos: Evento[], filtros: FiltrosEventos) => {
+    const texto = filtros.texto.trim().toLowerCase();
+    return eventos.filter((evento) => {
+        const coincideTexto = evento.nombre.toLowerCase().includes(texto);
+        const coincideMes = filtros.mes === 0 || new Date(evento.fechaHoraInicio).getMonth() + 1 === filtros.mes;
+        const coincideEstado = filtros.estado === "" || evento.estado === filtros.estado;
+        return coincideTexto && coincideMes && coincideEstado;
+    });
+}
 
 
+const FiltroEventos = ({filtros, onChange }: FiltroEventosProps) => {
     return (
         <ContenedorFiltros>
             <div className="flex items-end gap-8 w-3/4">
                 <Input
                     className="min-w-[400px]"
                     type="text"
-                    value={""}
+                    value={filtros.texto}
                     placeholder="Introduzca el nombre de un evento"
+                    onChange={(e) => onChange({ ...filtros, texto: e.target.value })}
                 />
-                <Select opciones={meses} label="Mes" 
-                value={mes}
-                onChange={(e) => onMesesChange(Number(e.target.value))}
+                <Select opciones={MESES.map((m) => ({ label: m.label, value: m.value }))} label="Mes" 
+                value={filtros.mes}
+                onChange={(e) => onChange({ ...filtros, mes: Number(e.target.value) })}
                 />
-                <Select label="Estado" opciones={estados}
-                value={estado}
-                onChange={(e) => onEstadoChange(e.target.value as EventoEstado)}
+                <Select label="Estado" opciones={[{ label: "Todos", value: "" }, ...opcionesEstadoEvento]}
+                value={filtros.estado}
+                onChange={(e) => onChange({ ...filtros, estado: e.target.value as EstadoEvento | "" })}
                 
-                />
+                /> 
             </div>
             <div className="flex items-end ">
-                <Btn>
+                <Btn variant="outline" onClick={() => onChange(filtrosEventosVacios)}>
                     Limpiar Filtros
                 </Btn>
             </div>
