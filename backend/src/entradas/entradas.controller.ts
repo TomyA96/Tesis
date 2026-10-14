@@ -1,4 +1,4 @@
-import { Controller, Get, Post, Put, Delete, Param, Body, Query, UseGuards } from '@nestjs/common';
+import { Controller, Get, Post, Put, Delete, Param, Body, Query, UseGuards, Header, StreamableFile } from '@nestjs/common';
 import { EstadoEntrada } from '@prisma/client';
 import { EntradasService } from './entradas.service';
 import { CreateEntradaDto } from './dtos/create.entrada.dto';
@@ -55,9 +55,12 @@ export class EntradasController {
     }
 
     @Permisos('entradas.imprimir')
+    @Header('Content-Type', 'application/pdf')
+    @Header('Content-Disposition', 'attachment; filename="tickets.pdf"')
     @Post(':id/imprimir')
-    imprimirEntrada(@Param('id') id: string) {
-        return this.entradasService.imprimirEntrada(Number(id))
+    async imprimirEntrada(@Param('id') id: string) {
+        const bufferPDF = await this.entradasService.imprimirEntrada(Number(id));
+        return new StreamableFile(bufferPDF);
     }
 
     @Permisos('entradas.eliminar')

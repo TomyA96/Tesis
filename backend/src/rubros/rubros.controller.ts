@@ -17,6 +17,12 @@ export class RubrosController {
         return this.rubrosService.findAll()
     }
 
+    //@Permisos('')
+    @Get('ingresos')
+    findByIngresos(){
+        return this.rubrosService.findByIngresos()
+    }
+
     @Permisos('rubros.ver')
     @Get(':id')
     findOne(@Param('id') id: string) {

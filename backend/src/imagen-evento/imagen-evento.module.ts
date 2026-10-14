@@ -4,6 +4,7 @@ import { ImagenEventoService } from './imagen-evento.service';
 
 @Module({
   controllers: [ImagenEventoController],
-  providers: [ImagenEventoService]
+  providers: [ImagenEventoService],
+  exports: [ImagenEventoService]
 })
 export class ImagenEventoModule {}

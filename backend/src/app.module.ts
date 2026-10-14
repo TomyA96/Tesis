@@ -26,9 +26,11 @@ import { ProveedoresModule } from './proveedores/proveedores.module';
 import { ProveedorRubroModule } from './proveedor-rubro/proveedor-rubro.module';
 import { MovimientoFinancieroModule } from './movimiento-financiero/movimiento-financiero.module';
 import { AuthModule } from './auth/auth.module';
+import { FuentesIngresoModule } from './fuentes-ingreso/fuentes-ingreso.module';
+import { ComprasModule } from './compras/compras.module';
 
 @Module({
-  imports: [PrismaModule, PuntoVentaModule, UsuariosModule, PerfilesModule, UsuarioPerfilModule, PermisoPerfilModule, PermisosModule, AuditoriasModule, EventosModule, EntradasModule, ClientesModule, OrdenCompraModule, TicketEventoModule, ReembolsosModule, AccesosModule, ImagenEventoModule, ProductosModule, ProductoEventoModule, VentaBuffetModule, DetalleVentaBuffetModule, RubrosModule, ProveedoresModule, ProveedorRubroModule, MovimientoFinancieroModule, AuthModule],
+  imports: [PrismaModule, PuntoVentaModule, UsuariosModule, PerfilesModule, UsuarioPerfilModule, PermisoPerfilModule, PermisosModule, AuditoriasModule, EventosModule, EntradasModule, ClientesModule, OrdenCompraModule, TicketEventoModule, ReembolsosModule, AccesosModule, ImagenEventoModule, ProductosModule, ProductoEventoModule, VentaBuffetModule, DetalleVentaBuffetModule, RubrosModule, ProveedoresModule, ProveedorRubroModule, MovimientoFinancieroModule, AuthModule, FuentesIngresoModule, ComprasModule],
   controllers: [AppController],
   providers: [AppService],
 })

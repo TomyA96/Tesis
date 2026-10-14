@@ -55,6 +55,20 @@ export class ProveedoresService {
         }
     }
 
+    // A un proveedor se le paga: no puede estar en un rubro que solo es de ingreso.
+    private async validarTiposRubros(idsRubros: number[]) {
+        const rubrosInvalidos = await this.prisma.rubro.findMany({
+            where: { id: { in: idsRubros }, tipo: 'Ingreso' },
+            select: { nombre: true },
+        });
+
+        if (rubrosInvalidos.length > 0) {
+            throw new BadRequestException(
+                `Un proveedor solo puede tener rubros de tipo Gasto o Mixto. No corresponde: ${rubrosInvalidos.map((r) => r.nombre).join(', ')}`,
+            );
+        }
+    }
+
     // Traduce los errores de Prisma que sí dependen de constraints de la base.
     private manejarErrorPrisma(err: unknown): never {
         if (err instanceof Prisma.PrismaClientKnownRequestError && err.code === 'P2002') {
@@ -70,6 +84,7 @@ export class ProveedoresService {
         const { idsRubros, estado, ...datosProveedor } = data;
 
         await this.validarNombreDisponible(data.nombre);
+        await this.validarTiposRubros(idsRubros);
 
         /*
             Transacción: el proveedor y sus rubros se guardan como un todo o nada.
@@ -102,6 +117,9 @@ export class ProveedoresService {
 
         if (data.nombre) {
             await this.validarNombreDisponible(data.nombre, id);
+        }
+        if (idsRubros) {
+            await this.validarTiposRubros(idsRubros);
         }
 
         try {

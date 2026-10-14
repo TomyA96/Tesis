@@ -85,6 +85,11 @@ enum EstadoProveedor {
   Bloqueado
 }
 
+enum EstadoFuenteIngreso {
+  Activo
+  Bloqueado
+}
+
 enum TipoRubro {
   Ingreso
   Gasto
@@ -205,6 +210,7 @@ model Entrada {
 
   evento   Evento  @relation(fields: [idEvento], references: [id])
   tickets   TicketEvento[]
+  detallesOrden  DetalleOrdenCompra[]
   
 
   @@map("entradas")
@@ -214,7 +220,7 @@ model Cliente {
   id          Int      @id @default(autoincrement())
   nombre      String
   dni         String   @unique
-  email       String   @unique
+  email       String
   telefono    String?
 
   ordenes     OrdenCompra[]
@@ -229,11 +235,32 @@ model OrdenCompra {
   fechaHora   DateTime @default(now())
   total       Decimal
   estado      EstadoOrden
+  // Hasta cuándo las entradas de una orden Pendiente quedan reservadas. Las órdenes
+  // gratuitas, que se aprueban en el momento, no la necesitan.
+  expiraEn    DateTime?
 
   tickets     TicketEvento[]
+  detalles    DetalleOrdenCompra[]
   cliente    Cliente? @relation(fields: [idCliente], references: [id])
 
   @@map("ordenes_compra")
+}
+
+// Qué entradas y cuántas se pidieron en una orden. Se guarda al crearla para
+// que, cuando se apruebe el pago, se sepa qué tickets generar. El precio queda
+// fijado al momento de la compra.
+model DetalleOrdenCompra {
+  idOrden         Int
+  idEntrada       Int
+  cantidad        Int
+  precioUnitario  Decimal
+  subtotal        Decimal
+
+  orden           OrdenCompra @relation(fields: [idOrden], references: [id])
+  entrada         Entrada @relation(fields: [idEntrada], references: [id])
+
+  @@id([idOrden, idEntrada])
+  @@map("detalle_orden_compra")
 }
 
 model TicketEvento {
@@ -365,7 +392,8 @@ model Rubro {
   tipo        TipoRubro
 
   proveedores ProveedorRubro[]
-  movimientos MovimientoFinanciero[] 
+  fuentes     FuenteIngresoRubro[]
+  movimientos MovimientoFinanciero[]
 
   @@map("rubros")
 }
@@ -393,20 +421,47 @@ model ProveedorRubro {
   @@map("proveedores_rubros")
 }
 
+// Quien genera un ingreso: sponsor, puestero que alquila un stand, organismo que da un subsidio.
+model FuenteIngreso {
+  id          Int      @id @default(autoincrement())
+  nombre      String
+  email       String?   @unique
+  telefono    String?
+  estado      EstadoFuenteIngreso
+
+  rubros      FuenteIngresoRubro[]
+  movimientos MovimientoFinanciero[]
+  @@map("fuentes_ingreso")
+}
+
+model FuenteIngresoRubro {
+  idFuente    Int
+  idRubro     Int
+
+  fuente    FuenteIngreso @relation(fields: [idFuente], references: [id])
+  rubro     Rubro         @relation(fields: [idRubro], references: [id])
+
+  @@id([idFuente, idRubro])
+  @@map("fuentes_ingreso_rubros")
+}
+
+// idProveedor lo usan los gastos e idFuente los ingresos: nunca los dos a la vez.
 model MovimientoFinanciero {
   id              Int      @id @default(autoincrement())
   idEvento        Int
   idRubro         Int
   idProveedor     Int?
+  idFuente        Int?
   nroFactura      String?
   tipoMovimiento  TipoMovimiento
-  fechaHora       DateTime @default(now())
+  fecha           DateTime @default(now()) @db.Date
   monto           Decimal
   descripcion     String?
 
-  evento      Evento      @relation(fields: [idEvento], references: [id])
-  rubro       Rubro       @relation(fields: [idRubro], references: [id]) 
-  proveedor   Proveedor?  @relation(fields: [idProveedor], references: [id])
-  
+  evento      Evento         @relation(fields: [idEvento], references: [id])
+  rubro       Rubro          @relation(fields: [idRubro], references: [id])
+  proveedor   Proveedor?     @relation(fields: [idProveedor], references: [id])
+  fuente      FuenteIngreso? @relation(fields: [idFuente], references: [id])
+
   @@map("movimientos_financieros")
 }

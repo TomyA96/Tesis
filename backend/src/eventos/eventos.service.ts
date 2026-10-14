@@ -3,17 +3,62 @@ import { PrismaService } from '../prisma/prisma.service';
 import { CreateEventoDto } from './dtos/create.evento.dto';
 import { UpdateEventoDto } from './dtos/update.evento.dto';
 import { ReprogramarEventoDto } from './dtos/reprogramar.evento.dto';
+import { ImagenEventoService } from '../imagen-evento/imagen-evento.service';
+import { error } from 'console';
 
 @Injectable()
 export class EventosService {
-    constructor(private prisma: PrismaService) {}
+    constructor(private prisma: PrismaService, private imagenEventoService: ImagenEventoService) {}
 
     findAll() {
-        return this.prisma.evento.findMany()    
+        return this.prisma.evento.findMany({orderBy: {fechaHoraInicio: 'asc'}})    
+    }
+
+    /*
+        Un evento en Borrador todavía no se decidió hacer, así que no tiene
+        sentido cargarle movimientos financieros. El resto (incluso Finalizado
+        o Cancelado) sí: una factura puede llegar tarde, o un evento cancelado
+        puede haber dejado gastos ya comprometidos.
+    */
+    findAllPublicados() {
+        return this.prisma.evento.findMany({
+            where: { estado: { not: "Borrador" } },
+            orderBy: { fechaHoraInicio: 'asc' }
+        })
+    }
+
+    findAllActivos(){
+        return this.prisma.evento.findMany(
+            {
+                where: {estado: 'Activo'},
+                include: {imagenes: true}, 
+                orderBy: { fechaHoraInicio: 'asc' }
+            }
+        )
     }
 
     findOne(id: number) {
         return this.prisma.evento.findUnique({ where: { id } });
+    }
+
+    async findOneEventoPublico(id: number){
+
+        const evento = await this.prisma.evento.findFirst({
+            where: {id, estado:'Activo'},
+            include: {
+                imagenes: true,
+                entradas: {
+                    where: {estado: 'Disponible', habilitada: true, esFisica: false},
+                    select: {id: true, descripcion: true, precio: true},
+                    orderBy: {precio: 'asc'} 
+                }
+            }
+        })
+
+        if(!evento){
+            throw new NotFoundException('El evento no existe o no esta activo')
+        }
+        return evento
     }
 
     create(data: CreateEventoDto) {
@@ -49,25 +94,31 @@ export class EventosService {
             throw new NotFoundException('No existe el evento que intentas eliminar')
         }
 
-        /*
-            El estado por sí solo no garantiza que el evento esté "vacío": nada
-            impide hoy cargar entradas o movimientos para un evento en Borrador.
-            Por eso se chequean las relaciones directamente, no solo el estado.
-        */
-        const entradas = await this.prisma.entrada.count({ where: { idEvento: id } });
-        if (entradas > 0) {
-            throw new ConflictException('No se puede eliminar: el evento tiene entradas asociadas');
+        if (evento.estado !== "Borrador"){
+            throw new ConflictException("No puedes eliminar eventos que esten publicados o finalizados")
         }
 
         const movimientos = await this.prisma.movimientoFinanciero.count({ where: { idEvento: id } });
         if (movimientos > 0) {
             throw new ConflictException('No se puede eliminar: el evento tiene movimientos financieros registrados');
         }
-
-        if (evento.estado !== "Borrador"){
-            throw new ConflictException("No puedes eliminar eventos que esten publicados o finalizados")
+        /*
+            Si el evento sigue en Borrador, nunca estuvo Activo — y
+            publicarEntrada exige evento Activo para sacar una entrada de
+            Borrador (ver entradas.service.ts). Por lo tanto ninguna de sus
+            entradas pudo publicarse ni tener tickets o ventas reales: son
+            seguras de borrar en cascada junto con el evento, en vez de
+            obligar a borrarlas una por una a mano.
+        */
+        const imagenes = await this.imagenEventoService.findAllByEvento(id);
+        for (const imagen of imagenes) {
+            await this.imagenEventoService.remove(imagen.id);
         }
-        return this.prisma.evento.delete({ where: { id } });
+
+        return this.prisma.$transaction(async (tx) => {
+            await tx.entrada.deleteMany({ where: { idEvento: id } });
+            return tx.evento.delete({ where: { id } });
+        });
     }
 
     async publicarEvento(id: number) {
@@ -90,6 +141,14 @@ export class EventosService {
         });
         if (entradasVendibles === 0) {
             throw new ConflictException('No se puede publicar un evento sin entradas cargadas');
+        }
+
+        const imagenes = await this.prisma.imagenEvento.count({
+            where: {idEvento: id}
+        })
+
+        if (imagenes === 0){
+            throw new ConflictException('No se puede publicar un evento sin una imagen publicitaria')
         }
 
         return this.prisma.$transaction(async (tx) => {

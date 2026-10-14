@@ -37,6 +37,14 @@ const permisos = [
     { codigo: 'entradas.eliminar', descripcion: 'Eliminar entradas' },
     { codigo: 'entradas.publicar', descripcion: 'Publicar entradas' },
     { codigo: 'entradas.imprimir', descripcion: 'Generar tickets físicos' },
+    { codigo: 'entradas.vender', descripcion: 'Vender entradas en puerta o boletería' },
+
+    // Ventas
+    { codigo: 'ventas.ver', descripcion: 'Ver las ventas y la recaudación de un evento' },
+
+    // Reembolsos (el schema modela un paso de aprobación: Pendiente → Procesado / Rechazado)
+    { codigo: 'reembolsos.solicitar', descripcion: 'Cargar un pedido de devolución de entrada' },
+    { codigo: 'reembolsos.aprobar', descripcion: 'Aprobar o rechazar devoluciones de entradas' },
 
     // Rubros
     { codigo: 'rubros.ver', descripcion: 'Ver rubros' },
@@ -50,12 +58,46 @@ const permisos = [
     { codigo: 'proveedores.editar', descripcion: 'Editar proveedores' },
     { codigo: 'proveedores.eliminar', descripcion: 'Eliminar proveedores' },
 
+    // Fuentes de ingreso
+    { codigo: 'fuentes.ver', descripcion: 'Ver fuentes de ingreso' },
+    { codigo: 'fuentes.crear', descripcion: 'Crear fuentes de ingreso' },
+    { codigo: 'fuentes.editar', descripcion: 'Editar fuentes de ingreso' },
+    { codigo: 'fuentes.eliminar', descripcion: 'Eliminar fuentes de ingreso' },
+
     // Productos
     { codigo: 'productos.ver', descripcion: 'Ver productos' },
     { codigo: 'productos.crear', descripcion: 'Crear productos' },
     { codigo: 'productos.editar', descripcion: 'Editar productos' },
     { codigo: 'productos.eliminar', descripcion: 'Eliminar productos' },
+    { codigo: 'productos.asignar', descripcion: 'Armar la lista de productos' },
 
+    // Administración
+    { codigo: 'administracion.ver', descripcion: 'Ver el panel de administración' },
+
+    // Ingresos
+    { codigo: 'ingresos.ver', descripcion: 'Ver ingresos de un evento' },
+    { codigo: 'ingresos.crear', descripcion: 'Registrar ingresos' },
+    { codigo: 'ingresos.editar', descripcion: 'Editar ingresos' },
+    { codigo: 'ingresos.eliminar', descripcion: 'Eliminar ingresos' },
+
+    // Gastos
+    { codigo: 'gastos.ver', descripcion: 'Ver gastos de un evento' },
+    { codigo: 'gastos.crear', descripcion: 'Registrar gastos' },
+    { codigo: 'gastos.editar', descripcion: 'Editar gastos' },
+    { codigo: 'gastos.eliminar', descripcion: 'Eliminar gastos' },
+
+    // Informes
+    {codigo: 'informes.ver', descripcion: 'Ver informes'},
+    {codigo: 'informes.exportar', descripcion: 'Exportar informe'},
+
+    // Buffet
+    { codigo: 'buffet.vender', descripcion: 'Registrar ventas en el buffet' },
+
+    // Accesos
+    { codigo: 'accesos.registrar', descripcion: 'Escanear QR y registrar el ingreso al evento' },
+    { codigo: 'accesos.ver', descripcion: 'Consultar los ingresos registrados' },
+
+    
 ]
 
 async function seedPermisos() {

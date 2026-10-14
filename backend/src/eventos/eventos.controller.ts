@@ -18,12 +18,20 @@ export class EventosController {
     findAll() {
         return this.eventosService.findAll();
     }
+    
+    @Permisos('eventos.ver')
+    @Get('publicados')
+    findAllPublicados() {
+        return this.eventosService.findAllPublicados();
+    }
 
     @Permisos('eventos.ver')
     @Get(':id')
     findOne(@Param('id') id: string) {
         return this.eventosService.findOne(Number(id));
     }
+
+    
 
     @Permisos('eventos.crear')
     @Post()

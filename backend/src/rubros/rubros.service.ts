@@ -11,6 +11,12 @@ export class RubrosService {
         return this.prisma.rubro.findMany({ orderBy: { nombre: 'asc' } });
     }
 
+    findByIngresos(){
+        return this.prisma.rubro.findMany({
+            where: {tipo: {not: 'Gasto'}
+        }})
+    }
+
     findOne(id: number) {
         return this.prisma.rubro.findUnique({ where: { id } });
     }
@@ -73,6 +79,11 @@ export class RubrosService {
         const proveedores = await this.prisma.proveedorRubro.count({ where: { idRubro: id } });
         if (proveedores !== 0) {
             throw new ConflictException('No se puede eliminar: el rubro tiene proveedores asociados');
+        }
+
+        const fuentes = await this.prisma.fuenteIngresoRubro.count({ where: { idRubro: id } });
+        if (fuentes !== 0) {
+            throw new ConflictException('No se puede eliminar: el rubro tiene fuentes de ingreso asociadas');
         }
 
         return this.prisma.rubro.delete({ where: { id } });
