@@ -19,7 +19,7 @@ type FilaEvento = {
   margen: string;
 };
 
-const InformesResumenAnual = () => {
+const InformesHomePage = () => {
   const eventos: FilaEvento[] = [
     {
       nombre: "Festival Primavera",
@@ -262,4 +262,4 @@ const InformesResumenAnual = () => {
   );
 };
 
-export default InformesResumenAnual;
+export default InformesHomePage;

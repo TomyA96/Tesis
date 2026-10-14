@@ -19,7 +19,7 @@ import type { Auditoria } from "../../auditorias/types";
 
  
 
-const InicioSeg = () => {
+const SeguridadHomePage = () => {
     return (
         // gap-8 separa las secciones verticalmente de forma uniforme
         <main className="flex flex-col gap-8 p-8">
@@ -134,4 +134,4 @@ const InicioSeg = () => {
     );
 };
 
-export default InicioSeg;
+export default SeguridadHomePage;

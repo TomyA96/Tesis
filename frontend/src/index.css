@@ -1,1 +1,16 @@
 @import "tailwindcss";
+
+/*
+    Colores de marca del sitio público, tomados del escudo de El Arañado pero
+    más oscuros que los originales (celeste, verde y amarillo del escudo son
+    muy saturados para usarlos como color de interfaz). Generan clases como
+    bg-marca, text-marca, border-sol, etc.
+*/
+@theme {
+    --color-marca: #0369a1;
+    --color-marca-oscuro: #075985;
+    --color-acento: #4d7c0f;
+    --color-acento-oscuro: #3f6212;
+    --color-sol: #fbbf24;
+    --color-noche: #0f172a;
+}

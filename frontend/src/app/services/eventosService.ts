@@ -1,4 +1,5 @@
 import { api } from "./api";
+import type { ImagenEvento } from "./imagenEventoService";
  
 export const ESTADOS_EVENTO = ["Activo", "Cancelado", "Finalizado", "Suspendido", "Borrador"] as const;
 export type EstadoEvento = typeof ESTADOS_EVENTO[number];
@@ -19,6 +20,20 @@ export interface Evento {
     estado: EstadoEvento;
     direccion: string | null;
     capacidad: number;
+}
+
+export interface EventoConImagenes extends Evento {
+    imagenes: ImagenEvento[]
+}
+
+export interface EntradaPublica {
+    id: number;
+    descripcion: string;
+    precio: string;
+}
+
+export interface EventoDetalle extends EventoConImagenes {
+    entradas: EntradaPublica[];
 }
 
 /*
@@ -57,6 +72,18 @@ export function getEvento(id:number){
     return api.get<Evento>(`/eventos/${id}`)
 }
 
+export function getEventosPublicados() {
+    return api.get<Evento[]>("/eventos/publicados");
+}
+
+export function getEventosConImagenes(){
+    return api.get<EventoConImagenes[]>('/eventos-publicos')
+}
+
+export function getEventoPublicado(id:number){
+    return api.get<EventoDetalle>(`/eventos-publicos/${id}`)
+}
+
 export function createEvento(evento: CreateEvento) {
     return api.post<Evento>("/eventos", evento);
 }
@@ -90,3 +117,4 @@ export function finalizarEvento(id: number) {
 export function reprogramarEvento(id: number, data: { fechaHoraInicio: Date; fechaHoraFin: Date }) {
     return api.put<Evento>(`/eventos/${id}/reprogramar`, data);
 }
+

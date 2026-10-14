@@ -54,3 +54,14 @@ export function updateProducto(id: number, data: UpdateProducto) {
 export function deleteProducto(id: number) {
     return api.delete<Producto>(`/productos/${id}`);
 }
+
+// ── PRODUCTOS DE UN EVENTO ─────────────────────────────────────────────────────
+
+export function getProductosEvento(idEvento: number) {
+    return api.get<Producto[]>(`/producto-evento/evento/${idEvento}`);
+}
+
+// Manda la lista completa que tiene que quedar asignada (vacía = sin productos)
+export function asignarProductosEvento(idEvento: number, idsProductos: number[]) {
+    return api.put<Producto[]>(`/producto-evento/evento/${idEvento}`, { idsProductos });
+}

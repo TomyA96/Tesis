@@ -21,7 +21,7 @@ const LoginPage = () => {
 
         try {
             await login(usuario, password);
-            navigate("/");
+            navigate("/admin");
         } catch {
             setError("Credenciales inválidas. Por favor, inténtalo de nuevo.");
         } finally {

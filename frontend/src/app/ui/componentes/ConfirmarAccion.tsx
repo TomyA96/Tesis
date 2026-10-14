@@ -29,7 +29,7 @@ const ConfirmarAccion = ({ title, mensaje, onConfirmar, entidad, isOpen, variant
     };
 
     return (
-        <Modal isOpen={isOpen} closeModal={onCancelar} title={title}>
+        <Modal isOpen={isOpen} closeModal={onCancelar} title={title} maxWidth="450px">
             <div className=" w-full justify-between min-h-[150px] max-w-[450px] flex flex-col">
 
 

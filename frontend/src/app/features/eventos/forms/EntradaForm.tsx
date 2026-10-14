@@ -134,7 +134,7 @@ const EntradaForm = ({idEvento, entrada, onSaved, onCancel}:EntradaFormProps) =>
                     
                         required={datos.esFisica}
                         min={1}
-                       
+                        disabled={!!entrada && entrada.estado !== "Borrador"}
                         value={datos.cantidad}
                         onChange={(e) => setDatos({ ...datos, cantidad: e.target.value })}
                         />

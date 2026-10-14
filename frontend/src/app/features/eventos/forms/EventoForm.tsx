@@ -170,7 +170,7 @@ const EventoForm = ({ modo, onCreated, onUpdated, onCancel, evento }: EventoForm
     }
    
     return (
-        <Formulario autoComplete="off" className="p-6" onSubmit={onSubmit}>
+        <Formulario autoComplete="off" className="" onSubmit={onSubmit}>
  
             {/* ── CAMPOS ────────────────────────────────────────────────────── */}
             {/*
@@ -295,7 +295,7 @@ const EventoForm = ({ modo, onCreated, onUpdated, onCancel, evento }: EventoForm
             */}
             {!esModoVer && (
                 <div className={cn("gap-3 mt-6 pt-4 border-t border-gray-100", modo === "editar" ? "grid grid-cols-2" : "flex justify-center")}>
-                    <Btn type="submit" className="min-w-[240px]">
+                    <Btn type="submit" className="min-w-60">
                         {modo === "crear" ? "Crear Evento" : "Guardar Cambios"}
                     </Btn>
                     {modo === "editar" && (

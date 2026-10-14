@@ -16,7 +16,7 @@ import { columnasUsuario } from "../usuarios.columns.ts";
 type ModalUsuarios = "crearUsuario" | "editarUsuario" | "eliminarUsuario" | null;
 
 // ── COMPONENTE PRINCIPAL ─────────────────────────────────────────────────────
-const Usuarios = () => {
+const UsuariosPage = () => {
     const [activarModal, setActivarModal] = useState<ModalUsuarios>(null);
     const [usuarios, setUsuarios] = useState<Usuario[]>([]);
     const [error, setError] = useState("");
@@ -146,5 +146,5 @@ const Usuarios = () => {
     );
 };
 
-export default Usuarios;
+export default UsuariosPage;
                                 

@@ -13,46 +13,17 @@ import { CalendarDays } from "lucide-react";
 import { columnasEventos } from "../eventos.columns";
 import { deleteEvento } from "../../../services/eventosService";
 import { cn } from "../../../../lib/cn";
-import {cargarAñosEventos} from "../utils/cargarAñosEventos";
+import {cargarAñosEventos} from "../../../utils/cargarAñosEventos";
 import {contarEventosPorEstado} from "../utils/contarEventosPorEstado";
+import DropdownAnio from "../../../ui/componentes/DropdownAnio";
 
 // ── TIPOS ─────────────────────────────────────────────────────────────────────
 // Los tipos se definen acá si son exclusivos de esta feature.
 // Si Evento se usa en otras features, moverlo a un archivo compartido:
 // src/app/features/eventos/types/evento.ts
 
-// ── DROPDOWN DE AÑO ───────────────────────────────────────────────────────────
-// Componente separado — responsabilidad única: mostrar un selector de año.
-// Está acá porque por ahora solo se usa en esta página.
-// Si lo necesitás en otro lado, moverlo a ui/componentes/DropdownAnio.tsx
-type DropdownAnioProps = {
-    años: number[];
-    value: number;
-    onChange: (anio: number) => void;
-};
-
-const DropdownAnio = ({  años, value, onChange }: DropdownAnioProps) => {
-    return (
-        <div className="flex items-center gap-2">
-            <span className="text-sm font-medium text-slate-500">
-                Año:
-            </span>
-            <select
-                id="selector-anio"
-                className="rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm font-semibold text-slate-700 shadow-sm outline-none"
-                value={value}
-                onChange={(e) => onChange(Number(e.target.value))}
-            >
-                {años.map((opcion) => (
-                    <option key={opcion} value={opcion}>{opcion}</option>
-                ))}
-            </select>
-        </div>
-    );
-};
-
 // ── COMPONENTE PRINCIPAL ──────────────────────────────────────────────────────
-const InicioEventos = () => {
+const EventosHomePage = () => {
     // camelCase para variables — las mayúsculas se reservan para componentes y tipos
     const añoActual = new Date().getFullYear();
     const [añoSeleccionado, setAñoSeleccionado] = useState<number>(añoActual);
@@ -122,7 +93,7 @@ const InicioEventos = () => {
             <section aria-label="Resumen de eventos">
                 <div className="grid grid-cols-1 sm:grid-cols-2  lg:grid-cols-5 gap-4">
                     <Card title="Eventos Activos"    icono={<CalendarDays/>} colorIcono="green"  content={conteoPorEstado["Activo"]} />
-                    <Card title="Eventos Borradores"  icono={<CalendarDays/>} colorIcono="gray"  content={conteoPorEstado["Borrador"]} />
+                    <Card title="Eventos Borradores"  icono={<CalendarDays/>} colorIcono="indigo"  content={conteoPorEstado["Borrador"]} />
                     <Card title="Eventos Finalizados" icono={<CalendarDays/>} content={conteoPorEstado["Finalizado"]} />
                     <Card title="Eventos Suspendidos"  icono={<CalendarDays/>} colorIcono="yellow"  content={conteoPorEstado["Suspendido"]} />
                     <Card title="Eventos Cancelados"  icono={<CalendarDays/>} colorIcono="red"  content={conteoPorEstado["Cancelado"]} />
@@ -194,4 +165,4 @@ const InicioEventos = () => {
     );
 };
 
-export default InicioEventos;
+export default EventosHomePage;

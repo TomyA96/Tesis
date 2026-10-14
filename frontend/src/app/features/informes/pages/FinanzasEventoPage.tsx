@@ -17,7 +17,7 @@ type MovimientoFinanciero = {
   participacion: string;
 };
 
-const FinanzasEvento = () => {
+const FinanzasEventoPage = () => {
   const ingresos: MovimientoFinanciero[] = [
     { concepto: "Venta de entradas", categoria: "Comercial", monto: "$11.240.000", participacion: "62%" },
     { concepto: "Venta buffet", categoria: "Operacion", monto: "$1.060.000", participacion: "6%" },
@@ -268,4 +268,4 @@ const FinanzasEvento = () => {
   );
 };
 
-export default FinanzasEvento;
+export default FinanzasEventoPage;

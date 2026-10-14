@@ -1,78 +1,48 @@
 // ═══════════════════════════════════════════════════════════════════════════════
 // CardEvent.tsx
 // ═══════════════════════════════════════════════════════════════════════════════
-import Btn from "../../../ui/componentes/Btn";
-import LinkBtn from "../../../ui/componentes/LinkBtn";
 import { CalendarDays } from "lucide-react";
-import { RUTAS } from "../../../constantes/Rutas";
-import GastoModal from "../modales/GastoModal";
-import IngresoModal from "../modales/IngresoModal";import { useState } from "react";
+import type { EstadoEvento } from "../../../services/eventosService";
+import Etiqueta, { type ColorEtiqueta } from "../../../ui/componentes/Etiqueta";
+import { coloresEstadoEvento } from "../../eventos/eventos.columns";
 
- type ModalRegistar =
-    | "nuevoGasto"
-    | "nuevoIngreso"
-    | "modificarLista"
-    | null;
-
-type Estado = "activo" | "suspendido";
- 
 type EventProps = {
     nombre: string;
     fecha: string;
-    estado: Estado;
+    estado: EstadoEvento;
+    // Botones del pie de la card: los arma quien tiene los datos que necesitan
+    acciones: React.ReactNode;
 };
  
-// ── BADGE DE ESTADO ────────────────────────────────────────────────────────────
-// Mismo patrón que BadgeEstado en Ventas — cada estado tiene su color semántico
-const BadgeEstadoEvento = ({ estado }: { estado: Estado }) => {
-    const estilos: Record<Estado, string> = {
-        activo:     "bg-emerald-100 text-emerald-700",
-        suspendido: "bg-amber-100   text-amber-700",
-    };
- 
-    const etiquetas: Record<Estado, string> = {
-        activo:     "Activo",
-        suspendido: "Suspendido",
-    };
- 
-    return (
-        <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${estilos[estado]}`}>
-            {etiquetas[estado]}
-        </span>
-    );
+// Franja superior: se indexa por el color de la Etiqueta, no por el estado,
+// así franja y etiqueta nunca pueden quedar con colores distintos.
+const colorFranja: Record<ColorEtiqueta, string> = {
+    verde:  "bg-emerald-500",
+    rojo:   "bg-rose-500",
+    ambar:  "bg-amber-400",
+    gris:   "bg-gray-400",
+    azul:   "bg-blue-500",
+    indigo: "bg-indigo-500",
 };
  
-const CardEvent = ({ nombre, fecha, estado }: EventProps) => {
-    const [modalActivo, setModalActivo] = useState<ModalRegistar>(null);
- 
+const CardEvent = ({ nombre, fecha, estado, acciones }: EventProps) => {
+
     return (
         /*
-            flex flex-col: apila el contenido verticalmente
-            h-full: todas las cards tienen la misma altura dentro del grid
-            group: permite que los hijos usen group-hover para reaccionar
-                   al hover de la card completa
+            Sin alto fijo: la card mide lo que mide su contenido, y flex ya
+            iguala la altura de todas las de una misma fila.
+            basis + grow + max-w: arrancan en 360px y se estiran para llenar
+            el ancho sobrante de la fila (menos aire a los costados), pero sin
+            desbordarse cuando queda una sola card en la última fila.
         */
-       
-        <div className="flex flex-col h-full bg-white border border-gray-200 rounded-xl shadow-sm hover:shadow-md transition-shadow duration-200 overflow-hidden group">
-            <GastoModal
-                isOpen={modalActivo === "nuevoGasto"}
-                closeModal={() => setModalActivo(null)}
-                modo="crear"
-            />
-            <IngresoModal
-                isOpen={modalActivo === "nuevoIngreso"}
-                closeModal={() => setModalActivo(null)}
-                modo="crear"
-            />
+        <div className="flex flex-col basis-[360px] grow max-w-[320px] bg-white border border-gray-200 rounded-xl shadow-sm hover:shadow-md transition-shadow duration-200 overflow-hidden group">
             {/* ── FRANJA SUPERIOR DE COLOR ──────────────────────────────────────
-                Comunica visualmente el estado sin necesidad de leer el badge.
-                activo     → franja verde
-                suspendido → franja amarilla
+                Comunica visualmente el estado sin necesidad de leer la etiqueta.
             */}
-            <div className={`h-1.5 w-full ${estado === "activo" ? "bg-emerald-500" : "bg-amber-400"}`} />
- 
+            <div className={`h-1.5 w-full ${colorFranja[coloresEstadoEvento[estado]]}`} />
+
             {/* ── CONTENIDO PRINCIPAL ───────────────────────────────────────── */}
-            <div className="flex flex-col flex-1 p-5 gap-3">
+            <div className="flex flex-col flex-1 p-4 gap-2">
  
                 {/* Nombre + Badge en la misma fila */}
                 <div className="flex items-start justify-between gap-2">
@@ -84,7 +54,7 @@ const CardEvent = ({ nombre, fecha, estado }: EventProps) => {
                     <h3 className="text-base font-semibold text-gray-900 leading-tight line-clamp-2">
                         {nombre}
                     </h3>
-                    <BadgeEstadoEvento estado={estado} />
+                    <Etiqueta color={coloresEstadoEvento[estado]}>{estado}</Etiqueta>
                 </div>
  
                 {/* Fecha con ícono */}
@@ -98,18 +68,8 @@ const CardEvent = ({ nombre, fecha, estado }: EventProps) => {
                     sin importar cuánto contenido haya arriba.
                     Así todas las cards tienen los botones alineados al mismo nivel.
                 */}
-                <div className="mt-auto pt-3 border-t border-gray-100 flex flex-col gap-2">
-                    <div className="flex gap-2">
-                        <Btn variant="outline" size="sm" className="flex-1" onClick={() => setModalActivo("nuevoGasto")}>
-                            Registrar Gasto
-                        </Btn>
-                        <Btn variant="outline" size="sm" className="flex-1" onClick={() => setModalActivo("nuevoIngreso")}>
-                            Registrar Ingreso
-                        </Btn>
-                    </div>
-                    <LinkBtn variant="primary" size="sm" className="w-full" to={RUTAS.administracion.administrarEvento(2)}>
-                        Administrar Evento
-                    </LinkBtn>
+                <div className="mt-auto pt-3 border-t border-gray-100">
+                    {acciones}
                 </div>
  
             </div>

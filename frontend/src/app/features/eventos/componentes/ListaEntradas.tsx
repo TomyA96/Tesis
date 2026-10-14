@@ -137,7 +137,7 @@ const ListaEntradas = ({entradas, idEvento, estadoEvento, capacidad, onEntradaGu
                 variante="primary"
                 onConfirmar={async () => {
                     if (!entradaAImprimir) return;
-                    await imprimirEntrada(entradaAImprimir.id);
+                    await imprimirEntrada(entradaAImprimir.id, entradaAImprimir.descripcion);
                     onEntradaGuardada();
                     setEntradaAImprimir(null);
                 }}

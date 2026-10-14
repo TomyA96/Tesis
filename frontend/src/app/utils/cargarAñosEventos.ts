@@ -1,4 +1,4 @@
-import type { Evento } from "../../../services/eventosService";
+import type { Evento } from "../services/eventosService";
 
 export const cargarAñosEventos = (eventos: Evento[], añoActual: number) => {
     const añosSet = new Set<number>();

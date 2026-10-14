@@ -20,7 +20,7 @@ import { getRubros, type Rubro } from "../../../services/rubrosService";
 type ModalProveedores = "crearProveedor" | "editarProveedor" | "eliminarProveedor" | null;
 
 // ── COMPONENTE PRINCIPAL ─────────────────────────────────────────────────────
-const Proveedores = () => {
+const ProveedoresPage = () => {
     const [proveedores, setProveedores] = useState<Proveedor[]>([]);
     /*
         Los rubros se cargan una sola vez acá y se pasan hacia abajo: los usan el
@@ -52,6 +52,9 @@ const Proveedores = () => {
             .catch(() => setError("No se pudieron cargar los rubros"));
     }, []);
 
+    // A un proveedor se le paga: solo tienen sentido los rubros de Gasto o Mixto
+    const rubrosGasto = useMemo(() => rubros.filter((rubro) => rubro.tipo !== "Ingreso"), [rubros]);
+
     const proveedoresFiltrados = useMemo(
         () => aplicarFiltrosProveedores(proveedores, filtros),
         [proveedores, filtros],
@@ -68,7 +71,7 @@ const Proveedores = () => {
                 {error && <p className="px-6 pt-4 text-sm text-red-600">{error}</p>}
 
                 <div className="px-6 pt-4">
-                    <FiltroProveedores rubros={rubros} filtros={filtros} onChange={setFiltros} />
+                    <FiltroProveedores rubros={rubrosGasto} filtros={filtros} onChange={setFiltros} />
                 </div>
 
                 <GenericTable<Proveedor>
@@ -105,7 +108,7 @@ const Proveedores = () => {
 
             <CrearProveedorModal
                 isOpen={activarModal === "crearProveedor"}
-                rubros={rubros}
+                rubros={rubrosGasto}
                 closeModal={() => setActivarModal(null)}
                 onCreated={() => {
                     cargarProveedores();
@@ -116,7 +119,7 @@ const Proveedores = () => {
             <EditarProveedorModal
                 isOpen={activarModal === "editarProveedor"}
                 proveedor={proveedorSeleccionado}
-                rubros={rubros}
+                rubros={rubrosGasto}
                 closeModal={() => setActivarModal(null)}
                 onUpdated={() => {
                     cargarProveedores();
@@ -141,4 +144,4 @@ const Proveedores = () => {
     );
 };
 
-export default Proveedores;
+export default ProveedoresPage;

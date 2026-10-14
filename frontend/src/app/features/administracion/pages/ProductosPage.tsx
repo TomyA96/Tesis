@@ -19,7 +19,7 @@ import { getProductos, deleteProducto, type Producto } from "../../../services/p
 type ModalProductos = "crearProducto" | "editarProducto" | "eliminarProducto" | null;
 
 // ── COMPONENTE PRINCIPAL ─────────────────────────────────────────────────────
-const Productos = () => {
+const ProductosPage = () => {
     const [productos, setProductos] = useState<Producto[]>([]);
     const [productoSeleccionado, setProductoSeleccionado] = useState<Producto | null>(null);
     const [activarModal, setActivarModal] = useState<ModalProductos>(null);
@@ -131,4 +131,4 @@ const Productos = () => {
     );
 };
 
-export default Productos;
+export default ProductosPage;

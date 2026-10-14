@@ -2,15 +2,16 @@ import type { Column } from "../../ui/componentes/GenericTable/GenericTable.type
 import type { Evento, EstadoEvento } from "../../services/eventosService";
 import Etiqueta from "../../ui/componentes/Etiqueta";
 import type { ColorEtiqueta } from "../../ui/componentes/Etiqueta";
+import { fechaArgentina, horaArgentina } from "../../utils/zonaHoraria";
 
 /*
     Los estados de evento son distintos a los de usuario, así que no se puede
     reutilizar el renderEstado de genericTabla.utils (que muestra iconos de
     usuario y solo contempla activo/inactivo/bloqueado).
 */
-const coloresEstado: Record<EstadoEvento, ColorEtiqueta> = {
+export const coloresEstadoEvento: Record<EstadoEvento, ColorEtiqueta> = {
     Activo: "verde",
-    Borrador: "gris",
+    Borrador: "indigo",
     Finalizado: "azul",
     Suspendido: "ambar",
     Cancelado: "rojo",
@@ -27,14 +28,12 @@ export const columnasEventos: Column<Evento>[] = [
         key: "fechaHoraInicio",
         label: "Fecha",
         // Llega como string ISO desde la API, hay que convertirlo para mostrarlo.
-        render: (value) =>
-            new Date(value as string).toLocaleDateString("es-AR"),
+        render: (value) => fechaArgentina(value as string),
     },
     {
         key: "fechaHoraInicio",
         label: "Hora",
-        render: (value) =>
-            new Date(value as string).toLocaleTimeString("es-AR", { hour: "2-digit", minute: "2-digit" }),
+        render: (value) => horaArgentina(value as string),
     },
     {
         key: "ubicacion",
@@ -47,6 +46,6 @@ export const columnasEventos: Column<Evento>[] = [
     {
         key: "estado",
         label: "Estado",
-        render: (value) => <Etiqueta color={coloresEstado[value as EstadoEvento]}>{value as string}</Etiqueta>
+        render: (value) => <Etiqueta color={coloresEstadoEvento[value as EstadoEvento]}>{value as string}</Etiqueta>
     },
 ];

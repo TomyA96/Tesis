@@ -1,4 +1,5 @@
 import Btn, { type Variant } from "../../../ui/componentes/Btn";
+import { formatPrecioEntrada } from "../../../utils/formatoPrecio";
 import type { Entrada, EstadoEntrada } from "../../../services/entradasService";
 import Etiqueta, { type ColorEtiqueta } from "../../../ui/componentes/Etiqueta";
 import type { AccionEntrada } from "../utils/accionesParaEntradas";
@@ -105,15 +106,8 @@ const LoteEntrada = ({entrada, acciones, cantidadTotal, cantidadVendida, onEdita
                     </FilaDato>
  
                     <FilaDato label="Precio">
-                        {/* 
-                            Intl.NumberFormat formatea el número como moneda argentina
-                            $6.000 en lugar de 6000
-                        */}
-                        {new Intl.NumberFormat("es-AR", {
-                            style: "currency",
-                            currency: "ARS",
-                            maximumFractionDigits: 0,
-                        }).format(entrada.precio)}
+                        {/* Pesos enteros ($6.000 en lugar de 6000); si es gratuita muestra "Gratis" */}
+                        {formatPrecioEntrada(entrada.precio)}
                     </FilaDato>
                 </dl>
             </div>

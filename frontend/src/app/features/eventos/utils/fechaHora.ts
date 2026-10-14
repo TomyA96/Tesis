@@ -1,24 +1,35 @@
 // Conversión entre fechas reales (Date) y los campos sueltos que usan los
 // formularios de eventos: fecha, hora, y duración en horas.
 
+import { OFFSET_ARGENTINA, ZONA_ARGENTINA } from "../../../utils/zonaHoraria";
+
 // Los inputs date/time exigen dos dígitos: "03", no "3".
 export const dosDigitos = (n: number) => String(n).padStart(2, "0");
 
 /*
-    Convierte un Date a los strings que necesitan los inputs. Usa los getters
-    locales (getHours, no getUTCHours) a propósito: el Date construido a
-    partir del string ISO que manda la API está en UTC, y estos getters lo
-    devuelven ya convertido a la zona del navegador — la hora que el usuario
-    realmente cargó.
+    Convierte un Date a los strings que necesitan los inputs, siempre en hora
+    argentina (no la de la computadora): así un evento cargado a las 20:00 se
+    ve a las 20:00 sin importar desde dónde lo abra cada usuario.
+    El locale "sv-SE" se usa solo porque da la fecha como AAAA-MM-DD, que es
+    el formato que exige el input type="date".
 */
 export const fechaAInputs = (fecha: Date) => ({
-    // getMonth() arranca en 0 (enero), por eso el +1
-    fecha: `${fecha.getFullYear()}-${dosDigitos(fecha.getMonth() + 1)}-${dosDigitos(fecha.getDate())}`,
-    hora: `${dosDigitos(fecha.getHours())}:${dosDigitos(fecha.getMinutes())}`,
+    fecha: fecha.toLocaleDateString("sv-SE", { timeZone: ZONA_ARGENTINA }),
+    hora: fecha.toLocaleTimeString("es-AR", {
+        timeZone: ZONA_ARGENTINA,
+        hour: "2-digit",
+        minute: "2-digit",
+        hourCycle: "h23",
+    }),
 });
 
-// Inverso de fechaAInputs: junta fecha y hora sueltas en un solo Date.
-export const combinarFechaHora = (fecha: string, hora: string) => new Date(`${fecha}T${hora}`);
+/*
+    Inverso de fechaAInputs: junta fecha y hora sueltas en un solo Date,
+    interpretando lo que se escribió como hora argentina. Sin el offset, JS lo
+    tomaría como hora de la computadora de quien carga el evento.
+*/
+export const combinarFechaHora = (fecha: string, hora: string) =>
+    new Date(`${fecha}T${hora}${OFFSET_ARGENTINA}`);
 
 // Diferencia entre dos fechas, en horas — para precargar el campo "duración".
 export const calcularDuracionHoras = (inicio: Date, fin: Date) =>

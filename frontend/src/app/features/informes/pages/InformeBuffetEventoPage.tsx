@@ -18,7 +18,7 @@ type VentaProducto = {
   totalRecaudado: string;
 };
 
-const InformeBuffetEvento = () => {
+const InformeBuffetEventoPage = () => {
   const comidas: VentaProducto[] = [
     { producto: "Hamburguesa", cantidadVendida: 150, precio: "$1.500", totalRecaudado: "$225.000" },
     { producto: "Choripan", cantidadVendida: 100, precio: "$1.000", totalRecaudado: "$100.000" },
@@ -258,4 +258,4 @@ const InformeBuffetEvento = () => {
   );
 };
 
-export default InformeBuffetEvento;
+export default InformeBuffetEventoPage;

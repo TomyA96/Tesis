@@ -55,7 +55,7 @@ const Sidebar = () => {
                 <li>
                     <NavLink
                         onClick={() => setActivarSeccion(null)}
-                        to={RUTAS.inicio}
+                        to={RUTAS.admin.inicio}
                         className={cn("w-full flex items-center gap-3 px-4 py-2.5 rounded-md",
                             "text-sm font-semibold text-gray-400 hover:bg-white/5 hover:text-gray-200",
                             "transition-colors duration-150 cursor-pointer")}
@@ -96,6 +96,7 @@ const Sidebar = () => {
                         opciones={[
                             { label: "Productos", href: RUTAS.administracion.productos },
                             { label: "Proveedores", href: RUTAS.administracion.proveedores },
+                            { label: "Fuentes de ingreso", href: RUTAS.administracion.fuentesIngreso },
                             { label: "Rubros", href: RUTAS.administracion.rubros }
                         ]}
                     />

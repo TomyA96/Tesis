@@ -30,6 +30,10 @@ export function getRubros() {
     return api.get<Rubro[]>("/rubros");
 }
 
+export function getRubrosIngresos(){
+    return api.get<Rubro[]>('/rubros/ingresos')
+}
+
 export function getRubro(id: number) {
     return api.get<Rubro>(`/rubros/${id}`);
 }

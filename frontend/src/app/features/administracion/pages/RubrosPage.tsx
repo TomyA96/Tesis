@@ -19,7 +19,7 @@ import { getRubros, deleteRubro, type Rubro } from "../../../services/rubrosServ
 type ModalRubros = "crearRubro" | "editarRubro" | "eliminarRubro" | null;
 
 // ── COMPONENTE PRINCIPAL ─────────────────────────────────────────────────────
-const Rubros = () => {
+const RubrosPage = () => {
     const [rubros, setRubros] = useState<Rubro[]>([]);
     const [rubroSeleccionado, setRubroSeleccionado] = useState<Rubro | null>(null);
     const [activarModal, setActivarModal] = useState<ModalRubros>(null);
@@ -137,4 +137,4 @@ const Rubros = () => {
     );
 };
 
-export default Rubros;
+export default RubrosPage;

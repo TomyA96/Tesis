@@ -1,42 +1,51 @@
 
 export const RUTAS = {
-    inicio: "/",
+    publico: {
+        inicio: "/",
+        detalle: (idEvento: number | string) => `/eventos/${idEvento}`,
+        comprar: (idEvento: number | string) => `/eventos/${idEvento}/comprar`,
+    },
+
+    admin: {
+        inicio: "/admin",
+    },
 
     seguridad: {
-        inicio: "/seguridad",
-        usuarios: "/seguridad/usuarios",
-        perfiles: "/seguridad/perfiles", 
-        auditorias: "/seguridad/auditorias" ,
-        
+        inicio: "/admin/seguridad",
+        usuarios: "/admin/seguridad/usuarios",
+        perfiles: "/admin/seguridad/perfiles",
+        auditorias: "/admin/seguridad/auditorias",
+
     },
 
     administracion: {
-        inicio: "/administracion",
-        proveedores: "/administracion/proveedores",  
-        productos: "/administracion/productos",       
-        rubros: "/administracion/rubros"   ,        
-        administrarEvento: (idEvento: number | string) => `/eventos/${idEvento}/administracion` 
+        inicio: "/admin/administracion",
+        proveedores: "/admin/administracion/proveedores",
+        fuentesIngreso: "/admin/administracion/fuentes-ingreso",
+        productos: "/admin/administracion/productos",
+        rubros: "/admin/administracion/rubros",
+        administrarEvento: (idEvento: number | string) => `/admin/eventos/${idEvento}/administracion`
     },
 
     eventos: {
-        inicio: "/eventos",
-        crear: "/eventos/crear",  
-        detalle:(idEvento: number | string) => `/eventos/${idEvento}`, 
-        ventas:(idEvento: number | string) => `/eventos/${idEvento}/ventas`, 
+        inicio: "/admin/eventos",
+        crear: "/admin/eventos/crear",
+        detalle:(idEvento: number | string) => `/admin/eventos/${idEvento}`,
+        ventas:(idEvento: number | string) => `/admin/eventos/${idEvento}/ventas`,
     },
 
     informes: {
-        inicio: "/informes",
-        resumenAnual: "/informes/resumen-anual",
-        entradas: (idEvento: number | string) => `/eventos/${idEvento}/informes/entradas`,
-        buffet: (idEvento: number | string) => `/eventos/${idEvento}/informes/buffet`,
-        finanzas: (idEvento: number | string) => `/eventos/${idEvento}/informes/finanzas`,
+        inicio: "/admin/informes",
+        resumenAnual: "/admin/informes/resumen-anual",
+        entradas: (idEvento: number | string) => `/admin/eventos/${idEvento}/informes/entradas`,
+        buffet: (idEvento: number | string) => `/admin/eventos/${idEvento}/informes/buffet`,
+        finanzas: (idEvento: number | string) => `/admin/eventos/${idEvento}/informes/finanzas`,
     },
     operaciones: {
-        inicio: "/operaciones",
-        ventaEntradas: (idEvento: number | string) => `/eventos/${idEvento}/operaciones/venta-entradas`,
-        puerta: (idEvento: number | string) => `/eventos/${idEvento}/operaciones/puerta`,  
-        buffet: (idEvento: number | string) => `/eventos/${idEvento}/operaciones/buffet`,  
-        accesos: (idEvento: number | string) => `/eventos/${idEvento}/operaciones/accesos`,  
+        inicio: "/admin/operaciones",
+        ventaEntradas: (idEvento: number | string) => `/admin/eventos/${idEvento}/operaciones/venta-entradas`,
+        puerta: (idEvento: number | string) => `/admin/eventos/${idEvento}/operaciones/puerta`,
+        buffet: (idEvento: number | string) => `/admin/eventos/${idEvento}/operaciones/buffet`,
+        accesos: (idEvento: number | string) => `/admin/eventos/${idEvento}/operaciones/accesos`,
     }
 }

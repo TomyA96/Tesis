@@ -54,8 +54,21 @@ export function deshabilitarEntrada(id: number){
     return api.put<Entrada>(`/entradas/${id}/deshabilitar`, {})
 }
 
-export function imprimirEntrada(id: number){
-    return api.post<{ count: number }>(`/entradas/${id}/imprimir`, {})
+export async function imprimirEntrada(id: number, descripcion: string) {
+    const blob = await api.postBlob(`/entradas/${id}/imprimir`, {});
+    const descripcionSegura = descripcion.replace(/[\\/:*?"<>|]/g, '');
+    const url = URL.createObjectURL(blob);
+
+    // <a download> es la forma estándar de forzar una descarga desde JS —
+    // se arma al vuelo, se clickea solo, y se descarta. No queda en el DOM.
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = `tickets-${id}-${descripcionSegura}.pdf`;
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    window.open(url, '_blank');
+    setTimeout(() => URL.revokeObjectURL(url), 8000);
 }
 
 export function deleteEntrada(id: number){

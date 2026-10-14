@@ -36,7 +36,7 @@ const columnasAuditorias: Column<Auditoria>[] = [
   },
 ];
 
-const Auditorias = () => {
+const AuditoriasPage = () => {
   return (
     <main className="flex flex-col gap-6 px-6">
       <ContenedorDatos>
@@ -60,4 +60,4 @@ const Auditorias = () => {
   );
 };
 
-export default Auditorias;
+export default AuditoriasPage;

@@ -21,7 +21,7 @@ type TipoEntrada = {
   facturacion: string;
 };
 
-const InformeEntradasEvento = () => {
+const InformeEntradasEventoPage = () => {
   const tiposEntrada: TipoEntrada[] = [
     { tipoEntrada: "General Pre-venta", precio: "$8.000", cantidadVendida: 500, facturacion: "$4.000.000" },
     { tipoEntrada: "General Tanda 1", precio: "$10.000", cantidadVendida: 300, facturacion: "$3.000.000" },
@@ -267,4 +267,4 @@ const InformeEntradasEvento = () => {
   );
 };
 
-export default InformeEntradasEvento;
+export default InformeEntradasEventoPage;

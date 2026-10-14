@@ -1,17 +1,8 @@
 import { formatPrecio } from "../../../utils/formatoPrecio";
-
-// ── TIPOS ──────────────────────────────────────────────────────────────────────
-type Categoria = "comida" | "bebida";
-
-type ProductosProps = {
-    id:        string;
-    nombre:    string;
-    categoria: Categoria;
-    precio:    number;
-};
+import type { Producto } from "../../../services/productosService";
 
 type ListaProductosProps = {
-    items: ProductosProps[];
+    items: Producto[];
 };
 
 // ── COMPONENTE INTERNO: LISTA POR CATEGORÍA ────────────────────────────────────
@@ -19,7 +10,7 @@ type ListaProductosProps = {
 // el mismo bloque de JSX para Comidas y Bebidas
 type ListaCategoriaProps = {
     titulo: string;
-    items:  ProductosProps[];
+    items:  Producto[];
 };
 
 const ListaCategoria = ({ titulo, items }: ListaCategoriaProps) => {
@@ -38,21 +29,16 @@ const ListaCategoria = ({ titulo, items }: ListaCategoriaProps) => {
                         key={item.id}
                         className="flex items-center gap-2 px-3 py-2 rounded-lg hover:bg-gray-50 transition-colors"
                     >
-                        {/* Nombre del producto */}
-                        <span className="flex-1 text-sm text-gray-700 truncate">
+                        <span className="text-sm text-gray-700 truncate">
                             {item.nombre}
                         </span>
 
-                        {/*
-                            Línea punteada conectora — une visualmente el nombre con el precio
-                            flex-1 min-w-[1rem]: ocupa el espacio disponible entre nombre y precio
-                            border-b border-dashed: la línea de puntos
-                        */}
-                        <span className="flex-1  border-b border-dashed border-gray-200 mb-1" />
+                        {/* Línea punteada que une visualmente el nombre con el precio */}
+                        <span className="flex-1 min-w-4 border-b border-dashed border-gray-200 mb-1" />
 
-                        {/* Precio */}
+                        {/* El precio llega como string (Decimal de Prisma) — Number() antes de formatear */}
                         <span className="text-sm font-medium text-gray-800 tabular-nums whitespace-nowrap">
-                            {formatPrecio(item.precio)}
+                            {formatPrecio(Number(item.precio))}
                         </span>
                     </li>
                 ))}
@@ -63,35 +49,19 @@ const ListaCategoria = ({ titulo, items }: ListaCategoriaProps) => {
 
 // ── COMPONENTE PRINCIPAL ───────────────────────────────────────────────────────
 const ListarProductosEvento = ({ items }: ListaProductosProps) => {
-    const comidas = items.filter((p) => p.categoria === "comida");
-    const bebidas = items.filter((p) => p.categoria === "bebida");
+    // Mismo mensaje y estilo que el estado vacío de GenericTable
+    if (items.length === 0) {
+        return (
+            <div className="flex items-center justify-center py-12 text-center text-gray-400 text-sm">
+                No hay productos designados para el evento
+            </div>
+        );
+    }
 
     return (
         <div className="flex flex-col gap-4">
-
-            {/* ── ESTADO VACÍO ──────────────────────────────────────────────── */}
-            {/* Mismo patrón que GenericTable — ícono + texto gris centrado */}
-            {items.length === 0 && (
-                <div className="flex flex-col items-center justify-center py-8 text-gray-400 gap-2">
-                    <svg className="w-8 h-8 text-gray-300" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5}
-                            d="M20 7H4a2 2 0 00-2 2v6a2 2 0 002 2h16a2 2 0 002-2V9a2 2 0 00-2-2z" />
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5}
-                            d="M16 3H8a2 2 0 00-2 2v2h12V5a2 2 0 00-2-2z" />
-                    </svg>
-                    <p className="text-sm">No hay productos asignados</p>
-                </div>
-            )}
-
-            {/* ── LISTAS POR CATEGORÍA ──────────────────────────────────────── */}
-            {/*
-                Usamos el componente ListaCategoria que retorna null si no hay items
-                así no necesitamos el condicional {comidas.length > 0 && ...}
-                afuera — el componente se encarga solo
-            */}
-            <ListaCategoria titulo="Comidas" items={comidas} />
-            <ListaCategoria titulo="Bebidas" items={bebidas} />
-
+            <ListaCategoria titulo="Comidas" items={items.filter((p) => p.tipo === "Comida")} />
+            <ListaCategoria titulo="Bebidas" items={items.filter((p) => p.tipo === "Bebida")} />
         </div>
     );
 };

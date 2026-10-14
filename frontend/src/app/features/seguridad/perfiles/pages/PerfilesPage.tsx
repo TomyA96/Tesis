@@ -17,7 +17,7 @@ import ConfirmarAccion from "../../../../ui/componentes/ConfirmarAccion";
 
 type ModalPerfiles = "crearPerfil" | "editarPerfil" | "eliminarPerfil" |  null;
 
-const Perfiles = () => {
+const PerfilesPage = () => {
 
     const [perfiles, setPerfiles] = useState<Perfil[]>([]);
     const [permisos, setPermisos] = useState<Permiso[]>([]);
@@ -144,4 +144,4 @@ const Perfiles = () => {
     );
 };
 
-export default Perfiles;
+export default PerfilesPage;

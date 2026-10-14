@@ -13,8 +13,10 @@ import type { Evento, EstadoEvento } from "../../../services/eventosService";
 import { useNavigate } from "react-router-dom";
 import { getEntradas, type Entrada } from "../../../services/entradasService";
 
-import Etiqueta, { type ColorEtiqueta } from "../../../ui/componentes/Etiqueta";
+import Etiqueta from "../../../ui/componentes/Etiqueta";
 import { cn } from "../../../../lib/cn";
+import { coloresEstadoEvento } from "../eventos.columns";
+import ImagenEventoCard from "../componentes/ImagenEventoCard";
 
 
 export type ModoEventoPage = "crear" | "ver" | "editar";
@@ -26,14 +28,6 @@ type BotonesEvento ={
     onClick?: () => void;
 }
 
-const coloresEstado: Record<EstadoEvento, ColorEtiqueta> = {
-    Activo: "verde",
-    Borrador: "indigo",
-    Finalizado: "azul",
-    Suspendido: "ambar",
-    Cancelado: "rojo",
-}
-   
 
 
 
@@ -151,7 +145,7 @@ const EventoPage = () => {
     ) : (
         <div className="h-fit">
             <h1 className="text-2xl font-bold">{eventoActual?.nombre}</h1>
-            <h2 className="flex gap-2 items-center text-sm font-medium text-gray-500 ">Estado: <Etiqueta color={coloresEstado[eventoActual?.estado as EstadoEvento] || "gris"} >{eventoActual?.estado}</Etiqueta></h2>
+            <h2 className="flex gap-2 items-center text-sm font-medium text-gray-500 ">Estado: <Etiqueta color={coloresEstadoEvento[eventoActual?.estado as EstadoEvento] || "gris"} >{eventoActual?.estado}</Etiqueta></h2>
         </div>
     );
 
@@ -198,7 +192,7 @@ const EventoPage = () => {
             </ContenedorDatos>
             
             <div className="flex justify-center gap-6">
-                <ContenedorDatos className={cn("max-w-[800px]", modoPage === "editar" && "relative z-50")}>
+                <ContenedorDatos className={cn("max-w-[800px] p-6 gap-6", modoPage === "editar" && "relative z-50")}>
                     {/*
                         La key incluye fechaHoraInicio además del id: así, no
                         solo remonta al cambiar de evento (o volver a "crear"),
@@ -220,6 +214,9 @@ const EventoPage = () => {
                         }}
                         onCancel={() => setEditando(false)}
                     />
+                {evento &&   
+                    <ImagenEventoCard idEvento={Number(idEvento)} estado={evento?.estado}/>
+                }
                 </ContenedorDatos>
                 {evento &&
                 <ContenedorDatos >

@@ -16,7 +16,7 @@ const EntradaModal = ({isOpen, closeModal, idEvento, entrada, onSaved}: EntradaM
         <Modal
             isOpen={isOpen}
             closeModal={closeModal}
-            title="Crear Nueva Entrada"
+            title={entrada ? "Editar entrada" : "Crear entrada"}
             >
             <EntradaForm idEvento={Number(idEvento)} onSaved={onSaved} onCancel={closeModal} entrada={entrada} />
         </Modal>

@@ -40,9 +40,14 @@ const EditarProveedorForm = ({ proveedor, rubros, onCancel, onUpdated }: EditarP
         El backend ya devuelve los rubros del proveedor dentro del objeto
         (proveedor.rubros), así que la selección inicial sale de ahí sin pedir
         nada extra al servidor.
+        Se descartan los rubros que ya no se pueden elegir (los de tipo Ingreso,
+        cargados antes de la restricción): quedarían marcados pero invisibles en
+        el selector, y el backend rechazaría el guardado sin forma de destildarlos.
     */
     const [rubrosSeleccionados, setRubrosSeleccionados] = useState<number[]>(
-        proveedor.rubros.map((rubro) => rubro.id),
+        proveedor.rubros
+            .filter((rubro) => rubros.some((permitido) => permitido.id === rubro.id))
+            .map((rubro) => rubro.id),
     );
     const [error, setError] = useState("");
     const [guardando, setGuardando] = useState(false);

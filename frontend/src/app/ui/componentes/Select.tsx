@@ -6,6 +6,7 @@ import { cn } from "../../../lib/cn";
 export type Opcion = {
     label: string;
     value: string | number;
+    disabled?: boolean;
 };
  
 type SelectProps = React.ComponentProps<"select"> & {
@@ -39,7 +40,7 @@ const Select = ({ label, opciones, className = "", id, ...props }: SelectProps) 
                 {...props}
             >
                 {opciones.map((opcion) => (
-                    <option key={opcion.value} value={opcion.value}>
+                    <option key={opcion.value} value={opcion.value} disabled={opcion.disabled} hidden={opcion.disabled}>
                         {opcion.label}
                     </option>
                 ))}
