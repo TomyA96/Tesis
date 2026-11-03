@@ -41,11 +41,11 @@ export const RUTAS = {
         buffet: (idEvento: number | string) => `/admin/eventos/${idEvento}/informes/buffet`,
         finanzas: (idEvento: number | string) => `/admin/eventos/${idEvento}/informes/finanzas`,
     },
+    // Cada noche se opera por separado: las entradas, la capacidad y el buffet son de la jornada
     operaciones: {
         inicio: "/admin/operaciones",
-        ventaEntradas: (idEvento: number | string) => `/admin/eventos/${idEvento}/operaciones/venta-entradas`,
-        puerta: (idEvento: number | string) => `/admin/eventos/${idEvento}/operaciones/puerta`,
-        buffet: (idEvento: number | string) => `/admin/eventos/${idEvento}/operaciones/buffet`,
-        accesos: (idEvento: number | string) => `/admin/eventos/${idEvento}/operaciones/accesos`,
+        accesos: (idJornada: number | string) => `/admin/operaciones/jornadas/${idJornada}/accesos`,
+        ventaEntradas: (idJornada: number | string) => `/admin/operaciones/jornadas/${idJornada}/venta-entradas`,
+        buffet: (idJornada: number | string) => `/admin/operaciones/jornadas/${idJornada}/buffet`,
     }
 }

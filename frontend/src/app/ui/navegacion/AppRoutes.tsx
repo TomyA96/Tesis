@@ -33,6 +33,11 @@ const InformesHomePage = lazy(() => import("../../features/informes/pages/Inform
 const InformeEntradasEventoPage = lazy(() => import("../../features/informes/pages/InformeEntradasEventoPage"));
 const InformeBuffetEventoPage = lazy(() => import("../../features/informes/pages/InformeBuffetEventoPage"));
 const FinanzasEventoPage = lazy(() => import("../../features/informes/pages/FinanzasEventoPage"));
+const OperacionesHomePage = lazy(() => import("../../features/operaciones/pages/OperacionesHomePage"));
+const OperacionesJornadaLayout = lazy(() => import("../../features/operaciones/pages/OperacionesJornadaLayout"));
+const ControlAccesos = lazy(() => import("../../features/operaciones/pages/ControlAccesos"));
+const VentaEntradas = lazy(() => import("../../features/operaciones/pages/VentaEntradas"));
+const PanelVentas = lazy(() => import("../../features/operaciones/pages/PanelVentas"));
 
 const AppRoutes = () => {
     return(
@@ -80,6 +85,14 @@ const AppRoutes = () => {
                     <Route path="informes">
                         <Route index element={<InformesHomePage />} />
                         <Route path="resumen-anual" element={<InformesHomePage />} />
+                    </Route>
+                    <Route path="operaciones">
+                        <Route index element={<OperacionesHomePage />} />
+                        <Route path="jornadas/:idJornada" element={<OperacionesJornadaLayout />}>
+                            <Route path="accesos" element={<ControlAccesos />} />
+                            <Route path="venta-entradas" element={<VentaEntradas />} />
+                            <Route path="buffet" element={<PanelVentas />} />
+                        </Route>
                     </Route>
 
 

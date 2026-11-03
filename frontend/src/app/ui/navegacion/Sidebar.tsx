@@ -114,10 +114,10 @@ const Sidebar = () => {
                         area="Operaciones"
                         icono={<Wrench className="w-4 h-4" />}
                         isOpen={activarSeccion === "operaciones"}
-                        href={RUTAS.eventos.inicio}
+                        href={RUTAS.operaciones.inicio}
                         onToggle={() => toggleSeccion("operaciones")}
                         opciones={[
-                            { label: "Seleccionar evento", href: RUTAS.eventos.inicio }
+                            { label: "Jornadas activas", href: RUTAS.operaciones.inicio }
                         ]}
                     />
 
