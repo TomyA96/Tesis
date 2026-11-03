@@ -27,10 +27,10 @@ export class ProductoEventoService {
             throw new NotFoundException('El evento indicado no existe');
         }
         // Mismo criterio que las entradas: un evento cerrado ya es historia
-        if (evento.estado === 'Finalizado' || evento.estado === 'Cancelado') {
-            throw new ConflictException('No se puede modificar la lista de productos de un evento finalizado o cancelado');
+        if (evento.estado === 'Finalizado') {
+            throw new ConflictException('No se puede modificar la lista de productos de un evento finalizado');
         }
-        // Mismo criterio que los movimientos financieros: sin publicar, no tiene sentido
+        // Mismo criterio que los movimientos financieros: un evento que todavía no se publicó no se decidió hacer
         if (evento.estado === 'Borrador') {
             throw new ConflictException('No se pueden asignar productos a un evento en borrador');
         }
@@ -68,7 +68,7 @@ export class ProductoEventoService {
         // Un producto que ya se vendió en el buffet de este evento no se puede sacar de la lista
         if (idsQuitados.length > 0) {
             const vendidos = await this.prisma.detalleVentaBuffet.findMany({
-                where: { idProducto: { in: idsQuitados }, ventaBuffet: { idEvento } },
+                where: { idProducto: { in: idsQuitados }, ventaBuffet: { jornada: { idEvento } } },
                 select: { producto: { select: { nombre: true } } },
                 distinct: ['idProducto'],
             });

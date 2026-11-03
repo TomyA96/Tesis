@@ -3,6 +3,7 @@ import { PrismaService } from '../prisma/prisma.service';
 import { CreateCompraDto } from './dtos/create.compra.dto';
 import { Prisma } from '@prisma/client';
 import { randomUUID } from 'crypto';
+import { limiteVentaOnline } from '../jornadas/utils/venta-online';
 
 @Injectable()
 export class ComprasService {
@@ -17,17 +18,28 @@ export class ComprasService {
         if (hayRepetidas) {
             throw new BadRequestException('Error de envio de datos');
         }
-            
+
         // let y no const: se asigna adentro del try, pero se usa después de él
         // (una const declarada dentro del try no existe fuera de sus llaves).
         let ordenRegistrada;
         try {
             ordenRegistrada = await this.prisma.$transaction( async (tx) => {
-                const contadorEntradas = await tx.evento.findUnique({
-                    where: { id: idEvento },
+                /*
+                    Una compra puede incluir entradas de varias jornadas del mismo evento.
+                    Se traen las jornadas que contienen alguna de las entradas pedidas,
+                    con TODAS sus entradas: la capacidad se controla por jornada y hay que
+                    saber cuánto tiene ocupado cada una (vendidos + reservas en curso).
+                    Filtrar por idEvento deja afuera, sin avisar, entradas de otro evento.
+                */
+                const idsPedidos = entradas.map((e) => e.idEntrada);
+                const jornadas = await tx.jornada.findMany({
+                    where: {
+                        idEvento,
+                        entradas: { some: { id: { in: idsPedidos } } },
+                    },
                     include: { entradas: {
                         include: { _count: {
-                            select: { tickets: { where: 
+                            select: { tickets: { where:
                                 { estado: {notIn: ['Reembolsado', 'Anulado']}}}}
                         },
                         detallesOrden: {
@@ -37,19 +49,29 @@ export class ComprasService {
                     }
                     } },
                 });
-                
 
-                if (!contadorEntradas) {
-                    throw new NotFoundException('Evento no existe');
-                }
-
-                if (contadorEntradas.estado !== 'Activo') {
-                    throw new ConflictException('Evento no está activo');
-                }
-                const entradasConOcupacion = contadorEntradas.entradas.map((e) => ({
-                    ...e,
-                    ocupadas: e._count.tickets + e.detallesOrden.reduce((suma, d) => suma + d.cantidad, 0),
+                const jornadasConOcupacion = jornadas.map((jornada) => ({
+                    ...jornada,
+                    entradas: jornada.entradas.map((e) => ({
+                        ...e,
+                        ocupadas: e._count.tickets + e.detallesOrden.reduce((suma, d) => suma + d.cantidad, 0),
+                    })),
                 }));
+                const entradasConOcupacion = jornadasConOcupacion.flatMap((j) => j.entradas);
+
+                // Una entrada que no apareció no existe o es de otro evento: no se distingue a propósito
+                const idsEncontrados = new Set(entradasConOcupacion.map((e) => e.id));
+                if (idsPedidos.some((id) => !idsEncontrados.has(id))) {
+                    throw new NotFoundException('Una o más entradas solicitadas no están disponibles');
+                }
+
+                if (jornadasConOcupacion.some((j) => j.estado !== 'Activo')) {
+                    throw new ConflictException('Una de las jornadas seleccionadas no está activa');
+                }
+                // La venta online cierra unas horas antes del inicio: después, las entradas se venden en la puerta
+                if (jornadasConOcupacion.some((j) => j.fechaHoraInicio <= limiteVentaOnline())) {
+                    throw new ConflictException('La venta online de una de las jornadas seleccionadas ya cerró');
+                }
 
                 // Solo se pueden comprar online las entradas publicadas, habilitadas y no físicas.
                 const entradasVendibles = entradasConOcupacion.filter(
@@ -57,28 +79,30 @@ export class ComprasService {
                 );
                 const pedidas = entradas.map((pedida) => {
                     const entrada = entradasVendibles.find((e) => e.id === pedida.idEntrada);
-                    
+
                     if (!entrada) {
                         throw new NotFoundException('Una o más entradas solicitadas no están disponibles');
                     }
-                    
+
                     if (entrada.cantidad !== null && (pedida.cantidad + entrada.ocupadas) > entrada.cantidad) {
                         throw new ConflictException(`La cantidad de entradas  ${entrada.descripcion} excede la disponible, o se agotaron`);
                     }
 
-                    return { ...pedida, entrada };   
+                    return { ...pedida, entrada };
                 });
 
-                const totalVendido = entradasConOcupacion.reduce((total, e) => {
-                    const cantidadVendida = total + e.ocupadas;
-                    return cantidadVendida;
-                }, 0);
+                // La capacidad es de cada jornada: se suma lo ocupado y lo pedido jornada por jornada
+                for (const jornada of jornadasConOcupacion) {
+                    const ocupadas = jornada.entradas.reduce((suma, e) => suma + e.ocupadas, 0);
+                    const solicitadas = pedidas
+                        .filter((p) => p.entrada.idJornada === jornada.id)
+                        .reduce((suma, p) => suma + p.cantidad, 0);
 
-                const totalSolicitado = entradas.reduce((total, e) => total + e.cantidad, 0);
-
-                if ((totalVendido + totalSolicitado) > contadorEntradas.capacidad){
-                    throw new ConflictException('No hay suficientes entradas disponibles');
+                    if ((ocupadas + solicitadas) > jornada.capacidad) {
+                        throw new ConflictException('No hay suficientes entradas disponibles');
+                    }
                 }
+
                 const total = pedidas.reduce(
                     (suma, p) => suma.plus(p.entrada.precio.mul(p.cantidad)),
                     new Prisma.Decimal(0),
@@ -86,7 +110,7 @@ export class ComprasService {
 
                 const cliente = await tx.cliente.upsert({
                     where: { dni: comprador.dni },
-                    update: { 
+                    update: {
                         nombre: comprador.nombre,
                         email: comprador.email,
                         telefono: comprador.telefono || undefined,
@@ -127,7 +151,7 @@ export class ComprasService {
                 }
 
                 return ordenCompra;
-        
+
             },{ isolationLevel: 'Serializable' });
         } catch (err) {
             // P2034: dos compras simultáneas chocaron y la base de datos abortó una
@@ -182,13 +206,13 @@ export class ComprasService {
                 data: nuevosTickets,
             });
         }
-        
+
         return await tx.ordenCompra.update({
             where: { id: idOrden },
             data: { estado: 'Aprobada', expiraEn: null },
             include: { detalles: { include: { entrada: { select: { descripcion: true } } } } },
         });
 
-      
+
     }
 }

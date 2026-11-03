@@ -16,12 +16,12 @@ export class ImagenEventoService {
     }
 
     async subirImagen(data: { idEvento: number, url: string}) {
-        const evento = await this.prisma.evento.findUnique({where: {id: data.idEvento} })
+        const evento = await this.prisma.evento.findUnique({ where: {id: data.idEvento} })
         if (!evento){
             await this.borrarArchivo(data.url)
             throw new NotFoundException('No existe el evento')
         }
-        if (evento.estado === 'Finalizado' || evento.estado === 'Cancelado'){
+        if (evento.estado === 'Finalizado'){
             await this.borrarArchivo(data.url)
             throw new ConflictException('No se puede asociar una imagen a un evento que ya concluyo')
         }

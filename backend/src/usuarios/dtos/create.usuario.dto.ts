@@ -1,5 +1,5 @@
 import { EstadoUsuario } from '@prisma/client';
-import { IsEnum, IsOptional, IsString, MinLength } from 'class-validator';
+import { ArrayUnique, IsArray, IsEnum, IsInt, IsOptional, IsString, MinLength } from 'class-validator';
 
 
 export class CreateUsuarioDto {
@@ -16,4 +16,10 @@ export class CreateUsuarioDto {
     @IsOptional()
     @IsEnum(EstadoUsuario)
     estado?: EstadoUsuario;
+
+    @IsOptional()
+    @IsArray()
+    @ArrayUnique()
+    @IsInt({ each: true })   // each: true valida cada elemento del array
+    idPerfiles?: number[]
 }

@@ -142,6 +142,7 @@ export class MovimientoFinancieroService {
         if (!evento) {
             throw new NotFoundException('El evento indicado no existe');
         }
+        // Mientras el evento no se publique, sigue siendo un borrador
         if (evento.estado === 'Borrador') {
             throw new ConflictException('No se pueden registrar movimientos en un evento en borrador');
         }

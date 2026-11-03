@@ -1,15 +1,16 @@
 import Btn from "../../../../ui/componentes/Btn.tsx";
 import GenericTable from "../../../../ui/componentes/GenericTable/GenericTable";
-import FiltroUsuarios from "../components/FiltroUsuarios";
+import FiltroUsuarios, { aplicarFiltrosUsuarios, filtrosUsuariosVacios, type FiltrosUsuarios } from "../components/FiltroUsuarios";
 import CrearUsuarioModal from "../modals/CrearUsuarioModal.tsx";
 import EditarUsuarioModal from "../modals/EditarUsuarioModal.tsx";
 import Header from "../../../../ui/componentes/Header";
 import ConfirmarAccion from "../../../../ui/componentes/ConfirmarAccion";
 import ContenedorDatos from "../../../../ui/componentes/ContenedorDatos";
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { deleteUsuario, getUsuarios } from "../../../../services/usuariosService.ts";
 import type { Usuario } from "../../../../services/usuariosService.ts";
 import { columnasUsuario } from "../usuarios.columns.ts";
+import { getPerfiles, type Perfil } from "../../../../services/perfilesService.ts";
 
 // ── TIPOS ────────────────────────────────────────────────────────────────────
 
@@ -21,6 +22,9 @@ const UsuariosPage = () => {
     const [usuarios, setUsuarios] = useState<Usuario[]>([]);
     const [error, setError] = useState("");
     const [usuarioSeleccionado, setUsuarioSeleccionado] = useState<Usuario | null>(null);
+    const [perfiles, setPerfiles] = useState<Perfil[]>([]);
+    const [filtros, setFiltros] = useState<FiltrosUsuarios>(filtrosUsuariosVacios);
+
 
     useEffect(() => {
         getUsuarios()
@@ -28,10 +32,26 @@ const UsuariosPage = () => {
                 setUsuarios(response);
             })
             .catch(() => {
-                setError("No se pudieron cargar los usuarios");
+                setError("No se pudieron cargar los usuarios.");
             });
     }, []);
 
+    useEffect(() => {
+        getPerfiles()
+            .then((response) => {
+                setPerfiles(response);
+            })
+            .catch(() => {
+                setError("No se pudieron cargar los perfiles.");
+            });
+    }, []);
+    
+    const usuariosFiltrados = useMemo(
+        () => aplicarFiltrosUsuarios(usuarios, filtros),
+        [usuarios, filtros]
+    );
+    console.log(usuarios)
+  
     
     return (
         <main className=" gap-6 px-8 ">
@@ -60,27 +80,16 @@ const UsuariosPage = () => {
                 {/* Filtros */}
                 <div className="px-6 pt-4">
                     <FiltroUsuarios
-                        perfiles={[
-                            { id: 1, nombre: "Administrador" },
-                            { id: 2, nombre: "Operador" },
-                            { id: 3, nombre: "Supervisor" },
-                        ]}
-                        estados={[
-                            { id: 1, nombre: "Activo" },
-                            { id: 2, nombre: "Bloqueado" },
-                        ]}
-                        onFilterChange={(filtros) => {
-                            // TODO: conectar con la lógica de filtrado cuando
-                            // integres el backend
-                            console.log("Filtros actualizados:", filtros);
-                        }}
+                        filtros={filtros}
+                        onChange={setFiltros}
+                        perfiles={perfiles}
                     />
                 </div>
 
                 {/* Tabla */}
                 <GenericTable<Usuario>
                     columns={columnasUsuario}
-                    data={usuarios}
+                    data={usuariosFiltrados}
                     actions={(row) => (
                         // flex + gap reemplaza el mr-2 hardcodeado
                         <div className="grid grid-cols-2 gap-2">
@@ -115,6 +124,7 @@ const UsuariosPage = () => {
             <CrearUsuarioModal
                 isOpen={activarModal === "crearUsuario"}
                 closeModal={() => setActivarModal(null)}
+                perfiles={perfiles}
                 onCreated={() => {
                     getUsuarios().then(setUsuarios);
                     setActivarModal(null);
@@ -124,6 +134,7 @@ const UsuariosPage = () => {
                 isOpen={activarModal === "editarUsuario"}
                 closeModal={() => setActivarModal(null)}
                 usuario={usuarioSeleccionado}
+                perfiles={perfiles}
                 onUpdated={() => {
                     getUsuarios().then(setUsuarios);
                     setActivarModal(null);

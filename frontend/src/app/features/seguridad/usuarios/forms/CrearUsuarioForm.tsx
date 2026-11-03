@@ -5,12 +5,15 @@ import Btn from "../../../../ui/componentes/Btn";
 import type { FormEvent } from "react";
 import { createUsuario } from "../../../../services/usuariosService";
 import { useState } from "react";
+import type { Perfil } from "../../../../services/perfilesService";
+import SelectorPerfiles from "../components/SelectorPerfiles";
 
 type CreateUsuarioFormProps = {
     onCreated: () => void;
+    perfiles:  Perfil[] ; // Opcional, para el select de perfiles
 };
 
-const CrearUsuarioForm = ({ onCreated }: CreateUsuarioFormProps) => {
+const CrearUsuarioForm = ({ onCreated, perfiles }: CreateUsuarioFormProps) => {
     // Adentro de CrearUsuarioForm
     
     const [usuario, setUsuario] = useState("");
@@ -18,6 +21,7 @@ const CrearUsuarioForm = ({ onCreated }: CreateUsuarioFormProps) => {
     const [password, setPassword] = useState("");
     const [confirmPassword, setConfirmPassword] = useState("");
     const [error, setError] = useState("");
+    const [seleccionados, setSeleccionados] = useState<number[] | undefined>(undefined);
     
 
     const onSubmit = async (e: FormEvent) => {
@@ -27,7 +31,7 @@ const CrearUsuarioForm = ({ onCreated }: CreateUsuarioFormProps) => {
             return;
         }
         try {
-            await createUsuario({ usuario, nombre, password });
+            await createUsuario({ usuario, nombre, password, idPerfiles: seleccionados });
             
             onCreated(); 
         } catch (err) {
@@ -77,6 +81,11 @@ const CrearUsuarioForm = ({ onCreated }: CreateUsuarioFormProps) => {
                 required 
                 value={confirmPassword}
                 onChange={(e) => setConfirmPassword(e.target.value)}   
+            />
+            <SelectorPerfiles perfiles={perfiles} 
+                inicial={[]} 
+                seleccionados={seleccionados} 
+                onChange={setSeleccionados}
             />
             {error && <p className="text-sm text-red-500">{error}</p>}
             <Btn type="submit">

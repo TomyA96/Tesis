@@ -1,30 +1,20 @@
-import { IsDate,  IsString, IsOptional,  IsInt } from "class-validator";
+import { IsString, IsOptional, IsArray, ArrayMinSize, ValidateNested, IsNotEmpty } from "class-validator";
 import { Type } from "class-transformer";
-import { EstadoEvento } from "@prisma/client";
+import { CreateJornadaDto } from "../../jornadas/dtos/create.jornada.dto";
 
 export class CreateEventoDto {
     @IsString()
+    @IsNotEmpty()
     nombre!: string;
-
-    @Type(() => Date)
-    @IsDate()
-    fechaHoraInicio!: Date;
-
-    @Type(() => Date)
-    @IsDate()
-    fechaHoraFin!: Date;
-
-    @IsString()
-    ubicacion!: string;
-    @IsString()
-    @IsOptional()
-    direccion?: string;
-
-    @IsInt()
-    capacidad!: number;
 
     @IsOptional()
     @IsString()
     descripcion?: string;
 
+    @IsArray()
+    @ArrayMinSize(1)
+    // Valida cada elemento con las reglas de CreateJornadaDto; Type indica qué clase instanciar
+    @ValidateNested({ each: true })
+    @Type(() => CreateJornadaDto)
+    jornadas!: CreateJornadaDto[];
 }

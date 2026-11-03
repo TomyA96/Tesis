@@ -17,7 +17,7 @@ export class VentaBuffetController {
 
     @Post()
     create(@Body() data: {
-        idEvento: number,
+        idJornada: number,
         idUsuario: number,
         fechaHora?: Date,
         total: number,
@@ -27,7 +27,7 @@ export class VentaBuffetController {
 
     @Put(':id')
     update(@Param('id') id: string, @Body() data: {
-        idEvento?: number,
+        idJornada?: number,
         idUsuario?: number,
         fechaHora?: Date,
         total?: number,

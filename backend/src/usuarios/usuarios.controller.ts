@@ -35,13 +35,13 @@ export class UsuariosController {
     @Permisos('usuarios.crear')
     @Post()
     create(@Body() data: CreateUsuarioDto) {
-        return this.usuariosService.create(data);
+        return this.usuariosService.createUser(data);
     }
 
     @Permisos('usuarios.editar')
     @Put(':id')
     update(@Param('id') id: string, @Body() data: UpdateUsuarioDto) {
-        return this.usuariosService.update(Number(id), data);
+        return this.usuariosService.updateUser(Number(id), data);
     }
 
     @Permisos('usuarios.eliminar')

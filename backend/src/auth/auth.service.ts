@@ -1,20 +1,26 @@
-import { Injectable, UnauthorizedException } from '@nestjs/common';
+import { ForbiddenException, Injectable, UnauthorizedException } from '@nestjs/common';
 import { JwtService} from '@nestjs/jwt';
 
 import * as bcrypt from 'bcrypt'
 import { LoginDto } from './dtos/login.dto';
 import { UsuariosService } from '../usuarios/usuarios.service';
+import { PrismaService } from '../prisma/prisma.service';
 
 @Injectable()
 export class AuthService {
     constructor( 
+        private prisma: PrismaService,
         private userService: UsuariosService, 
         private jwtService: JwtService
     ) {}
 
     async login(data: LoginDto) {
         //Busco si existe el usuario
-        const user = await this.userService.findByUser(data.usuario)
+        //const user = await this.userService.findByUser(data.usuario)
+        const user = await this.prisma.usuario.findFirst({
+            where: { usuario: data.usuario, eliminado: false },
+            include: { _count: { select: { perfiles: true } }}
+        })
 
         if (!user){
             throw new UnauthorizedException('Credenciales incorrectas')
@@ -28,6 +34,10 @@ export class AuthService {
 
         if (!verifyPassword){
             throw new UnauthorizedException('Credenciales incorrectas')
+        }
+
+        if (user._count.perfiles === 0){
+            throw new ForbiddenException('Usuario no tiene perfiles asignados')
         }
 
         await this.userService.updateLastLogin(user.id)

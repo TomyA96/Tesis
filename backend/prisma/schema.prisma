@@ -178,29 +178,45 @@ model Auditoria {
 
 /* --------Tablas Modulo de Eventos--------------*/
 
+// El evento "mayor": agrupa una o más jornadas. Las imágenes, los productos del
+// buffet y los movimientos financieros son del evento completo.
 model Evento {
   id              Int      @id @default(autoincrement())
   nombre          String
-  fechaHoraInicio DateTime
-  fechaHoraFin    DateTime
-  ubicacion       String
   descripcion     String?
+  // Solo usa Borrador, Activo y Finalizado, y lo decide el organizador: nunca cambia solo
   estado          EstadoEvento @default(Borrador)
-  direccion       String?
-  capacidad       Int
 
-  entradas      Entrada[]
+  jornadas     Jornada[]
   imagenes      ImagenEvento[]
   productos     ProductoEvento[]
-  ventasBuffet  VentaBuffet[]
   movimientos    MovimientoFinanciero[]
 
   @@map("eventos")
 }
 
+// Cada fecha concreta del evento. Un evento de una sola noche tiene una jornada.
+// El inicio y el fin del evento se calculan a partir de sus jornadas.
+model Jornada {
+  id              Int      @id @default(autoincrement())
+  idEvento        Int
+  nombre          String?
+  fechaHoraInicio DateTime
+  fechaHoraFin    DateTime
+  direccion       String // lugar exacto de esta jornada
+  capacidad       Int
+  estado          EstadoEvento @default(Borrador)
+
+  evento        Evento  @relation(fields: [idEvento], references: [id])
+  entradas      Entrada[]
+  ventasBuffet  VentaBuffet[]
+
+  @@map("jornadas")
+}
+
 model Entrada {
   id          Int      @id @default(autoincrement())
-  idEvento    Int
+  idJornada   Int
   descripcion String
   precio      Decimal
   esFisica    Boolean
@@ -208,7 +224,7 @@ model Entrada {
   cantidad    Int?
   habilitada  Boolean @default(true)
 
-  evento   Evento  @relation(fields: [idEvento], references: [id])
+  jornada   Jornada  @relation(fields: [idJornada], references: [id])
   tickets   TicketEvento[]
   detallesOrden  DetalleOrdenCompra[]
   
@@ -359,12 +375,12 @@ model ProductoEvento {
 
 model VentaBuffet {
   id          Int      @id @default(autoincrement())
-  idEvento    Int
+  idJornada   Int
   idUsuario   Int
   fechaHora   DateTime @default(now())
   total       Decimal
 
-  evento        Evento  @relation(fields: [idEvento], references: [id])
+  jornada       Jornada @relation(fields: [idJornada], references: [id])
   usuario       Usuario @relation(fields: [idUsuario], references: [id])
   detalleVenta  DetalleVentaBuffet[]
 

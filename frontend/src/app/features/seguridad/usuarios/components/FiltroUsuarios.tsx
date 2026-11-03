@@ -1,29 +1,44 @@
-import React from "react";
+
 import Select from "../../../../ui/componentes/Select";
 import Input from "../../../../ui/componentes/Input";
 import Btn from "../../../../ui/componentes/Btn";
 import ContenedorFiltros from "../../../../ui/componentes/ContenedorFiltros";
-import { opcionesEstadoUsuario } from "../../../../services/usuariosService";
+import { opcionesEstadoUsuario, type EstadoUsuario, type Usuario } from "../../../../services/usuariosService";
+import type { Perfil } from "../../../../services/perfilesService";
 
-type FiltroUsuariosProps = {
-    perfiles: { id: number; nombre: string }[];
-    estados: { id: number; nombre: string }[];
-    onFilterChange?: (filtros: { perfilId: number | null; estadoId: number | null; searchTerm: string }) => void;
+export type FiltrosUsuarios = {
+    idPerfil: number ;
+    estado: EstadoUsuario | "";
+    nombreUsuario : string;
+    
 };
 
-const FiltroUsuarios = ({ perfiles, estados, onFilterChange }: FiltroUsuariosProps) => {
-    const [perfilId, setPerfilId] = React.useState<number | null>(null);
-    const [estadoId, setEstadoId] = React.useState<number | null>(null);
-    const [searchTerm, setSearchTerm] = React.useState<string>("");
-    const handleFilterChange = () => {
-        if (onFilterChange) {
-            onFilterChange({ perfilId, estadoId, searchTerm });
-        }
-    };
+export const filtrosUsuariosVacios: FiltrosUsuarios = { 
+    idPerfil: 0,
+    estado: "",
+    nombreUsuario: "",
+};
 
-    React.useEffect(() => {
-        handleFilterChange();
-    }, [perfilId, estadoId, searchTerm]);
+export const aplicarFiltrosUsuarios = (usuarios: Usuario[], filtros: FiltrosUsuarios) => {
+    const texto = filtros.nombreUsuario.trim().toLowerCase();
+
+    return usuarios.filter((usuario) => {
+        const coincideNombre = usuario.nombre.toLowerCase().includes(texto) || usuario.usuario.toLowerCase().includes(texto);
+        const coincideEstado = filtros.estado === "" || filtros.estado === usuario.estado;
+        const coincidePerfil = filtros.idPerfil === 0 || usuario.perfiles.some((p) => p.idPerfil === filtros.idPerfil);
+        return coincideNombre && coincideEstado && coincidePerfil;
+    })}
+        
+
+type FiltroUsuariosProps = {
+    filtros : FiltrosUsuarios;
+    onChange: (filtros: FiltrosUsuarios) => void;
+    perfiles: Perfil[];
+};
+
+
+const FiltroUsuarios = ({ filtros, onChange, perfiles }: FiltroUsuariosProps) => {
+    
     return (
         <ContenedorFiltros>
             <div className="flex gap-6  items-end">
@@ -31,26 +46,26 @@ const FiltroUsuarios = ({ perfiles, estados, onFilterChange }: FiltroUsuariosPro
                     type="text"
                     placeholder="Buscar usuario por nombre"
                     className="min-w-[500px]"   
-                    value={searchTerm}
-                    onChange={(e) => setSearchTerm(e.target.value)}
+                    value={filtros.nombreUsuario}
+                    onChange={(e) => onChange({...filtros, nombreUsuario: e.target.value})}
                 />  
                 <Select
                     label="Perfil"
-                    className="w-1/6"   
-                    opciones={[{ label: "Todos", value: "" }, ...perfiles.map((p) => ({ label: p.nombre, value: p.id }))]}
-                    value={perfilId ?? ""}
-                    onChange={(e) => setPerfilId(e.target.value ? Number(e.target.value) : null)}
+                     className="min-w-40"
+                    opciones={[{label: "Todos", value: 0} , ...perfiles.map((p) => ( {label: p.nombre, value: p.id}))]}
+                    value={filtros.idPerfil}
+                    onChange={(e) => onChange({ ...filtros, idPerfil: Number(e.target.value) })} 
                 />
                 <Select
                     label="Estado"  
-                    className="w-1/6"
+                    className="min-w-40"
                     opciones={[{ label: "Todos", value: "" }, ...opcionesEstadoUsuario]}
-                    value={[]}
-                    onChange={(e) => setEstadoId(e.target.value ? Number(e.target.value) : null)}
+                    value={filtros.estado}
+                    onChange={(e) => onChange({ ...filtros, estado: e.target.value as EstadoUsuario | ""})}
                 />
             </div>
             <div className="flex items-end">
-                <Btn variant="outline">
+                <Btn variant="outline" onClick={() => onChange(filtrosUsuariosVacios)}>
                     Limpiar Filtros
                 </Btn>
             </div>

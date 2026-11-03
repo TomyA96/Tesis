@@ -14,7 +14,7 @@ export class VentaBuffetService {
     }
 
     create(data: {
-        idEvento: number,
+        idJornada: number,
         idUsuario: number,
         fechaHora?: Date,
         total: number,
@@ -23,7 +23,7 @@ export class VentaBuffetService {
     }
 
     update(id: number, data: {
-        idEvento?: number,
+        idJornada?: number,
         idUsuario?: number,
         fechaHora?: Date,
         total?: number,

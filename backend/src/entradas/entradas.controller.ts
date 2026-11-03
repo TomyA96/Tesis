@@ -1,4 +1,4 @@
-import { Controller, Get, Post, Put, Delete, Param, Body, Query, UseGuards, Header, StreamableFile } from '@nestjs/common';
+import { BadRequestException, Controller, Get, Post, Put, Delete, Param, Body, Query, UseGuards, Header, StreamableFile } from '@nestjs/common';
 import { EstadoEntrada } from '@prisma/client';
 import { EntradasService } from './entradas.service';
 import { CreateEntradaDto } from './dtos/create.entrada.dto';
@@ -14,8 +14,14 @@ export class EntradasController {
 
     @Permisos("entradas.ver")
     @Get()
-    findAll(@Query('idEvento') idEvento: string) {
-        return this.entradasService.findAll(Number(idEvento))
+    findAll(@Query('idJornada') idJornada?: string, @Query('idEvento') idEvento?: string) {
+        if (!idJornada && !idEvento) {
+            throw new BadRequestException('Indicá idJornada o idEvento para listar las entradas');
+        }
+        return this.entradasService.findAll({
+            idJornada: idJornada ? Number(idJornada) : undefined,
+            idEvento: idEvento ? Number(idEvento) : undefined,
+        })
     }
 
     @Permisos('entradas.ver')

@@ -27,3 +27,17 @@ export const renderEstado = (value: string | number): ReactNode => {
     </span>
   );
 };
+
+export const listarPerfilesUsuario = (perfiles: { idPerfil: number; perfil: { nombre: string } }[]) => {
+  if (!perfiles || perfiles.length === 0) {
+    return "—"; // Retorna un guion si no hay perfiles
+  }
+  return (
+  <>
+      {perfiles.map((perfil) => (
+          <span key={perfil.idPerfil} className="flex w-fit mt-1 bg-gray-100 text-gray-700 px-2 py-0.5 rounded-full text-xs font-semibold mr-1">
+              {perfil.perfil.nombre.at(0)?.toUpperCase() + perfil.perfil.nombre.slice(1).toLowerCase()}
+          </span>
+      ))}
+  </>);
+}

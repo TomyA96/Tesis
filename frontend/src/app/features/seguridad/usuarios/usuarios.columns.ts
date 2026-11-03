@@ -1,6 +1,6 @@
 import type { Column } from "../../../ui/componentes/GenericTable/GenericTable.types";
 import type { Usuario } from "../../../services/usuariosService";
-import { renderEstado } from "../../../ui/componentes/GenericTable/genericTabla.utils";
+import { listarPerfilesUsuario, renderEstado } from "../../../ui/componentes/GenericTable/genericTabla.utils";
 
 export const columnasUsuario: Column<Usuario>[] = [
   {
@@ -26,4 +26,9 @@ export const columnasUsuario: Column<Usuario>[] = [
     label: "Último acceso",
     render: (value) => (value ? new Date(value as string).toLocaleString() : "—"),
   },
+  {
+    key: "perfiles",
+    label: "Perfiles",
+    render: (value) => listarPerfilesUsuario(value as { idPerfil: number; perfil: { nombre: string } }[]),
+  }
 ];

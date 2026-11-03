@@ -13,6 +13,7 @@ export interface Usuario {
     password: string;
     estado:EstadoUsuario;
     ultimoAcceso: string | null;
+    perfiles: { idPerfil: number; perfil: { nombre: string } }[];
 
 }
 
@@ -21,12 +22,14 @@ export interface CreateUsuario {
     nombre: string;
     password: string;
     estado?: EstadoUsuario;
+    idPerfiles?: number[]; // Array de IDs de perfiles asociados al usuario
 }
 
 export interface UpdateUsuario {
     nombre?: string;
     password?: string;
     estado?: EstadoUsuario;
+    idPerfiles?: number[]; // Array de IDs de perfiles asociados al usuario
 }
 
 

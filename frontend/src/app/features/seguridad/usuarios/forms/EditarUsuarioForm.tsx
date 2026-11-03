@@ -3,31 +3,34 @@ import Input from "../../../../ui/componentes/Input";
 import Btn from "../../../../ui/componentes/Btn";
 import Select from "../../../../ui/componentes/Select";
 import { useState, type FormEvent } from "react";
+import SelectorPerfiles from "../components/SelectorPerfiles";
+import type { Perfil } from "../../../../services/perfilesService";
 import { opcionesEstadoUsuario, updateUsuario, type EstadoUsuario, type Usuario , type UpdateUsuario} from "../../../../services/usuariosService";
 
 
 
 type EditarUsuarioFormProps = {
     usuario: Usuario;
+    perfiles: Perfil[];
     onCancel: () => void;
     onUpdated: () => void; 
 }
 
 type camposEditables = {
     password: boolean;
-    perfil: boolean;
     estado: boolean; 
 }
 
-const EditarUsuarioForm = ({usuario, onCancel, onUpdated}: EditarUsuarioFormProps) => {
+const EditarUsuarioForm = ({usuario, perfiles, onCancel, onUpdated}: EditarUsuarioFormProps) => {
     const [nombre, setNombre] = useState(usuario.nombre);
     const [password, setPassword] = useState("");
     const [confirmPassword, setConfirmPassword] = useState("");
     const [estado, setEstado] = useState<EstadoUsuario>(usuario.estado);
     const [error, setError] = useState("");
+    // undefined = no se tocan los perfiles del usuario
+    const [idPerfiles, setIdPerfiles] = useState<number[] | undefined>(undefined);
     const [camposEditables, setCamposEditables] = useState<camposEditables>({
         password: false,
-        perfil: false ,
         estado: false
     });
     const activarCampo = (campo: keyof camposEditables) => {
@@ -55,6 +58,9 @@ const EditarUsuarioForm = ({usuario, onCancel, onUpdated}: EditarUsuarioFormProp
         if (camposEditables.estado) {
             newData.estado = estado;
         }
+        if (idPerfiles !== undefined) {
+            newData.idPerfiles = idPerfiles;
+        }
         
 
         try {
@@ -81,6 +87,12 @@ const EditarUsuarioForm = ({usuario, onCancel, onUpdated}: EditarUsuarioFormProp
                 value={nombre}
                 onChange={(e) => setNombre(e.target.value)}
             />
+            <SelectorPerfiles
+                perfiles={perfiles}
+                inicial={usuario.perfiles.map((p) => p.idPerfil)}
+                seleccionados={idPerfiles}
+                onChange={setIdPerfiles}
+            />
             <div className="border border-gray-200 rounded-lg p-2 ">
                 <div className="flex items-center justify-between   cursor-pointer hover:bg-gray-50"
                  onClick={() => activarCampo("password")}>
@@ -90,6 +102,7 @@ const EditarUsuarioForm = ({usuario, onCancel, onUpdated}: EditarUsuarioFormProp
                         {camposEditables.password ? "▲" : "▼"}
                     </span>
                 </div>
+                
                 {camposEditables.password && (
                  <div className="flex flex-col gap-4" >
                     <Input label="Contraseña" 
@@ -110,18 +123,7 @@ const EditarUsuarioForm = ({usuario, onCancel, onUpdated}: EditarUsuarioFormProp
                     />
                 </div>)}
             </div>
-            {/* Aquí irían los campos del formulario 
-            <div className="border border-gray-200 rounded-lg p-2">
-                <div className="flex items-center justify-between   cursor-pointer hover:bg-gray-50"
-                onClick={() => activarCampo("perfil")}>
-                    <h2 className="font-semibold ">Cambiar perfil</h2>
-                    <span className="text-sm">
-                        {camposEditables.perfil ? "▲" : "▼"}
-                    </span>
-                </div>
-                {camposEditables.perfil && (<Select label="Perfiles" name="perfil" opciones={usuario.perfiles}/>)}
-            </div>
-            */}
+            
             <div className="border border-gray-200 rounded-lg p-2">
                 <div className="flex items-center justify-between   cursor-pointer hover:bg-gray-50"
                 onClick={() => activarCampo("estado")}>

@@ -12,10 +12,18 @@ import { generarQR } from './utils/generarQR';
 export class EntradasService {
     constructor(private prisma: PrismaService) {}
 
-    async findAll(idEvento: number) {
+    // Se puede listar por jornada o por evento (todas las entradas de todas sus jornadas)
+    async findAll(filtro: { idJornada?: number; idEvento?: number }) {
         const entradas = await this.prisma.entrada.findMany({
-            where: { idEvento },
-            include: { _count: { select: { tickets: true } } },
+            where: {
+                idJornada: filtro.idJornada,
+                jornada: filtro.idEvento ? { idEvento: filtro.idEvento } : undefined,
+            },
+            include: {
+                jornada: { select: { id: true, nombre: true, fechaHoraInicio: true } },
+                _count: { select: { tickets: true } },
+            },
+            orderBy: [{ jornada: { fechaHoraInicio: 'asc' } }, { id: 'asc' }],
         });
 
         return entradas.map((entrada) => {
@@ -30,21 +38,21 @@ export class EntradasService {
     }
 
     async createEntrada(data: CreateEntradaDto) {
-        const evento = await this.prisma.evento.findUnique({ where: { id: data.idEvento } });
-        if (!evento) {
-            throw new NotFoundException('No existe el evento al que intentas asociar la entrada');
+        const jornada = await this.prisma.jornada.findUnique({ where: { id: data.idJornada } });
+        if (!jornada) {
+            throw new NotFoundException('No existe la jornada a la que intentas asociar la entrada');
         }
-        if (evento.estado === "Finalizado" || evento.estado === "Cancelado") {
-            throw new ConflictException('No se puede crear una entrada para un evento finalizado o cancelado');
+        if (jornada.estado === "Finalizado" || jornada.estado === "Cancelado") {
+            throw new ConflictException('No se puede crear una entrada para una jornada finalizada o cancelada');
         }
         const suma = await this.prisma.entrada.aggregate({
-            where: { idEvento: data.idEvento },
+            where: { idJornada: data.idJornada },
             _sum: { cantidad: true },
         })
-        if (data.cantidad !== undefined && ((suma._sum.cantidad ?? 0) + data.cantidad > evento.capacidad) ){
-            throw new ConflictException(`La cantidad de entradas excede la capacidad del evento. Capacidad restante: ${evento.capacidad - (suma._sum.cantidad ?? 0)}`);
+        if (data.cantidad !== undefined && ((suma._sum.cantidad ?? 0) + data.cantidad > jornada.capacidad) ){
+            throw new ConflictException(`La cantidad de entradas excede la capacidad de la jornada. Capacidad restante: ${jornada.capacidad - (suma._sum.cantidad ?? 0)}`);
         }
-        await this.validarDescripcionDisponible(data.idEvento, data.descripcion);
+        await this.validarDescripcionDisponible(data.idJornada, data.descripcion);
         return this.prisma.entrada.create({ data });
     }
 
@@ -54,22 +62,22 @@ export class EntradasService {
             throw new NotFoundException('La entrada no existe');
         }
         if (data.descripcion) {
-            await this.validarDescripcionDisponible(entrada.idEvento, data.descripcion, id)
+            await this.validarDescripcionDisponible(entrada.idJornada, data.descripcion, id)
         }
         if (data.cantidad !== undefined) {
             if (entrada.estado !== "Borrador") {
                 throw new ConflictException('No se puede modificar la cantidad de una entrada que ya fue publicada');
             }
-            const evento = await this.prisma.evento.findUnique({ where: { id: entrada.idEvento } });
-            if (!evento) {
-                throw new NotFoundException('No existe el evento al que pertenece la entrada');
+            const jornada = await this.prisma.jornada.findUnique({ where: { id: entrada.idJornada } });
+            if (!jornada) {
+                throw new NotFoundException('No existe la jornada a la que pertenece la entrada');
             }
             const suma = await this.prisma.entrada.aggregate({
-                where: { idEvento: entrada.idEvento, id: { not: id } },
+                where: { idJornada: entrada.idJornada, id: { not: id } },
                 _sum: { cantidad: true },
             })
-            if ((suma._sum.cantidad ?? 0) + data.cantidad > evento.capacidad) {
-                throw new ConflictException(`La cantidad de entradas excede la capacidad del evento. Capacidad restante: ${evento.capacidad - (suma._sum.cantidad ?? 0)}`);
+            if ((suma._sum.cantidad ?? 0) + data.cantidad > jornada.capacidad) {
+                throw new ConflictException(`La cantidad de entradas excede la capacidad de la jornada. Capacidad restante: ${jornada.capacidad - (suma._sum.cantidad ?? 0)}`);
             }
         }
 
@@ -83,15 +91,15 @@ export class EntradasService {
     async publicarEntrada(id: number) {
         const entrada = await this.prisma.entrada.findUnique({
             where: { id },
-            include: { evento: true },
+            include: { jornada: true },
          
         })
 
         if (!entrada) {
             throw new NotFoundException('La entrada no existe');
         }
-        if (entrada.evento.estado !== "Activo") {
-            throw new ConflictException('No se puede publicar una entrada de un evento que no está activo');
+        if (entrada.jornada.estado !== "Activo") {
+            throw new ConflictException('No se puede publicar una entrada de una jornada que no está activa');
         }
         if (entrada.estado !== "Borrador") {
             throw new ConflictException('No se puede publicar esta entrada');
@@ -123,7 +131,7 @@ export class EntradasService {
         const entrada = await this.prisma.entrada.findUnique({
             where: { id },
             include: { 
-                evento: true,
+                jornada: { include: { evento: true } },
                 _count: { select: { tickets: true } }
             },    
         })
@@ -134,8 +142,8 @@ export class EntradasService {
         if (entrada._count.tickets > 0){
             throw new ConflictException('Estos tickets ya fueron impresos, no se pueden volver a imprimir');
         }
-        if (entrada.evento.estado !== "Activo") {
-            throw new ConflictException('No se puede imprimir una entrada de un evento que no está activo');
+        if (entrada.jornada.estado !== "Activo") {
+            throw new ConflictException('No se puede imprimir una entrada de una jornada que no está activa');
         }
         if (entrada.estado !== "Disponible") {
             throw new ConflictException('No se puede imprimir esta entrada todavia');
@@ -180,15 +188,23 @@ export class EntradasService {
             return tamano;
         }
 
+        // Los tickets de distintas jornadas del mismo evento se distinguen por la fecha impresa
+        const fechaJornada = entrada.jornada.fechaHoraInicio.toLocaleDateString('es-AR', {
+            day: '2-digit',
+            month: '2-digit',
+            year: 'numeric',
+            timeZone: 'America/Argentina/Buenos_Aires',
+        });
         const ticketsPDF = new PDFDocument({ autoFirstPage: false});
         for (const { ticket, qr } of QRsGenerados) {
 
             ticketsPDF.addPage({ size: [300, 300], margins: { top: 0, bottom: 0, left: 0, right: 0 }, });
             ticketsPDF.font('Helvetica-Bold');
-            ajustarFontSize(ticketsPDF, `${entrada.evento.nombre}`, 280, 18, 10);
-            ticketsPDF.text(`${entrada.evento.nombre}`, centrarX(ticketsPDF, `${entrada.evento.nombre}`, 300), 20);
+            ajustarFontSize(ticketsPDF, `${entrada.jornada.evento.nombre}`, 280, 18, 10);
+            ticketsPDF.text(`${entrada.jornada.evento.nombre}`, centrarX(ticketsPDF, `${entrada.jornada.evento.nombre}`, 300), 20);
             ticketsPDF.image(qr, (300-200)/2, 50, { width: 200, height: 200 });
-            ticketsPDF.font('Helvetica-Bold').fontSize(12).text(`#${ticket.numero}`,centrarX(ticketsPDF, `#${ticket.numero}`, 300), 250);
+            const numeroYFecha = `#${ticket.numero} - ${fechaJornada}`;
+            ticketsPDF.font('Helvetica-Bold').fontSize(12).text(numeroYFecha, centrarX(ticketsPDF, numeroYFecha, 300), 250);
             ajustarFontSize(ticketsPDF, `${entrada.descripcion}`, 280, 10, 8);
             ticketsPDF.font('Helvetica').fontSize(12).text(`${entrada.descripcion}`,centrarX(ticketsPDF, `${entrada.descripcion}`, 300), 263);
             
@@ -224,16 +240,17 @@ export class EntradasService {
         return this.prisma.entrada.delete({ where: { id } });
     }
 
-    private async validarDescripcionDisponible(idEvento: number, descripcion: string, idIgnorado?: number) {
+    // El nombre solo tiene que ser único dentro de la jornada: "General" puede repetirse en cada día
+    private async validarDescripcionDisponible(idJornada: number, descripcion: string, idIgnorado?: number) {
         const existente = await this.prisma.entrada.findFirst({
             where: {
-                idEvento,
+                idJornada,
                 descripcion: { equals: descripcion, mode: 'insensitive' },
                 id: idIgnorado ? { not: idIgnorado } : undefined,
             },
         });
         if (existente) {
-            throw new ConflictException('Ya existe una entrada con ese nombre para este evento');
+            throw new ConflictException('Ya existe una entrada con ese nombre para esta jornada');
         }
     }
 

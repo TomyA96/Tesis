@@ -1,4 +1,4 @@
-import { Injectable, ConflictException } from '@nestjs/common';
+import { Injectable, ConflictException, BadRequestException, NotFoundException } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 import {  Prisma } from '@prisma/client';
 import { CreateUsuarioDto } from './dtos/create.usuario.dto';
@@ -14,6 +14,11 @@ export class UsuariosService {
     findAll() {
         return this.prisma.usuario.findMany({
             where: { eliminado: false },
+            omit: { password: true},
+            include: { perfiles: { select: { 
+                idPerfil: true, 
+                perfil: { select: { nombre: true } }
+             } } },
         });
     }
 
@@ -48,26 +53,60 @@ export class UsuariosService {
         return [...new Set(permissionsUser)];
     }
 
-    async create(data: CreateUsuarioDto) {
-        const hashPassword = await bcrypt.hash(data.password, 10)
+    async createUser(data: CreateUsuarioDto) {
+        const { idPerfiles, password, ...resto } = data
+        const hashPassword = await bcrypt.hash(password, 10)
 
         try {
-            return await this.prisma.usuario.create({ data: { ...data, password: hashPassword } });
+            return await this.prisma.usuario.create({ 
+                data: {
+                    ...resto,
+                    password: hashPassword,
+                    perfiles: idPerfiles?.length  ? { create: idPerfiles.map((id) => ({ idPerfil: id })) } : undefined
+                }
+             });
         } catch (error) {
-            if (error instanceof Prisma.PrismaClientKnownRequestError && error.code === 'P2002') {
-                throw new ConflictException('Ese nombre de usuario ya existe');
-            }
-            throw error;
+            this.handlePrismaError(error);
         }
     }
-    
-    update(id: number, data: UpdateUsuarioDto) {
-        
-            return this.prisma.usuario.update({
+
+    async updateUser(id: number, data: UpdateUsuarioDto) {
+        const { idPerfiles, password, ...resto } = data
+
+        try {
+            return await this.prisma.usuario.update({
                 where: { id },
-                data
+                data: {
+                    ...resto,
+                    password: password ? await bcrypt.hash(password, 10) : undefined,
+                    perfiles: idPerfiles === undefined
+                        ? undefined
+                        : {
+                            deleteMany: {},   // borra todas las filas de este usuario
+                            create: idPerfiles.map((idPerfil) => ({ idPerfil })),
+                        },
+                },
             })
+        } catch (error) {
+            this.handlePrismaError(error);
         }
+    }
+
+    private handlePrismaError(error: unknown): never {
+        if (error instanceof Prisma.PrismaClientKnownRequestError) {
+            if (error.code === 'P2002') {
+                throw new ConflictException('Ese nombre de usuario ya existe');
+            }
+            if (error.code === 'P2003') {
+                throw new BadRequestException('Alguno de los perfiles indicados no existe');
+            }
+            if (error.code === 'P2025') {
+                throw new NotFoundException('Usuario no encontrado');
+            }
+        }
+        throw error;
+    }
+
     updateLastLogin(id: number){
         return this.prisma.usuario.update({
             where:{id},

@@ -4,7 +4,7 @@ import { IsInt, IsString, IsNumber, IsBoolean, ValidateIf, Min } from "class-val
 export class CreateEntradaDto {
 
     @IsInt()
-    idEvento!: number;
+    idJornada!: number;
 
     @IsString()
     descripcion!: string;
@@ -19,7 +19,7 @@ export class CreateEntradaDto {
 
     // Obligatoria solo para físicas: el lote de tickets se genera con una
     // cantidad fija. Las online, sin cantidad, quedan limitadas únicamente
-    // por la capacidad del evento.
+    // por la capacidad de la jornada.
     @ValidateIf((entrada) => entrada.esFisica)
     @IsInt()
     @Min(1)

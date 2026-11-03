@@ -1,4 +1,5 @@
 import { CreateEventoDto } from "./create.evento.dto";
-import { PartialType } from "@nestjs/mapped-types";
+import { OmitType, PartialType } from "@nestjs/mapped-types";
 
-export class UpdateEventoDto extends PartialType(CreateEventoDto){}
+// Solo datos propios del evento: las jornadas se modifican por separado
+export class UpdateEventoDto extends PartialType(OmitType(CreateEventoDto, ['jornadas'] as const)) {}

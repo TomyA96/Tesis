@@ -31,6 +31,16 @@ export const fechaAInputs = (fecha: Date) => ({
 export const combinarFechaHora = (fecha: string, hora: string) =>
     new Date(`${fecha}T${hora}${OFFSET_ARGENTINA}`);
 
+/*
+    Del "AAAA-MM-DD" de un input date a un Date en hora LOCAL (para el
+    calendario). new Date("AAAA-MM-DD") lo tomaría como UTC y en Argentina
+    caería el día anterior; con las partes sueltas no pasa.
+*/
+export const inputADia = (fecha: string) => {
+    const [anio, mes, dia] = fecha.split("-").map(Number);
+    return new Date(anio, mes - 1, dia);
+};
+
 // Diferencia entre dos fechas, en horas — para precargar el campo "duración".
 export const calcularDuracionHoras = (inicio: Date, fin: Date) =>
     String((fin.getTime() - inicio.getTime()) / (60 * 60 * 1000));
