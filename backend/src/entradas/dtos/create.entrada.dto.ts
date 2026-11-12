@@ -1,4 +1,6 @@
-import { IsInt, IsString, IsNumber, IsBoolean, ValidateIf, Min } from "class-validator";
+import { IsInt, IsString, IsNumber, IsBoolean, Min, IsNotEmpty } from "class-validator";
+import { Transform } from "class-transformer";
+import { limpiarTexto } from "../../jornadas/dtos/create.jornada.dto";
 
 
 export class CreateEntradaDto {
@@ -6,7 +8,10 @@ export class CreateEntradaDto {
     @IsInt()
     idJornada!: number;
 
+    // Se recortan los espacios antes de validar: "   " llega vacío y se rechaza
+    @Transform(limpiarTexto)
     @IsString()
+    @IsNotEmpty()
     descripcion!: string;
 
 
@@ -17,11 +22,9 @@ export class CreateEntradaDto {
     @IsBoolean()
     esFisica!: boolean;
 
-    // Obligatoria solo para físicas: el lote de tickets se genera con una
-    // cantidad fija. Las online, sin cantidad, quedan limitadas únicamente
-    // por la capacidad de la jornada.
-    @ValidateIf((entrada) => entrada.esFisica)
+    // Obligatoria para los dos tipos: es la cantidad de tickets que se crean
+    // al publicar (online) o imprimir (física) el lote
     @IsInt()
     @Min(1)
-    cantidad?: number;
+    cantidad!: number;
 }

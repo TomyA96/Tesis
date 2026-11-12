@@ -6,19 +6,19 @@ import type { Entrada } from "../../../services/entradasService";
 type EntradaModalProps = {
     isOpen: boolean;
     closeModal: () => void;
-    idEvento: number;
+    idJornada: number;
     entrada?:Entrada;
     onSaved: (entrada: Entrada) => void;
 }
 
-const EntradaModal = ({isOpen, closeModal, idEvento, entrada, onSaved}: EntradaModalProps) => {
+const EntradaModal = ({isOpen, closeModal, idJornada, entrada, onSaved}: EntradaModalProps) => {
     return (
         <Modal
             isOpen={isOpen}
             closeModal={closeModal}
             title={entrada ? "Editar entrada" : "Crear entrada"}
             >
-            <EntradaForm idEvento={Number(idEvento)} onSaved={onSaved} onCancel={closeModal} entrada={entrada} />
+            <EntradaForm idJornada={idJornada}onSaved={onSaved} onCancel={closeModal} entrada={entrada} />
         </Modal>
     );
 }

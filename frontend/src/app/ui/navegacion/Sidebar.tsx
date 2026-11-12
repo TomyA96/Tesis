@@ -85,6 +85,7 @@ const Sidebar = () => {
                         href={RUTAS.eventos.inicio}
                         opciones={[
                             {label: "Crear Evento", href: RUTAS.eventos.crear},
+                            {label: "Puntos de venta", href: RUTAS.eventos.puntosVenta},
                         ]}
                     />
                     <Menu

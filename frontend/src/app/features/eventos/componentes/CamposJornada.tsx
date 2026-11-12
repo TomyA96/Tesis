@@ -1,5 +1,5 @@
 import Input from "../../../ui/componentes/Input";
-import type { CampoJornada, JornadaFormData } from "../utils/jornadaForm";
+import { NOMBRE_JORNADA_MAX, type CampoJornada, type JornadaFormData } from "../utils/jornadaForm";
 
 type CamposJornadaProps = {
     datos: JornadaFormData;
@@ -35,6 +35,7 @@ const CamposJornada = ({ datos, onChange, disabled = false, fechasDeshabilitadas
                 id={idDe("nombre")}
                 name="nombre"
                 type="text"
+                maxLength={NOMBRE_JORNADA_MAX}
                 placeholder="Ej: Día 1, Fecha 3"
                 disabled={disabled}
                 value={datos.nombre}

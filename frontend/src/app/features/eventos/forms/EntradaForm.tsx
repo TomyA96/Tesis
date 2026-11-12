@@ -14,7 +14,7 @@ type EntradaFormData = {
 };
 
 type EntradaFormProps = {
-    idEvento: number;
+    idJornada: number;
     entrada?: Entrada;
     onSaved: (entrada: Entrada) => void;
     onCancel: () => void;
@@ -35,67 +35,71 @@ const entradaAFormulario = ( entrada?: Entrada): EntradaFormData => {
     
 
 
-const EntradaForm = ({idEvento, entrada, onSaved, onCancel}:EntradaFormProps) => {
+const EntradaForm = ({idJornada, entrada, onSaved, onCancel}:EntradaFormProps) => {
     const [datos, setDatos] = useState<EntradaFormData>(entradaAFormulario(entrada));
     const [error, setError] = useState<string>("");
-    
-   
-       const onSubmit = async (e: React.FormEvent) => {
+
+    // Si el usuario corrige algo, el aviso anterior ya no corresponde
+    const cambiar = (cambios: Partial<EntradaFormData>) => {
+        setDatos((prev) => ({ ...prev, ...cambios }));
+        setError("");
+    };
+
+    // Publicado el lote, sus tickets ya existen con su precio y su número: solo se corrige el nombre
+    const soloNombre = !!entrada && entrada.estado !== "Borrador";
+
+    const onSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
         setError("");
-        if (!idEvento) return;
-        const entradaData = {
-                
-                descripcion: datos.descripcion,
-                precio: parseFloat(datos.precio),
-                esFisica: datos.esFisica,
-                cantidad: datos.cantidad === "" ? undefined : parseInt(datos.cantidad)
-        };
-        
-        if (entradaData.precio < 0) {
-            setError("El precio del ticket no puede ser negativo");
+
+        const descripcion = datos.descripcion.trim();
+        // Number("") da 0: por eso el precio vacío se controla aparte
+        const precio = Number(datos.precio);
+        const cantidad = Number(datos.cantidad);
+
+        if (!descripcion) {
+            setError("Ingresá una descripción para el lote");
             return;
         }
-        if (entradaData.esFisica && (entradaData.cantidad === undefined || entradaData.cantidad <= 0)) {
-            setError("La cantidad de entradas físicas debe ser mayor a cero");
+        if (datos.precio === "" || !Number.isFinite(precio) || precio < 0) {
+            setError("Ingresá un precio válido (0 si es gratuita)");
             return;
         }
-        try{
-            if (!entrada){
-            const entradaCreada = await createEntrada({...entradaData, idEvento});
-            onSaved(entradaCreada);
-            }else{
-                const { esFisica, ...datosParaActualizar } = entradaData;
-                const entradaActualizada = await updateEntrada(entrada.id , datosParaActualizar)
-                onSaved(entradaActualizada);
+        if (!Number.isInteger(cantidad) || cantidad < 1) {
+            setError("La cantidad tiene que ser un número entero mayor a 0");
+            return;
+        }
+
+        try {
+            if (!entrada) {
+                onSaved(await createEntrada({ descripcion, precio, esFisica: datos.esFisica, cantidad, idJornada }));
+            } else {
+                // El tipo no se cambia nunca; precio y cantidad, solo en Borrador
+                onSaved(await updateEntrada(entrada.id, soloNombre ? { descripcion } : { descripcion, precio, cantidad }));
             }
-        }catch(error){
-          
+        } catch (error) {
             setError(error instanceof Error ? error.message : "Error desconocido al guardar la entrada");
         }
     }
 
-    
-    
-    
     return (
-        <Formulario autoComplete="off" className="border border-gray-200 rounded-lg p-4 min-w-[400px]" onSubmit={onSubmit}>
-            
-                <Input label="Descripcion" name="descripcion" 
+        // noValidate: las validaciones son las de onSubmit, así no aparecen también los globos del navegador
+        <Formulario autoComplete="off" noValidate className="border border-gray-200 rounded-lg p-4 min-w-[400px]" onSubmit={onSubmit}>
+
+                <Input label="Descripcion" name="descripcion"
                     placeholder="Ej: Entrada General, VIP, etc."
-                    type="text" 
+                    type="text"
                     value={datos.descripcion}
-                    onChange={(e) => setDatos({ ...datos, descripcion: e.target.value})}  
-                    required 
+                    onChange={(e) => cambiar({ descripcion: e.target.value })}
                 />
-                <Input label="Precio" name="precio" 
-                    type="number" 
+                <Input label="Precio" name="precio"
+                    type="number"
                     placeholder="Ingresar precio del ticket"
                     min={0}
                     step={1000}
                     value={datos.precio}
-                    onChange={(e) => setDatos({ ...datos, precio: e.target.value})}
-                    required 
+                    disabled={soloNombre}
+                    onChange={(e) => cambiar({ precio: e.target.value })}
                 />
                 <div className={cn("border border-gray-300 rounded-md p-2",  entrada ? "bg-gray-100" : "")}>
                     <strong className="text-sm font-semibold mb-2 block">Tipo de Entrada</strong>
@@ -104,7 +108,7 @@ const EntradaForm = ({idEvento, entrada, onSaved, onCancel}:EntradaFormProps) =>
                         <div className="flex items-center">
                             <Input type="radio" name="eTipo" 
                             checked={datos.esFisica === false }
-                            onChange={() => setDatos({...datos, esFisica: false})}
+                            onChange={() => cambiar({ esFisica: false })}
                             disabled={(entrada) ? true : false}
                             />
                             <label className="mx-2 text-sm">Entrada Online</label>
@@ -112,7 +116,7 @@ const EntradaForm = ({idEvento, entrada, onSaved, onCancel}:EntradaFormProps) =>
                         <div className="flex items-center">
                             <Input type="radio" name="eTipo"
                             checked={datos.esFisica === true}
-                            onChange={() => setDatos({...datos, esFisica: true})}
+                            onChange={() => cambiar({ esFisica: true })}
                             disabled={(entrada) ? true : false}
                             />
                             <label className="mx-2 text-sm">Entrada Física</label>
@@ -124,23 +128,22 @@ const EntradaForm = ({idEvento, entrada, onSaved, onCancel}:EntradaFormProps) =>
                 
                 <div className="flex flex-col justify-start p-2 border border-gray-300 rounded-md gap-3">
                     <div className="flex items-center gap-2">
-                        <strong className="text-sm font-semibold">Asignar cantidad de entradas</strong>
-                        
-                        
+                        <strong className="text-sm font-semibold">Cantidad de tickets</strong>
                     </div>
-                    
+
                     <div>
-                        <Input name="cantidad" type="number" placeholder="Ingresar cantidad" 
-                    
-                        required={datos.esFisica}
+                        <Input name="cantidad" type="number" placeholder="Ingresar cantidad"
                         min={1}
-                        disabled={!!entrada && entrada.estado !== "Borrador"}
+                        disabled={soloNombre}
                         value={datos.cantidad}
-                        onChange={(e) => setDatos({ ...datos, cantidad: e.target.value })}
+                        onChange={(e) => cambiar({ cantidad: e.target.value })}
                         />
-                    </div>  
+                        <span className="text-xs text-gray-500">
+                            Los tickets se crean todos juntos al publicar (online) o imprimir (física) el lote.
+                        </span>
+                    </div>
                 </div>
-                {error && <p className="text-red-500 text-sm mt-2">{error}</p>}
+                {error && <p role="alert" className="text-red-500 text-sm mt-2">{error}</p>}
                 <div className="grid grid-cols-2 gap-4 mt-4 ">
                     <Btn type="submit" className="min-w-[150px]">Guardar</Btn>
                     <Btn variant="ghost" className="min-w-[150px]" type="button" onClick={onCancel}>Cancelar</Btn>

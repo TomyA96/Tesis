@@ -1,9 +1,13 @@
-import { IsOptional, IsString, IsNumber, Min, IsInt } from "class-validator";
+import { IsOptional, IsString, IsNumber, Min, IsInt, IsNotEmpty } from "class-validator";
+import { Transform } from "class-transformer";
+import { limpiarTexto } from "../../jornadas/dtos/create.jornada.dto";
 
 
 export class UpdateEntradaDto {
     @IsOptional()
+    @Transform(limpiarTexto)
     @IsString()
+    @IsNotEmpty()
     descripcion?: string;
 
     @IsOptional()

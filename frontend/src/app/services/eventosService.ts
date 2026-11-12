@@ -26,14 +26,23 @@ export interface EventoConJornadas extends EventoBase {
 }
 
 /*
-    Lo que devuelven los listados y el detalle. El backend suma tres campos
-    calculados a partir de las jornadas: el inicio de la primera, el fin de la
-    última y el estado del evento (Activo si alguna jornada lo está, etc.).
+    Lo que devuelven los listados y el detalle. El backend suma dos campos
+    calculados a partir de las jornadas: el inicio de la primera y el fin de
+    la última. El estado sí se guarda: lo cambia el organizador (publicar,
+    finalizar, cancelar), nunca cambia solo.
 */
 export interface Evento extends EventoConJornadas {
     fechaHoraInicio: string;
     fechaHoraFin: string;
     estado: EstadoEvento;
+}
+
+// Una jornada en Borrador y lo que le falta para publicarse (vacío = está completa)
+export interface RevisionJornada {
+    id: number;
+    nombre: string | null;
+    fechaHoraInicio: string;
+    faltantes: string[];
 }
 
 // En las rutas públicas, jornadas trae solo las que están Activas
@@ -104,7 +113,32 @@ export function deleteEvento(id: number){
     return api.delete<EventoBase>(`/eventos/${id}`)
 }
 
+export function getRevisionPublicacion(id: number) {
+    return api.get<RevisionJornada[]>(`/eventos/${id}/publicacion`);
+}
+
 /*
-    Publicar, cancelar, suspender, finalizar y reprogramar ya no son del evento:
-    se hacen por jornada (ver jornadasService). El estado del evento se calcula solo.
+    Activa el evento (si está en Borrador) y publica todas sus jornadas
+    completas. Si hay incompletas, el backend lo rechaza salvo que se mande
+    confirmarIncompletas: el usuario tiene que aceptar que esas quedan afuera.
 */
+export function publicarEvento(id: number, confirmarIncompletas = false) {
+    return api.put<Evento>(`/eventos/${id}/publicar`, { confirmarIncompletas });
+}
+
+// Suspende todas las jornadas activas; el evento sigue Activo
+export function suspenderEvento(id: number) {
+    return api.put<Evento>(`/eventos/${id}/suspender`, {});
+}
+
+/*
+    Finalizar y cancelar descartan las jornadas en Borrador. Es irreversible:
+    el backend lo rechaza salvo que se mande descartarBorradores.
+*/
+export function finalizarEvento(id: number, descartarBorradores = false) {
+    return api.put<Evento>(`/eventos/${id}/finalizar`, { descartarBorradores });
+}
+
+export function cancelarEvento(id: number, descartarBorradores = false) {
+    return api.put<Evento>(`/eventos/${id}/cancelar`, { descartarBorradores });
+}

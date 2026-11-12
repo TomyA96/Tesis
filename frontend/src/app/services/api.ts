@@ -58,6 +58,7 @@ export const api = {
     post: <T>(path: string, body: unknown) => request<T>(path, { method: 'POST', body }),
     put: <T>(path: string, body: unknown) => request<T>(path, { method: 'PUT', body }),
     delete: <T>(path: string) => request<T>(path, { method: 'DELETE' }),
+    getBlob: (path: string) => requestBlob(path),
     postBlob: (path: string, body: unknown) => requestBlob(path, { method: 'POST', body }),
     postFile: <T>(path: string, body: FormData) => request<T>(path, {method: 'POST', body})
 };

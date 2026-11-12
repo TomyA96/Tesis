@@ -2,27 +2,24 @@ import Formulario from "../../../ui/componentes/Formulario";
 import Input from "../../../ui/componentes/Input";
 import Btn from "../../../ui/componentes/Btn";
 import { useState } from "react";
-import { reprogramarEvento } from "../../../services/eventosService";
-import type { Evento } from "../../../services/eventosService";
+import { reprogramarJornada, type Jornada } from "../../../services/jornadasService";
 import { fechaAInputs, combinarFechaHora, calcularDuracionHoras, sumarDuracion } from "../utils/fechaHora";
 
 type ReprogramarFormProps = {
-    evento: Evento;
-    onReprogramado: (evento: Evento) => void;
+    jornada: Jornada;
+    onReprogramado: (jornada: Jornada) => void;
     onCancel: () => void;
 };
 
 /*
-    A diferencia de EventoForm, este formulario maneja su propia llamada a la
-    API y su propio error local (mostrado dentro del modal) — no pasa por
-    ejecutarAccion de EventoPage. La razón: si el backend rechaza la fecha
-    nueva, el usuario necesita poder corregirla y reintentar sin perder lo que
-    ya cargó, algo que el mecanismo de errorAccion (que cierra el modal
-    siempre) no permite.
+    Maneja su propia llamada a la API y su propio error (mostrado dentro del
+    modal): si el backend rechaza la fecha nueva (por ejemplo, porque se pisa
+    con otra jornada), el usuario puede corregirla y reintentar sin perder lo
+    que ya cargó.
 */
-const ReprogramarForm = ({ evento, onReprogramado, onCancel }: ReprogramarFormProps) => {
-    const inicioActual = new Date(evento.fechaHoraInicio);
-    const finActual = new Date(evento.fechaHoraFin);
+const ReprogramarForm = ({ jornada, onReprogramado, onCancel }: ReprogramarFormProps) => {
+    const inicioActual = new Date(jornada.fechaHoraInicio);
+    const finActual = new Date(jornada.fechaHoraFin);
     const { fecha: fechaInicial, hora: horaInicial } = fechaAInputs(inicioActual);
 
     // Precargado con la fecha actual: si no hace falta cambiarla, el usuario
@@ -51,17 +48,16 @@ const ReprogramarForm = ({ evento, onReprogramado, onCancel }: ReprogramarFormPr
         const fechaHoraFin = sumarDuracion(fechaHoraInicio, Number(duracion));
 
         try {
-            const eventoActualizado = await reprogramarEvento(evento.id, { fechaHoraInicio, fechaHoraFin });
-            onReprogramado(eventoActualizado);
+            onReprogramado(await reprogramarJornada(jornada.id, { fechaHoraInicio, fechaHoraFin }));
         } catch (err) {
-            setError(err instanceof Error ? err.message : "No se pudo reprogramar el evento");
+            setError(err instanceof Error ? err.message : "No se pudo reprogramar la jornada");
         }
     };
 
     return (
         <Formulario onSubmit={onSubmit} className="p-6 min-w-[480px]">
             <div className="flex flex-col gap-2">
-                <span className="text-sm font-semibold text-gray-700">Nueva fecha del evento</span>
+                <span className="text-sm font-semibold text-gray-700">Nueva fecha de la jornada</span>
                 <div className="grid grid-cols-3 gap-3">
                     <Input
                         label="Fecha"
