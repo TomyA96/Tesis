@@ -7,7 +7,7 @@ import CrearProductoModal from "../modales/CrearProductoModal";
 import EditarProductoModal from "../modales/EditarProductoModal";
 import FiltroProductos, {
     aplicarFiltrosProductos,
-    filtrosProductosVacios,
+   
     type FiltrosProductos,
 } from "../componentes/FiltroProductos";
 import { columnasProductos } from "../productos.columns";
@@ -23,7 +23,7 @@ const ProductosPage = () => {
     const [productos, setProductos] = useState<Producto[]>([]);
     const [productoSeleccionado, setProductoSeleccionado] = useState<Producto | null>(null);
     const [activarModal, setActivarModal] = useState<ModalProductos>(null);
-    const [filtros, setFiltros] = useState<FiltrosProductos>(filtrosProductosVacios);
+    const [filtros, setFiltros] = useState<FiltrosProductos>({ texto: "", tipo: "", estado: "Disponible" });
     const [error, setError] = useState("");
 
     const cargarProductos = () => {

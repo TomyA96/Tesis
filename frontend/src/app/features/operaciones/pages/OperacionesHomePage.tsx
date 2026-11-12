@@ -1,125 +1,135 @@
 import { useEffect, useMemo, useState } from "react";
 import Header from "../../../ui/componentes/Header";
 import ContenedorDatos from "../../../ui/componentes/ContenedorDatos";
-import LinkBtn from "../../../ui/componentes/LinkBtn";
-import CardEvent from "../../administracion/componentes/CardEvent";
-import { RUTAS } from "../../../constantes/Rutas";
+import CardJornadaOperacion from "../componentes/CardJornadaOperacion";
+import { ACCIONES_OPERACION } from "../operaciones.config";
+import { estaOperable, momentoDeJornada } from "../utils/ventanaOperacion";
+import { useAuth } from "../../../context/AuthContext";
+import { API_URL } from "../../../services/api";
 import { getEventosPublicados, type Evento } from "../../../services/eventosService";
+import { buscarImagenesPorEvento } from "../../../services/imagenEventoService";
 import type { Jornada } from "../../../services/jornadasService";
 import { fechaArgentina, horaArgentina } from "../../../utils/zonaHoraria";
-import { fechaAInputs } from "../../eventos/utils/fechaHora";
 
-type EventoConJornadasActivas = {
+type JornadaOperable = {
+    jornada: Jornada;
     evento: Evento;
-    jornadas: Jornada[];
-    // Alguna de sus jornadas es de hoy o está en curso
-    tieneHoy: boolean;
-};
-
-/*
-    Una jornada es "de hoy" si empieza hoy o ya está en curso (una que arrancó
-    anoche a las 22:00 y termina a las 03:00 sigue siendo la de esta noche).
-    El día se compara en hora argentina, no en la de la computadora.
-*/
-const esDeHoy = (jornada: Jornada, ahora: Date) => {
-    const inicio = new Date(jornada.fechaHoraInicio);
-    const fin = new Date(jornada.fechaHoraFin);
-    const empiezaHoy = fechaAInputs(inicio).fecha === fechaAInputs(ahora).fecha;
-    const enCurso = inicio <= ahora && ahora <= fin;
-    return empiezaHoy || enCurso;
+    // Posición dentro de su evento, para el nombre cuando la jornada no tiene uno
+    numero: number;
 };
 
 const OperacionesHomePage = () => {
+    const { permisos, puede } = useAuth();
     const [eventos, setEventos] = useState<Evento[]>([]);
+    const [imagenes, setImagenes] = useState<Record<number, string>>({});
     const [cargando, setCargando] = useState(true);
     const [error, setError] = useState("");
 
     useEffect(() => {
         getEventosPublicados()
             .then((response) => setEventos(response))
-            .catch(() => setError("No se pudieron cargar los eventos"))
+            .catch(() => setError("No se pudieron cargar las jornadas"))
             .finally(() => setCargando(false));
     }, []);
 
+    // Lo que este usuario puede hacer: de acá salen los botones de cada card
+    const acciones = useMemo(
+        () => ACCIONES_OPERACION.filter((accion) => puede(accion.permiso)),
+        // puede cambia en cada render, pero su resultado solo depende de los permisos
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+        [permisos],
+    );
+
     /*
-        Solo se opera sobre jornadas Activas: una Borrador todavía no se
-        vende, y una Suspendida, Finalizada o Cancelada ya no tiene nada para
-        operar. Los eventos con alguna jornada de hoy van primero; el resto,
-        por fecha de inicio.
+        Solo las jornadas que se pueden operar ahora (Activas y dentro de la
+        ventana: ver ventanaOperacion). Las que están en curso van primero, el
+        resto por hora de inicio. La condición es de la jornada, no del
+        evento: el Día 3 de un festival no se opera el Día 1.
     */
-    const grupos = useMemo<EventoConJornadasActivas[]>(() => {
+    const operables = useMemo<JornadaOperable[]>(() => {
         const ahora = new Date();
         return eventos
-            .map((evento) => {
-                const jornadas = evento.jornadas.filter((jornada) => jornada.estado === "Activo");
-                return { evento, jornadas, tieneHoy: jornadas.some((jornada) => esDeHoy(jornada, ahora)) };
-            })
-            .filter((grupo) => grupo.jornadas.length > 0)
+            .flatMap((evento) =>
+                evento.jornadas.map((jornada, indice) => ({ jornada, evento, numero: indice + 1 })),
+            )
+            .filter(({ jornada }) => estaOperable(jornada, ahora))
             .sort((a, b) => {
-                if (a.tieneHoy !== b.tieneHoy) return a.tieneHoy ? -1 : 1;
-                return new Date(a.jornadas[0].fechaHoraInicio).getTime() - new Date(b.jornadas[0].fechaHoraInicio).getTime();
+                const aEnCurso = momentoDeJornada(a.jornada, ahora) === "en-curso";
+                const bEnCurso = momentoDeJornada(b.jornada, ahora) === "en-curso";
+                if (aEnCurso !== bEnCurso) return aEnCurso ? -1 : 1;
+                return new Date(a.jornada.fechaHoraInicio).getTime() - new Date(b.jornada.fechaHoraInicio).getTime();
             });
     }, [eventos]);
 
+    // Una imagen por evento (no por card): varias jornadas del mismo festival la comparten
+    const idsEventos = useMemo(
+        () => [...new Set(operables.map(({ evento }) => evento.id))].join(","),
+        [operables],
+    );
+    useEffect(() => {
+        if (!idsEventos) return;
+        idsEventos.split(",").forEach((id) => {
+            buscarImagenesPorEvento(Number(id))
+                .then((response) => {
+                    if (response[0]) setImagenes((prev) => ({ ...prev, [Number(id)]: `${API_URL}${response[0].url}` }));
+                })
+                // Sin imagen la card igual funciona: queda el fondo liso
+                .catch(() => {});
+        });
+    }, [idsEventos]);
+
     const ahora = new Date();
+
+    const contenido = () => {
+        if (cargando || permisos === null) {
+            return <p className="text-sm text-gray-500">Cargando jornadas…</p>;
+        }
+        if (error) {
+            return <p className="text-sm text-red-600">{error}</p>;
+        }
+        if (acciones.length === 0) {
+            return (
+                <p className="py-10 text-center text-gray-500">
+                    Tu perfil no tiene permisos para operar. Si lo necesitás para trabajar, pedíselo al administrador.
+                </p>
+            );
+        }
+        if (operables.length === 0) {
+            return (
+                <p className="py-10 text-center text-gray-500">
+                    No hay jornadas para operar en este momento. Aparecen 2 horas antes de empezar y hasta 4 horas
+                    después de terminar.
+                </p>
+            );
+        }
+        return (
+            <div className="grid gap-6 sm:grid-cols-2 xl:grid-cols-3">
+                {operables.map(({ jornada, evento, numero }) => (
+                    <CardJornadaOperacion
+                        key={jornada.id}
+                        idJornada={jornada.id}
+                        nombreEvento={evento.nombre}
+                        nombreJornada={jornada.nombre ?? `Jornada ${numero}`}
+                        imagenUrl={imagenes[evento.id]}
+                        fecha={fechaArgentina(jornada.fechaHoraInicio)}
+                        horario={`${horaArgentina(jornada.fechaHoraInicio)} a ${horaArgentina(jornada.fechaHoraFin)} hs`}
+                        momento={momentoDeJornada(jornada, ahora)}
+                        acciones={acciones}
+                    />
+                ))}
+            </div>
+        );
+    };
 
     return (
         <main>
             <ContenedorDatos>
-                <Header
-                    titulo={<span className="text-2xl font-semibold text-gray-800">Operaciones</span>}
-                />
-
-                <div className="flex flex-col gap-8 p-6">
+                <Header titulo={<span className="text-2xl font-semibold text-gray-800">Operaciones</span>} />
+                <div className="flex flex-col gap-6 p-6">
                     <p className="text-sm text-gray-500">
-                        Elegí la jornada sobre la que vas a trabajar: controlar los accesos, vender entradas en
-                        la puerta o atender el buffet.
+                        Elegí la jornada sobre la que vas a trabajar.
                     </p>
-
-                    {cargando && <p className="text-sm text-gray-500">Cargando jornadas…</p>}
-                    {error && <p className="text-sm text-red-600">{error}</p>}
-                    {!cargando && !error && grupos.length === 0 && (
-                        <p className="text-center text-gray-500">No hay jornadas activas para operar.</p>
-                    )}
-
-                    {grupos.map(({ evento, jornadas }) => (
-                        <section key={evento.id} className="flex flex-col gap-4">
-                            <h2 className="border-l-4 border-blue-500 pl-3 text-lg font-semibold text-gray-800">
-                                {evento.nombre}
-                            </h2>
-
-                            <div className="flex flex-wrap gap-6">
-                                {jornadas.map((jornada, indice) => {
-                                    const hora = horaArgentina(jornada.fechaHoraInicio);
-                                    return (
-                                        <CardEvent
-                                            key={jornada.id}
-                                            nombre={jornada.nombre ?? `Jornada ${indice + 1}`}
-                                            fecha={
-                                                esDeHoy(jornada, ahora)
-                                                    ? `Hoy, ${hora} hs`
-                                                    : `${fechaArgentina(jornada.fechaHoraInicio)} ${hora} hs`
-                                            }
-                                            estado={jornada.estado}
-                                            acciones={
-                                                <div className="flex flex-col gap-2">
-                                                    <LinkBtn variant="primary" size="sm" className="w-full" to={RUTAS.operaciones.accesos(jornada.id)}>
-                                                        Control de accesos
-                                                    </LinkBtn>
-                                                    <LinkBtn variant="outline" size="sm" className="w-full" to={RUTAS.operaciones.ventaEntradas(jornada.id)}>
-                                                        Venta de entradas
-                                                    </LinkBtn>
-                                                    <LinkBtn variant="outline" size="sm" className="w-full" to={RUTAS.operaciones.buffet(jornada.id)}>
-                                                        Buffet
-                                                    </LinkBtn>
-                                                </div>
-                                            }
-                                        />
-                                    );
-                                })}
-                            </div>
-                        </section>
-                    ))}
+                    {contenido()}
                 </div>
             </ContenedorDatos>
         </main>

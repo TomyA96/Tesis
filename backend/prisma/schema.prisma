@@ -117,6 +117,7 @@ model Usuario {
   reembolsos   Reembolso[]
   accesos      Acceso[]
   ventasBuffet  VentaBuffet[]
+  ticketsVendidos TicketEvento[]
 
   @@map("usuarios")
 }
@@ -284,6 +285,8 @@ model TicketEvento {
   idEntrada   Int
   idOrden     Int?
   idPuntoVenta  Int?
+  // Quién registró la venta en puerta; vacío en los tickets online y en los que todavía no se vendieron
+  idVendedor  Int?
   codigoQR    String   @unique
   numero      String   
   precio      Decimal
@@ -295,6 +298,7 @@ model TicketEvento {
   reembolso  Reembolso?
   accesos    Acceso?
   puntoVenta PuntoVenta? @relation(fields: [idPuntoVenta], references: [id])
+  vendedor   Usuario? @relation(fields: [idVendedor], references: [id])
 
   @@unique([idEntrada, numero])
   @@map("tickets_evento")

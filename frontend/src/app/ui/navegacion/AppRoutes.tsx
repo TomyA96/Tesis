@@ -6,6 +6,7 @@ import HomePage from "../../features/publico/pages/HomePage";
 import EventoDetallePage from "../../features/publico/pages/EventoDetallePage";
 import PublicLayout from "../../layouts/PublicLayout";
 import CompraPage from "../../features/publico/pages/CompraPage";
+import RequierePermiso from "./RequierePermiso";
 
 /*
     Todo lo de /admin se carga con lazy() en vez de import estático: así
@@ -89,9 +90,9 @@ const AppRoutes = () => {
                     <Route path="operaciones">
                         <Route index element={<OperacionesHomePage />} />
                         <Route path="jornadas/:idJornada" element={<OperacionesJornadaLayout />}>
-                            <Route path="accesos" element={<ControlAccesos />} />
-                            <Route path="venta-entradas" element={<VentaEntradas />} />
-                            <Route path="buffet" element={<PanelVentas />} />
+                            <Route path="accesos" element={<RequierePermiso permiso="accesos.registrar"><ControlAccesos /></RequierePermiso>} />
+                            <Route path="venta-entradas" element={<RequierePermiso permiso="entradas.vender"><VentaEntradas /></RequierePermiso>} />
+                            <Route path="buffet" element={<RequierePermiso permiso="buffet.vender"><PanelVentas /></RequierePermiso>} />
                         </Route>
                     </Route>
 

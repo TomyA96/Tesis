@@ -1,40 +1,46 @@
-import { Body, Controller, Delete, Get, Param, Post, Put } from '@nestjs/common';
+import { Body, Controller, Get, Param, ParseIntPipe, Post, Request, UseGuards } from '@nestjs/common';
 import { AccesosService } from './accesos.service';
+import { CreateAccesoDto } from './dtos/create.acceso.dto';
+import { CreateAccesoManualDto } from './dtos/create.acceso-manual.dto';
+import { AuthGuard } from '../auth/guards/auth.guard';
 
-@Controller('accesos')
+/*
+    Los accesos se registran sobre una jornada. No hay forma de editar ni borrar
+    un ingreso: es un registro de auditoría.
+
+    TODO: PermissionsGuard con @Permisos('accesos.registrar') en el POST y
+    @Permisos('accesos.ver') en el GET. Por ahora solo está AuthGuard, que es lo
+    que permite saber QUIÉN registra el ingreso (se toma del token).
+*/
+@UseGuards(AuthGuard)
+@Controller('jornadas/:idJornada/accesos')
 export class AccesosController {
     constructor(private accesosService: AccesosService) {}
 
     @Get()
-    findAll() {
-        return this.accesosService.findAll()
-    }
-
-    @Get(':id')
-    findOne(@Param('id') id: string) {
-        return this.accesosService.findOne(Number(id))
+    findByJornada(@Param('idJornada', ParseIntPipe) idJornada: number) {
+        return this.accesosService.findByJornada(idJornada);
     }
 
     @Post()
-    create(@Body() data: {
-        idTicket: number,
-        idUsuario: number,
-        fechaHora?: Date,
-    }) {
-        return this.accesosService.create(data)
+    registrar(
+        @Param('idJornada', ParseIntPipe) idJornada: number,
+        @Body() data: CreateAccesoDto,
+        @Request() request: any,
+    ) {
+        // El usuario sale del token, no del cuerpo: nadie puede registrar un ingreso a nombre de otro
+        const { sub: idUsuario } = request.user;
+        return this.accesosService.registrarAccesoPorQR(idJornada, data, idUsuario);
     }
 
-    @Put(':id')
-    update(@Param('id') id: string, @Body() data: {
-        idTicket?: number,
-        idUsuario?: number,
-        fechaHora?: Date,
-    }) {
-        return this.accesosService.update(Number(id), data)
-    }
-
-    @Delete(':id')
-    remove(@Param('id') id: string) {
-        return this.accesosService.remove(Number(id))
+    // Para supervisores, cuando el QR no se puede leer (ver el TODO del servicio sobre su permiso propio)
+    @Post('manual')
+    registrarManual(
+        @Param('idJornada', ParseIntPipe) idJornada: number,
+        @Body() data: CreateAccesoManualDto,
+        @Request() request: any,
+    ) {
+        const { sub: idUsuario } = request.user;
+        return this.accesosService.registrarAccesoManual(idJornada, data, idUsuario);
     }
 }
