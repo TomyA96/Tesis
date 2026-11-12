@@ -1,4 +1,14 @@
 
+// "?jornada=2&lote=3": solo las claves con valor; si no hay ninguna, nada
+const conQuery = (filtros: Record<string, number | undefined>) => {
+    const query = new URLSearchParams(
+        Object.entries(filtros)
+            .filter((par): par is [string, number] => par[1] !== undefined)
+            .map(([clave, valor]) => [clave, String(valor)]),
+    ).toString();
+    return query ? `?${query}` : "";
+};
+
 export const RUTAS = {
     publico: {
         inicio: "/",
@@ -31,7 +41,15 @@ export const RUTAS = {
         inicio: "/admin/eventos",
         crear: "/admin/eventos/crear",
         detalle:(idEvento: number | string) => `/admin/eventos/${idEvento}`,
+        jornada: (idEvento: number | string, idJornada: number | string) => `/admin/eventos/${idEvento}/jornadas/${idJornada}`,
         ventas:(idEvento: number | string) => `/admin/eventos/${idEvento}/ventas`,
+        // Los locales a los que se les reparten tickets físicos (su listado es general, no de un evento)
+        puntosVenta: "/admin/eventos/puntos-venta",
+        // Tickets físicos del evento: entregar por cantidad, o la lista de un lote (?lote=) para corregir
+        tickets: (idEvento: number | string, filtros: { jornada?: number; lote?: number } = {}) =>
+            `/admin/eventos/${idEvento}/tickets${conQuery(filtros)}`,
+        rendiciones: (idEvento: number | string, idLocal?: number) =>
+            `/admin/eventos/${idEvento}/rendiciones${conQuery({ local: idLocal })}`,
     },
 
     informes: {

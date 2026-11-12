@@ -3,6 +3,8 @@ import { AppController } from './app.controller'
 import { AppService } from './app.service'
 import { PrismaModule } from './prisma/prisma.module'
 import { PuntoVentaModule } from './punto-venta/punto-venta.module'
+import { RendicionesModule } from './rendiciones/rendiciones.module';
+import { EntregasModule } from './entregas/entregas.module';
 import { UsuariosModule } from './usuarios/usuarios.module'
 import { PerfilesModule } from './perfiles/perfiles.module'
 import { UsuarioPerfilModule } from './usuario-perfil/usuario-perfil.module'
@@ -30,7 +32,7 @@ import { FuentesIngresoModule } from './fuentes-ingreso/fuentes-ingreso.module';
 import { ComprasModule } from './compras/compras.module';
 
 @Module({
-  imports: [PrismaModule, PuntoVentaModule, UsuariosModule, PerfilesModule, UsuarioPerfilModule, PermisoPerfilModule, PermisosModule, AuditoriasModule, EventosModule, EntradasModule, ClientesModule, OrdenCompraModule, TicketEventoModule, ReembolsosModule, AccesosModule, ImagenEventoModule, ProductosModule, ProductoEventoModule, VentaBuffetModule, DetalleVentaBuffetModule, RubrosModule, ProveedoresModule, ProveedorRubroModule, MovimientoFinancieroModule, AuthModule, FuentesIngresoModule, ComprasModule],
+  imports: [PrismaModule, PuntoVentaModule, UsuariosModule, PerfilesModule, UsuarioPerfilModule, PermisoPerfilModule, PermisosModule, AuditoriasModule, EventosModule, EntradasModule, ClientesModule, OrdenCompraModule, TicketEventoModule, ReembolsosModule, AccesosModule, ImagenEventoModule, ProductosModule, ProductoEventoModule, VentaBuffetModule, DetalleVentaBuffetModule, RubrosModule, ProveedoresModule, ProveedorRubroModule, MovimientoFinancieroModule, AuthModule, FuentesIngresoModule, ComprasModule, RendicionesModule, EntregasModule],
   controllers: [AppController],
   providers: [AppService],
 })

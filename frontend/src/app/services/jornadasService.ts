@@ -53,6 +53,11 @@ export function createJornada(idEvento: number, data: CreateJornada) {
     return api.post<Jornada>(`/eventos/${idEvento}/jornadas`, data);
 }
 
+// Varias de una vez: el backend las crea todas o ninguna
+export function createJornadas(idEvento: number, jornadas: CreateJornada[]) {
+    return api.post<Jornada[]>(`/eventos/${idEvento}/jornadas/lote`, { jornadas });
+}
+
 export function updateJornada(id: number, data: UpdateJornada) {
     return api.put<Jornada>(`/jornadas/${id}`, data);
 }

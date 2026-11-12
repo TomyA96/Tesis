@@ -24,7 +24,11 @@ const PerfilesPage = lazy(() => import("../../features/seguridad/perfiles/pages/
 const AuditoriasPage = lazy(() => import("../../features/seguridad/auditorias/pages/AuditoriasPage"));
 const ProveedoresPage = lazy(() => import("../../features/administracion/pages/ProveedoresPage"));
 const FuentesIngresoPage = lazy(() => import("../../features/administracion/pages/FuentesIngresoPage"));
+const PuntosVentaPage = lazy(() => import("../../features/eventos/pages/PuntosVentaPage"));
+const TicketsPage = lazy(() => import("../../features/eventos/pages/TicketsPage"));
+const RendicionesPage = lazy(() => import("../../features/eventos/pages/RendicionesPage"));
 const EventoPage = lazy(() => import("../../features/eventos/pages/EventoPage"));
+const JornadaPage = lazy(() => import("../../features/eventos/pages/JornadaPage"));
 const VentasPage = lazy(() => import("../../features/eventos/pages/VentasPage"));
 const ProductosPage = lazy(() => import("../../features/administracion/pages/ProductosPage"));
 const RubrosPage = lazy(() => import("../../features/administracion/pages/RubrosPage"));
@@ -63,8 +67,12 @@ const AppRoutes = () => {
                     <Route path="eventos">
                         <Route index element={<EventosHomePage />}/>
                         <Route path="crear" element={<EventoPage/> } />
+                        <Route path="puntos-venta" element={<PuntosVentaPage />} />
                         <Route path=":idEvento" element={<EventoPage/>} />
+                        <Route path=":idEvento/jornadas/:idJornada" element={<JornadaPage/>} />
                         <Route path=":idEvento/ventas" element={<VentasPage/>} />
+                        <Route path=":idEvento/tickets" element={<TicketsPage />} />
+                        <Route path=":idEvento/rendiciones" element={<RendicionesPage />} />
                         <Route path=":idEvento/administracion" element={<AdministrarEventoPage />} />
                         <Route path=":idEvento/informes/entradas" element={<InformeEntradasEventoPage />} />
                         <Route path=":idEvento/informes/buffet" element={<InformeBuffetEventoPage />} />

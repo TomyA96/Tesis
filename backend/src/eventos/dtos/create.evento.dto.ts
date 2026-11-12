@@ -1,13 +1,15 @@
 import { IsString, IsOptional, IsArray, ArrayMinSize, ValidateNested, IsNotEmpty } from "class-validator";
-import { Type } from "class-transformer";
-import { CreateJornadaDto } from "../../jornadas/dtos/create.jornada.dto";
+import { Transform, Type } from "class-transformer";
+import { CreateJornadaDto, limpiarTexto } from "../../jornadas/dtos/create.jornada.dto";
 
 export class CreateEventoDto {
+    @Transform(limpiarTexto)
     @IsString()
     @IsNotEmpty()
     nombre!: string;
 
     @IsOptional()
+    @Transform(limpiarTexto)
     @IsString()
     descripcion?: string;
 

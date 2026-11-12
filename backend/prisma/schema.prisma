@@ -5,7 +5,10 @@ generator client {
 datasource db {
   provider = "postgresql"
 }
-/* --------Enums--------------------------------*/
+
+/**
+ * --------Enums--------------------------------
+ */
 enum EstadoUsuario {
   Activo
   Inactivo
@@ -38,11 +41,20 @@ enum EstadoEvento {
   Borrador
 }
 
+// Estado del lote. Disponible: publicado (online) o impreso (física).
+// Anulado: se cortó para siempre; sus tickets sin vender quedan anulados.
 enum EstadoEntrada {
   Disponible
   Borrador
+  Anulado
 }
+
+// Los tickets de un lote se crean todos juntos, al publicarlo (online) o al
+// imprimirlo (física). Disponible y Reservado son solo de los online: a la
+// venta, y apartado por una compra con el pago pendiente.
 enum EstadoTicket {
+  Disponible
+  Reservado
   Impreso
   Asignado
   Vendido
@@ -56,7 +68,6 @@ enum EstadoOrden {
   Aprobada
   Fallida
   Cancelada
-  
 }
 
 enum EstadoReembolso {
@@ -100,30 +111,37 @@ enum TipoMovimiento {
   Ingreso
   Gasto
 }
-/* --------Fin Enums----------------------------*/
 
-/* --------Tablas Modulo de seguridad-----------*/
+/**
+ * --------Fin Enums----------------------------
+ */
+
+/**
+ * --------Tablas Modulo de seguridad-----------
+ */
 model Usuario {
-  id        Int     @id  @default(autoincrement())
-  usuario       String  @unique
-  nombre        String
-  password      String
-  estado        EstadoUsuario @default(Activo)
-  eliminado     Boolean @default(false)
-  ultimoAcceso  DateTime?
+  id           Int           @id @default(autoincrement())
+  usuario      String        @unique
+  nombre       String
+  password     String
+  estado       EstadoUsuario @default(Activo)
+  eliminado    Boolean       @default(false)
+  ultimoAcceso DateTime?
 
   perfiles     UsuarioPerfil[]
   auditorias   Auditoria[]
   reembolsos   Reembolso[]
   accesos      Acceso[]
-  ventasBuffet  VentaBuffet[]
+  ventasBuffet VentaBuffet[]
+  rendiciones  Rendicion[]
+  entregas     Entrega[]
 
   @@map("usuarios")
 }
 
 model Perfil {
-  id          Int     @id  @default(autoincrement())
-  nombre      String  @unique
+  id          Int             @id @default(autoincrement())
+  nombre      String          @unique
   descripcion String?
   usuarios    UsuarioPerfil[]
   permisos    PermisoPerfil[]
@@ -132,29 +150,29 @@ model Perfil {
 }
 
 model UsuarioPerfil {
-  idUsuario   Int      
-  idPerfil    Int      
+  idUsuario Int
+  idPerfil  Int
   //asignado    DateTime @default(now())
 
-  perfil   Perfil  @relation(fields: [idPerfil], references: [id])
-  usuario  Usuario @relation(fields: [idUsuario], references: [id])
+  perfil  Perfil  @relation(fields: [idPerfil], references: [id])
+  usuario Usuario @relation(fields: [idUsuario], references: [id])
 
   @@id([idPerfil, idUsuario])
   @@map("usuarios_perfiles")
 }
 
 model Permiso {
-  id          Int     @id  @default(autoincrement())
-  codigo      String  @unique
+  id          Int             @id @default(autoincrement())
+  codigo      String          @unique
   descripcion String?
-  perfiles     PermisoPerfil[]
+  perfiles    PermisoPerfil[]
 
   @@map("permisos")
 }
 
 model PermisoPerfil {
-  idPermiso   Int      
-  idPerfil    Int      
+  idPermiso Int
+  idPerfil  Int
 
   permiso Permiso @relation(fields: [idPermiso], references: [id])
   perfil  Perfil  @relation(fields: [idPerfil], references: [id])
@@ -164,33 +182,38 @@ model PermisoPerfil {
 }
 
 model Auditoria {
-  id          Int   @id  @default(autoincrement())
-  idUsuario   Int   
+  id          Int          @id @default(autoincrement())
+  idUsuario   Int
   codigo      String
   descripcion String?
-  fecha       DateTime @default(now())
+  fecha       DateTime     @default(now())
   idRegistro  Int
   tabla       TablaSistema
 
   usuario Usuario @relation(fields: [idUsuario], references: [id])
+
   @@map("auditorias")
 }
 
-/* --------Tablas Modulo de Eventos--------------*/
+/**
+ * --------Tablas Modulo de Eventos--------------
+ */
 
 // El evento "mayor": agrupa una o más jornadas. Las imágenes, los productos del
 // buffet y los movimientos financieros son del evento completo.
 model Evento {
-  id              Int      @id @default(autoincrement())
-  nombre          String
-  descripcion     String?
+  id          Int          @id @default(autoincrement())
+  nombre      String
+  descripcion String?
   // Solo usa Borrador, Activo y Finalizado, y lo decide el organizador: nunca cambia solo
-  estado          EstadoEvento @default(Borrador)
+  estado      EstadoEvento @default(Borrador)
 
-  jornadas     Jornada[]
-  imagenes      ImagenEvento[]
-  productos     ProductoEvento[]
-  movimientos    MovimientoFinanciero[]
+  jornadas    Jornada[]
+  imagenes    ImagenEvento[]
+  productos   ProductoEvento[]
+  movimientos MovimientoFinanciero[]
+  rendiciones Rendicion[]
+  entregas    Entrega[]
 
   @@map("eventos")
 }
@@ -198,7 +221,7 @@ model Evento {
 // Cada fecha concreta del evento. Un evento de una sola noche tiene una jornada.
 // El inicio y el fin del evento se calculan a partir de sus jornadas.
 model Jornada {
-  id              Int      @id @default(autoincrement())
+  id              Int          @id @default(autoincrement())
   idEvento        Int
   nombre          String?
   fechaHoraInicio DateTime
@@ -207,57 +230,56 @@ model Jornada {
   capacidad       Int
   estado          EstadoEvento @default(Borrador)
 
-  evento        Evento  @relation(fields: [idEvento], references: [id])
-  entradas      Entrada[]
-  ventasBuffet  VentaBuffet[]
+  evento       Evento        @relation(fields: [idEvento], references: [id])
+  entradas     Entrada[]
+  ventasBuffet VentaBuffet[]
 
   @@map("jornadas")
 }
 
 model Entrada {
-  id          Int      @id @default(autoincrement())
+  id          Int           @id @default(autoincrement())
   idJornada   Int
   descripcion String
   precio      Decimal
   esFisica    Boolean
   estado      EstadoEntrada @default(Borrador)
-  cantidad    Int?
-  habilitada  Boolean @default(true)
+  cantidad    Int // cuántos tickets se crean al publicar o imprimir el lote
+  habilitada  Boolean       @default(true)
 
-  jornada   Jornada  @relation(fields: [idJornada], references: [id])
-  tickets   TicketEvento[]
-  detallesOrden  DetalleOrdenCompra[]
-  
+  jornada       Jornada              @relation(fields: [idJornada], references: [id])
+  tickets       TicketEvento[]
+  detallesOrden DetalleOrdenCompra[]
 
   @@map("entradas")
 }
 
 model Cliente {
-  id          Int      @id @default(autoincrement())
-  nombre      String
-  dni         String   @unique
-  email       String
-  telefono    String?
+  id       Int     @id @default(autoincrement())
+  nombre   String
+  dni      String  @unique
+  email    String
+  telefono String?
 
-  ordenes     OrdenCompra[]
- 
+  ordenes OrdenCompra[]
+
   @@map("clientes")
 }
 
 model OrdenCompra {
-  id          Int      @id @default(autoincrement())
-  idCliente   Int?
-  canal       CanalVenta  // quién la creó
-  fechaHora   DateTime @default(now())
-  total       Decimal
-  estado      EstadoOrden
+  id        Int         @id @default(autoincrement())
+  idCliente Int?
+  canal     CanalVenta // quién la creó
+  fechaHora DateTime    @default(now())
+  total     Decimal
+  estado    EstadoOrden
   // Hasta cuándo las entradas de una orden Pendiente quedan reservadas. Las órdenes
   // gratuitas, que se aprueban en el momento, no la necesitan.
-  expiraEn    DateTime?
+  expiraEn  DateTime?
 
-  tickets     TicketEvento[]
-  detalles    DetalleOrdenCompra[]
-  cliente    Cliente? @relation(fields: [idCliente], references: [id])
+  tickets  TicketEvento[]
+  detalles DetalleOrdenCompra[]
+  cliente  Cliente?             @relation(fields: [idCliente], references: [id])
 
   @@map("ordenes_compra")
 }
@@ -266,146 +288,207 @@ model OrdenCompra {
 // que, cuando se apruebe el pago, se sepa qué tickets generar. El precio queda
 // fijado al momento de la compra.
 model DetalleOrdenCompra {
-  idOrden         Int
-  idEntrada       Int
-  cantidad        Int
-  precioUnitario  Decimal
-  subtotal        Decimal
+  idOrden        Int
+  idEntrada      Int
+  cantidad       Int
+  precioUnitario Decimal
+  subtotal       Decimal
 
-  orden           OrdenCompra @relation(fields: [idOrden], references: [id])
-  entrada         Entrada @relation(fields: [idEntrada], references: [id])
+  orden   OrdenCompra @relation(fields: [idOrden], references: [id])
+  entrada Entrada     @relation(fields: [idEntrada], references: [id])
 
   @@id([idOrden, idEntrada])
   @@map("detalle_orden_compra")
 }
 
 model TicketEvento {
-  id          Int      @id @default(autoincrement())
-  idEntrada   Int
-  idOrden     Int?
-  idPuntoVenta  Int?
-  codigoQR    String   @unique
-  numero      String   
-  precio      Decimal
-  fechaHora   DateTime @default(now())
-  estado      EstadoTicket
+  id           Int          @id @default(autoincrement())
+  idEntrada    Int
+  idOrden      Int?
+  idPuntoVenta Int?
+  // La rendición en la que el local informó este ticket (vendido o devuelto). Null = pendiente de rendir.
+  idRendicion  Int?
+  // La entrega en la que el organizador se lo dio al local (para el comprobante). Null = nunca se entregó.
+  idEntrega    Int?
+  codigoQR     String       @unique
+  numero       String
+  precio       Decimal
+  fechaHora    DateTime     @default(now())
+  estado       EstadoTicket
 
-  entrada    Entrada  @relation(fields: [idEntrada], references: [id])
+  entrada    Entrada      @relation(fields: [idEntrada], references: [id])
   orden      OrdenCompra? @relation(fields: [idOrden], references: [id])
   reembolso  Reembolso?
   accesos    Acceso?
-  puntoVenta PuntoVenta? @relation(fields: [idPuntoVenta], references: [id])
+  puntoVenta PuntoVenta?  @relation(fields: [idPuntoVenta], references: [id])
+  rendicion  Rendicion?   @relation(fields: [idRendicion], references: [id])
+  entrega    Entrega?     @relation(fields: [idEntrega], references: [id])
 
   @@unique([idEntrada, numero])
   @@map("tickets_evento")
 }
 
 model Reembolso {
-  id            Int      @id @default(autoincrement())
-  idTicket      Int      @unique
-  idUsuario     Int      // quién lo procesó
-  motivo        String
-  monto         Decimal
-  fechaHora     DateTime @default(now())
-  estado      EstadoReembolso
+  id        Int             @id @default(autoincrement())
+  idTicket  Int             @unique
+  idUsuario Int // quién lo procesó
+  motivo    String
+  monto     Decimal
+  fechaHora DateTime        @default(now())
+  estado    EstadoReembolso
 
-  ticket    TicketEvento @relation(fields: [idTicket], references: [id])
-  usuario  Usuario       @relation(fields: [idUsuario], references: [id])
+  ticket  TicketEvento @relation(fields: [idTicket], references: [id])
+  usuario Usuario      @relation(fields: [idUsuario], references: [id])
 
   @@map("reembolsos")
 }
 
 model PuntoVenta {
-  id        Int @id @default(autoincrement())
-  nombre    String
-  telefono  String?
-  estado    EstadoPuntoVenta
+  id       Int              @id @default(autoincrement())
+  nombre   String
+  telefono String?
+  estado   EstadoPuntoVenta
 
-  tickets   TicketEvento[]
+  tickets     TicketEvento[]
+  rendiciones Rendicion[]
+  entregas    Entrega[]
 
   @@map("puntos_venta")
 }
 
+// Cada vez que el organizador le da tickets físicos a un local: qué tickets y cuándo.
+// Sirve para el comprobante de entrega y para saber qué se le dio a cada local.
+model Entrega {
+  id           Int      @id @default(autoincrement())
+  idPuntoVenta Int
+  idEvento     Int
+  idUsuario    Int // quién la hizo
+  fechaHora    DateTime @default(now())
+  // Cuántos tickets salieron al registrarla. Si después se corrige (se le quitan o
+  // pasan a otro local), los actuales son los que siguen apuntando a esta entrega.
+  cantidadOriginal Int
+  observacion  String?
+
+  puntoVenta PuntoVenta     @relation(fields: [idPuntoVenta], references: [id])
+  evento     Evento         @relation(fields: [idEvento], references: [id])
+  usuario    Usuario        @relation(fields: [idUsuario], references: [id])
+  tickets    TicketEvento[]
+
+  @@map("entregas")
+}
+
+enum TipoComision {
+  Ninguna
+  Porcentaje
+  MontoFijo
+}
+
+// Cuando un local viene a rendir los tickets físicos de un evento: qué vendió,
+// qué devolvió, su comisión y la plata que entregó. Un local puede rendir varias
+// veces en el mismo evento; lo que quede debiendo pasa a la rendición siguiente.
+model Rendicion {
+  id                Int          @id @default(autoincrement())
+  idPuntoVenta      Int
+  idEvento          Int
+  idUsuario         Int // quién la registró
+  fechaHora         DateTime     @default(now())
+  cantidadVendidos  Int
+  cantidadDevueltos Int
+  montoVendido      Decimal // suma de los precios de los tickets vendidos
+  tipoComision      TipoComision
+  valorComision     Decimal? // el porcentaje o el monto fijo, según el tipo
+  montoComision     Decimal
+  saldoAnterior     Decimal // lo que debía de rendiciones anteriores
+  montoRecibido     Decimal
+  saldoPendiente    Decimal // saldoAnterior + vendido - comisión - recibido
+  observacion       String?
+
+  puntoVenta PuntoVenta     @relation(fields: [idPuntoVenta], references: [id])
+  evento     Evento         @relation(fields: [idEvento], references: [id])
+  usuario    Usuario        @relation(fields: [idUsuario], references: [id])
+  tickets    TicketEvento[]
+
+  @@map("rendiciones")
+}
+
 model Acceso {
-  id          Int      @id @default(autoincrement())
-  idTicket    Int      @unique
-  idUsuario   Int
-  fechaHora   DateTime @default(now())
+  id        Int      @id @default(autoincrement())
+  idTicket  Int      @unique
+  idUsuario Int
+  fechaHora DateTime @default(now())
 
+  usuario Usuario      @relation(fields: [idUsuario], references: [id])
+  ticket  TicketEvento @relation(fields: [idTicket], references: [id])
 
-  usuario Usuario @relation(fields: [idUsuario], references: [id])
-  ticket   TicketEvento @relation(fields: [idTicket], references: [id])
   @@map("accesos")
 }
 
 model ImagenEvento {
-  id          Int      @id @default(autoincrement())
-  idEvento    Int
-  url         String
+  id       Int    @id @default(autoincrement())
+  idEvento Int
+  url      String
 
-  evento   Evento  @relation(fields: [idEvento], references: [id])
+  evento Evento @relation(fields: [idEvento], references: [id])
 
   @@map("imagenes_evento")
 }
 
 model Producto {
-  id          Int      @id @default(autoincrement())
-  nombre      String
-  tipo        TipoProducto
-  precio      Decimal
-  estado      EstadoProducto
+  id     Int            @id @default(autoincrement())
+  nombre String
+  tipo   TipoProducto
+  precio Decimal
+  estado EstadoProducto
 
-  eventos     ProductoEvento[]
+  eventos      ProductoEvento[]
   detalleVenta DetalleVentaBuffet[]
 
   @@map("productos")
 }
 
 model ProductoEvento {
-  idProducto    Int
-  idEvento      Int
+  idProducto Int
+  idEvento   Int
 
-  producto    Producto @relation(fields: [idProducto], references: [id])
-  evento      Evento @relation(fields: [idEvento], references: [id])
+  producto Producto @relation(fields: [idProducto], references: [id])
+  evento   Evento   @relation(fields: [idEvento], references: [id])
 
   @@id([idProducto, idEvento])
-
   @@map("productos_evento")
 }
 
 model VentaBuffet {
-  id          Int      @id @default(autoincrement())
-  idJornada   Int
-  idUsuario   Int
-  fechaHora   DateTime @default(now())
-  total       Decimal
+  id        Int      @id @default(autoincrement())
+  idJornada Int
+  idUsuario Int
+  fechaHora DateTime @default(now())
+  total     Decimal
 
-  jornada       Jornada @relation(fields: [idJornada], references: [id])
-  usuario       Usuario @relation(fields: [idUsuario], references: [id])
-  detalleVenta  DetalleVentaBuffet[]
+  jornada      Jornada              @relation(fields: [idJornada], references: [id])
+  usuario      Usuario              @relation(fields: [idUsuario], references: [id])
+  detalleVenta DetalleVentaBuffet[]
 
   @@map("ventas_buffet")
 }
 
 model DetalleVentaBuffet {
-  idProducto      Int
-  idVentaBuffet   Int
-  cantidad        Int
-  precioUnitario  Decimal
-  subtotal        Decimal
+  idProducto     Int
+  idVentaBuffet  Int
+  cantidad       Int
+  precioUnitario Decimal
+  subtotal       Decimal
 
-  ventaBuffet     VentaBuffet @relation(fields: [idVentaBuffet], references: [id])
-  producto        Producto @relation(fields: [idProducto], references: [id])
+  ventaBuffet VentaBuffet @relation(fields: [idVentaBuffet], references: [id])
+  producto    Producto    @relation(fields: [idProducto], references: [id])
 
   @@id([idProducto, idVentaBuffet])
   @@map("detalle_venta_buffet")
-
 }
 
 model Rubro {
-  id          Int      @id @default(autoincrement())
-  nombre      String
-  tipo        TipoRubro
+  id     Int       @id @default(autoincrement())
+  nombre String
+  tipo   TipoRubro
 
   proveedores ProveedorRubro[]
   fuentes     FuenteIngresoRubro[]
@@ -415,20 +498,21 @@ model Rubro {
 }
 
 model Proveedor {
-  id          Int      @id @default(autoincrement())
-  nombre      String
-  email       String?   @unique
-  telefono    String?
-  estado      EstadoProveedor
+  id       Int             @id @default(autoincrement())
+  nombre   String
+  email    String?         @unique
+  telefono String?
+  estado   EstadoProveedor
 
   rubros      ProveedorRubro[]
   movimientos MovimientoFinanciero[]
+
   @@map("proveedores")
 }
 
 model ProveedorRubro {
-  idProveedor   Int
-  idRubro       Int
+  idProveedor Int
+  idRubro     Int
 
   proveedor Proveedor @relation(fields: [idProveedor], references: [id])
   rubro     Rubro     @relation(fields: [idRubro], references: [id])
@@ -439,23 +523,24 @@ model ProveedorRubro {
 
 // Quien genera un ingreso: sponsor, puestero que alquila un stand, organismo que da un subsidio.
 model FuenteIngreso {
-  id          Int      @id @default(autoincrement())
-  nombre      String
-  email       String?   @unique
-  telefono    String?
-  estado      EstadoFuenteIngreso
+  id       Int                 @id @default(autoincrement())
+  nombre   String
+  email    String?             @unique
+  telefono String?
+  estado   EstadoFuenteIngreso
 
   rubros      FuenteIngresoRubro[]
   movimientos MovimientoFinanciero[]
+
   @@map("fuentes_ingreso")
 }
 
 model FuenteIngresoRubro {
-  idFuente    Int
-  idRubro     Int
+  idFuente Int
+  idRubro  Int
 
-  fuente    FuenteIngreso @relation(fields: [idFuente], references: [id])
-  rubro     Rubro         @relation(fields: [idRubro], references: [id])
+  fuente FuenteIngreso @relation(fields: [idFuente], references: [id])
+  rubro  Rubro         @relation(fields: [idRubro], references: [id])
 
   @@id([idFuente, idRubro])
   @@map("fuentes_ingreso_rubros")
@@ -463,21 +548,21 @@ model FuenteIngresoRubro {
 
 // idProveedor lo usan los gastos e idFuente los ingresos: nunca los dos a la vez.
 model MovimientoFinanciero {
-  id              Int      @id @default(autoincrement())
-  idEvento        Int
-  idRubro         Int
-  idProveedor     Int?
-  idFuente        Int?
-  nroFactura      String?
-  tipoMovimiento  TipoMovimiento
-  fecha           DateTime @default(now()) @db.Date
-  monto           Decimal
-  descripcion     String?
+  id             Int            @id @default(autoincrement())
+  idEvento       Int
+  idRubro        Int
+  idProveedor    Int?
+  idFuente       Int?
+  nroFactura     String?
+  tipoMovimiento TipoMovimiento
+  fecha          DateTime       @default(now()) @db.Date
+  monto          Decimal
+  descripcion    String?
 
-  evento      Evento         @relation(fields: [idEvento], references: [id])
-  rubro       Rubro          @relation(fields: [idRubro], references: [id])
-  proveedor   Proveedor?     @relation(fields: [idProveedor], references: [id])
-  fuente      FuenteIngreso? @relation(fields: [idFuente], references: [id])
+  evento    Evento         @relation(fields: [idEvento], references: [id])
+  rubro     Rubro          @relation(fields: [idRubro], references: [id])
+  proveedor Proveedor?     @relation(fields: [idProveedor], references: [id])
+  fuente    FuenteIngreso? @relation(fields: [idFuente], references: [id])
 
   @@map("movimientos_financieros")
 }

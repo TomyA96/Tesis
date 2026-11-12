@@ -1,18 +1,19 @@
 import Modal from "../../../ui/componentes/Modal";
 import ReprogramarForm from "../forms/ReprogramarForm";
-import type { Evento } from "../../../services/eventosService";
+import type { Jornada } from "../../../services/jornadasService";
 
 type ReprogramarModalProps = {
     isOpen: boolean;
-    evento: Evento;
+    jornada: Jornada;
     closeModal: () => void;
-    onReprogramado: (evento: Evento) => void;
+    onReprogramado: (jornada: Jornada) => void;
 };
 
-const ReprogramarModal = ({ isOpen, evento, closeModal, onReprogramado }: ReprogramarModalProps) => {
+// Reprogramar es de cada jornada suspendida: le da fecha nueva y la vuelve a Activo
+const ReprogramarModal = ({ isOpen, jornada, closeModal, onReprogramado }: ReprogramarModalProps) => {
     return (
-        <Modal isOpen={isOpen} closeModal={closeModal} title="Reprogramar evento">
-            <ReprogramarForm evento={evento} onReprogramado={onReprogramado} onCancel={closeModal} />
+        <Modal isOpen={isOpen} closeModal={closeModal} title="Reprogramar jornada">
+            <ReprogramarForm jornada={jornada} onReprogramado={onReprogramado} onCancel={closeModal} />
         </Modal>
     );
 };

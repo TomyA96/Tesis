@@ -1,78 +1,113 @@
-import Header from "../../../ui/componentes/Header";
+import { useCallback, useEffect, useState } from "react";
+import { Link, useLocation, useNavigate, useParams } from "react-router-dom";
 import Btn from "../../../ui/componentes/Btn";
 import ContenedorDatos from "../../../ui/componentes/ContenedorDatos";
-import { useEffect, useState } from "react";
-import { useNavigate, useParams } from "react-router-dom";
+import Etiqueta from "../../../ui/componentes/Etiqueta";
+import Modal from "../../../ui/componentes/Modal";
+import ConfirmarAccion from "../../../ui/componentes/ConfirmarAccion";
 import EventoForm from "../forms/EventoForm";
 import CrearEventoForm from "../forms/CrearEventoForm";
-import ImagenEventoCard from "../componentes/ImagenEventoCard";
+import MiniaturaImagenEvento from "../componentes/MiniaturaImagenEvento";
+import TarjetaJornada from "../componentes/TarjetaJornada";
+import ResumenLotesJornada from "../componentes/ResumenLotesJornada";
+import PuntosVentaDelEvento from "../componentes/PuntosVentaDelEvento";
+import PublicarEventoModal from "../modales/PublicarEventoModal";
+import AgregarJornadasModal from "../modales/AgregarJornadasModal";
+import LoteEntradasModal from "../modales/LoteEntradasModal";
 import { RUTAS } from "../../../constantes/Rutas";
-import { getEvento } from "../../../services/eventosService";
-import type { Evento, EstadoEvento } from "../../../services/eventosService";
-
-import Etiqueta from "../../../ui/componentes/Etiqueta";
-import { cn } from "../../../../lib/cn";
+import {
+    cancelarEvento,
+    finalizarEvento,
+    getEvento,
+    getRevisionPublicacion,
+    publicarEvento,
+    suspenderEvento,
+    type Evento,
+    type RevisionJornada,
+} from "../../../services/eventosService";
+import { getEntradasDeEvento, type Entrada } from "../../../services/entradasService";
+import { getLocalesDeEvento, type LocalDeEvento } from "../../../services/rendicionesService";
 import { coloresEstadoEvento } from "../eventos.columns";
+import { nombreJornada } from "../utils/jornadaForm";
+import { fechaCortaConDia } from "../../../utils/zonaHoraria";
 
-export type ModoEventoPage = "crear" | "ver" | "editar";
+// Qué ventana está abierta: una sola a la vez
+type ModalEvento = "editar" | "agregar" | "entradas" | "publicar" | "suspender" | "finalizar" | "cancelar" | "pendientes" | null;
 
+/*
+    Detalle de un evento: arriba sus datos en chico, abajo una tarjeta por
+    jornada. Cada tarjeta lleva a la pantalla de esa jornada (JornadaPage),
+    que es donde se trabaja cada una (editar, entradas, publicar, cerrar).
+    Sin idEvento en la URL, la misma ruta sirve para crear un evento nuevo.
+*/
 const EventoPage = () => {
     const { idEvento } = useParams();
     const navigate = useNavigate();
-    /*
-        El único estado real es "¿el usuario tocó Editar?". Si estamos creando
-        o viendo se deriva de la URL en cada render, así no puede quedar
-        desincronizado al navegar entre /eventos/crear y /eventos/:id.
-    */
-    const [editando, setEditando] = useState(false);
-    const modoPage: ModoEventoPage = !idEvento ? "crear" : editando ? "editar" : "ver";
+    // Si el evento se acaba de crear y la imagen falló, el formulario de crear dejó el motivo acá
+    const avisoImagen = (useLocation().state as { avisoImagen?: string } | null)?.avisoImagen;
+
     const [evento, setEvento] = useState<Evento | null>(null);
+    // Las jornadas en Borrador y lo que le falta a cada una para publicarse
+    const [revision, setRevision] = useState<RevisionJornada[]>([]);
+    // Los lotes de todas las jornadas (resumen debajo de cada tarjeta) y los locales con tickets del evento
+    const [lotes, setLotes] = useState<Entrada[]>([]);
+    const [locales, setLocales] = useState<LocalDeEvento[]>([]);
+    // null mientras no se sabe (la miniatura todavía no la buscó)
+    const [tieneImagen, setTieneImagen] = useState<boolean | null>(null);
     const [error, setError] = useState("");
+    const [modal, setModal] = useState<ModalEvento>(null);
 
     /*
-        TODO (jornadas): el estado de la pantalla que falta
-        - idJornadaSeleccionada (o leerla de la URL con ?jornada=ID)
-        - entradas de la jornada elegida
-        - confirmandoCancelar / confirmandoFinalizar / confirmandoSuspender,
-          ahora por jornada, y las acciones (publicar, suspender, cancelar,
-          finalizar, reprogramar) de jornadasService
+        Trae el evento y la revisión juntos. Si la revisión falla, la pantalla
+        sirve igual (solo no muestra los avisos), por eso su error se ignora.
     */
+    const cargar = useCallback(async (id: number) => {
+        const [eventoBuscado, revisionBuscada, lotesBuscados] = await Promise.all([
+            getEvento(id),
+            getRevisionPublicacion(id).catch(() => []),
+            getEntradasDeEvento(id).catch(() => []),
+        ]);
+        // Un evento en Borrador no tiene tickets: no hay locales que consultar
+        const localesBuscados = eventoBuscado.estado === "Borrador" ? [] : await getLocalesDeEvento(id).catch(() => []);
+        setEvento(eventoBuscado);
+        setRevision(revisionBuscada);
+        setLotes(lotesBuscados);
+        setLocales(localesBuscados);
+    }, []);
 
     useEffect(() => {
-        /*
-            Al cambiar de evento (o volver a "crear") arrancamos siempre en
-            modo lectura: React reutiliza esta instancia entre rutas, así que
-            si no lo reseteamos, "editando" quedaría prendido del evento anterior.
-        */
-        setEditando(false);
+        // Al cambiar de evento se arranca de cero: React reutiliza esta instancia entre rutas
+        setModal(null);
         setEvento(null);
+        setRevision([]);
+        setLotes([]);
+        setLocales([]);
+        setTieneImagen(null);
+        setError("");
 
         if (!idEvento) return;
-        getEvento(Number(idEvento))
-            .then((eventoBuscado) => setEvento(eventoBuscado))
-            .catch(() => setError("No se pudo cargar el evento"));
-    }, [idEvento]);
+        cargar(Number(idEvento)).catch(() => setError("No se pudo cargar el evento"));
+    }, [idEvento, cargar]);
 
-    /*
-        El setEvento(null) del efecto corre DESPUÉS del render, así que en el
-        primer render de /eventos/crear el estado todavía tiene el evento
-        anterior. Derivarlo acá lo resuelve: si la URL no apunta a un evento,
-        no hay evento, sin depender de cuándo corra el efecto.
-    */
-    const eventoActual = idEvento ? evento : null;
+    // Después de cada acción: el estado del evento y de sus jornadas pudo cambiar
+    const recargar = async () => {
+        if (idEvento) await cargar(Number(idEvento));
+    };
 
-    const contenidoHeader = (
-        <div className="h-fit">
-            <h1 className="text-2xl font-bold">{eventoActual?.nombre}</h1>
-            <h2 className="flex items-center gap-2 text-sm font-medium text-gray-500">
-                Estado:{" "}
-                <Etiqueta color={coloresEstadoEvento[eventoActual?.estado as EstadoEvento] || "gris"}>
-                    {eventoActual?.estado}
-                </Etiqueta>
-            </h2>
-        </div>
-    );
-
+    if (!idEvento) {
+        return (
+            <main>
+                <ContenedorDatos className="p-6">
+                    <CrearEventoForm
+                        onCreated={(nuevo, avisoImagen) =>
+                            // El state viaja con la navegación: es la forma de pasarle el aviso a la pantalla de detalle
+                            navigate(RUTAS.eventos.detalle(nuevo.id), { state: { avisoImagen } })
+                        }
+                    />
+                </ContenedorDatos>
+            </main>
+        );
+    }
     if (error) {
         return (
             <main className="px-8">
@@ -80,8 +115,8 @@ const EventoPage = () => {
             </main>
         );
     }
-    // Mientras se trae el evento no tiene sentido pintar la pantalla vacía
-    if (idEvento && !eventoActual) {
+    // El evento guardado puede ser el anterior por un render (el efecto lo limpia después): se compara el id
+    if (!evento || evento.id !== Number(idEvento)) {
         return (
             <main className="px-8">
                 <p className="text-sm text-gray-500">Cargando evento…</p>
@@ -89,61 +124,259 @@ const EventoPage = () => {
         );
     }
 
+    // Llegan ordenadas por fecha de inicio: el índice es el número de "Jornada N"
+    const jornadas = evento.jornadas;
+    const titulos: Record<number, string> = Object.fromEntries(jornadas.map((j, i) => [j.id, nombreJornada(j, i)]));
+    const faltantesPorId = new Map(revision.map((r) => [r.id, r.faltantes]));
+
+    const borradores = jornadas.filter((j) => j.estado === "Borrador").length;
+    // Las que todavía no tienen cierre: el evento no se puede finalizar con alguna así
+    const abiertas = jornadas.filter((j) => j.estado === "Activo" || j.estado === "Suspendido");
+    const hayActivas = jornadas.some((j) => j.estado === "Activo");
+    // Las que todavía pueden recibir entradas: ni finalizadas ni canceladas
+    const conEntradas = jornadas.filter((j) => j.estado !== "Finalizado" && j.estado !== "Cancelado");
+    const finalizado = evento.estado === "Finalizado";
+    const sePuedePublicar = (evento.estado === "Borrador" || evento.estado === "Activo") && revision.length > 0;
+
+    // Avisa cuántas jornadas en Borrador se pierden al cerrar el evento (el backend lo exige confirmado)
+    const avisoBorradores =
+        borradores > 0 ? ` y descartar ${borradores} jornada(s) en borrador que nunca se publicaron` : "";
+
     return (
-        <main>
-            {/* Al crear no hay header: el formulario ya lleva su título y se aprovecha todo el espacio */}
-            {modoPage !== "crear" && (
-                <ContenedorDatos className="mb-4">
-                    <Header
-                        titulo={contenidoHeader}
-                        // TODO (jornadas): las acciones por estado pasan a ser por jornada. Por ahora solo Editar.
-                        action={
-                            modoPage === "ver" && (
-                                <Btn variant="secondary" className="min-w-[110px]" onClick={() => setEditando(true)}>
-                                    Editar
-                                </Btn>
-                            )
-                        }
-                    />
-                </ContenedorDatos>
+        <main className="flex flex-col gap-4">
+            {avisoImagen && (
+                <p className="rounded-lg border border-amber-300 bg-amber-50 px-4 py-3 text-sm text-amber-800">
+                    El evento se creó, pero no se pudo subir la imagen ({avisoImagen}). Podés volver a subirla desde la
+                    miniatura de abajo; la necesitás para publicar el evento.
+                </p>
             )}
 
-            {modoPage === "crear" && (
-                <ContenedorDatos className="p-6">
-                    <CrearEventoForm onCreated={(nuevo) => navigate(RUTAS.eventos.detalle(nuevo.id))} />
-                </ContenedorDatos>
-            )}
+            {/* ── CABECERA: datos del evento en chico ─────────────────────── */}
+            <ContenedorDatos className="gap-3 p-5">
+                <div className="flex flex-col gap-4 md:flex-row md:items-start">
+                    <MiniaturaImagenEvento idEvento={evento.id} bloqueado={finalizado} onCambio={setTieneImagen} />
 
-            {eventoActual && (
-                <div className="flex justify-center gap-6">
-                    <ContenedorDatos className={cn("max-w-[800px] gap-6 p-6", modoPage === "editar" && "relative z-50")}>
-                        <EventoForm
-                            key={eventoActual.id}
-                            modo={modoPage === "editar" ? "editar" : "ver"}
-                            evento={eventoActual}
-                            onUpdated={(actualizado) => {
-                                // El PUT devuelve solo los datos del evento (sin jornadas ni estado): se mezclan con lo que ya hay
-                                setEvento((prev) => (prev ? { ...prev, ...actualizado } : prev));
-                                setEditando(false);
-                            }}
-                            onCancel={() => setEditando(false)}
-                        />
-                        <ImagenEventoCard idEvento={eventoActual.id} estado={eventoActual.estado} />
-                    </ContenedorDatos>
+                    <div className="flex min-w-0 flex-1 flex-col gap-1">
+                        <div className="flex flex-wrap items-center gap-2">
+                            <h1 className="text-2xl font-bold">{evento.nombre}</h1>
+                            <Etiqueta color={coloresEstadoEvento[evento.estado]}>{evento.estado}</Etiqueta>
+                        </div>
+                        <span className="text-sm text-gray-500">
+                            {jornadas.length} jornada(s) ·{" "}
+                            {/* Si empieza y termina el mismo día, "del sáb 5/12 al sáb 5/12" sobra */}
+                            {fechaCortaConDia(evento.fechaHoraInicio) === fechaCortaConDia(evento.fechaHoraFin)
+                                ? fechaCortaConDia(evento.fechaHoraInicio)
+                                : `del ${fechaCortaConDia(evento.fechaHoraInicio)} al ${fechaCortaConDia(evento.fechaHoraFin)}`}
+                        </span>
+                        {evento.descripcion ? (
+                            <p className="line-clamp-2 text-sm text-gray-600" title={evento.descripcion}>
+                                {evento.descripcion}
+                            </p>
+                        ) : (
+                            <p className="text-sm italic text-gray-400">Sin descripción</p>
+                        )}
+                        {/* Editar va con los datos que modifica, separado de las acciones que cambian el estado */}
+                        {!finalizado && (
+                            <Btn variant="outline" size="sm" className="mt-2 w-fit" onClick={() => setModal("editar")}>
+                                Editar datos
+                            </Btn>
+                        )}
+                    </div>
 
-                    <ContenedorDatos>
-                        {/*
-                            TODO (jornadas), de arriba hacia abajo:
-                            1. SelectorJornadas con eventoActual.jornadas
-                            2. JornadaForm (key = id de la jornada elegida)
-                            3. ListaEntradas de la jornada elegida (hoy recibe idEvento y capacidad)
-                            4. agregar una jornada nueva (JornadaForm en modo "crear")
-                        */}
-                    </ContenedorDatos>
+                    {/*
+                        Las acciones que cambian el estado del evento completo, una
+                        debajo de otra y del mismo ancho; las de cada jornada están
+                        en su pantalla.
+                    */}
+                    <div className="flex flex-col gap-2 md:w-44">
+                        {sePuedePublicar && (
+                            <Btn variant="success" size="sm" onClick={() => setModal("publicar")}>
+                                {evento.estado === "Borrador" ? "Publicar" : "Publicar jornadas"}
+                            </Btn>
+                        )}
+                        {evento.estado === "Activo" && hayActivas && (
+                            <Btn variant="warning" size="sm" onClick={() => setModal("suspender")}>
+                                Suspender
+                            </Btn>
+                        )}
+                        {evento.estado === "Activo" && (
+                            // Si quedan jornadas sin cierre, en vez de intentar se le muestra cuáles son
+                            <Btn variant="secondary" size="sm" onClick={() => setModal(abiertas.length > 0 ? "pendientes" : "finalizar")}>
+                                Finalizar
+                            </Btn>
+                        )}
+                        {evento.estado === "Activo" && abiertas.length > 0 && (
+                            <Btn variant="danger" size="sm" onClick={() => setModal("cancelar")}>
+                                Cancelar evento
+                            </Btn>
+                        )}
+                    </div>
                 </div>
-            )}
 
-            {modoPage === "editar" && <div className="fixed inset-0 z-40 bg-black/50" />}
+                {tieneImagen === false && !finalizado && (
+                    <p className="rounded-lg bg-amber-50 px-4 py-2 text-sm text-amber-800">
+                        Falta la imagen del evento: la necesitás para publicar.
+                    </p>
+                )}
+            </ContenedorDatos>
+
+            {/* ── JORNADAS ─────────────────────────────────────────────────── */}
+            <ContenedorDatos className="gap-4 p-5">
+                <div className="flex items-center justify-between gap-4">
+                    <h2 className="text-lg font-semibold text-gray-900">Jornadas ({jornadas.length})</h2>
+                    <div className="flex flex-wrap gap-2">
+                        {conEntradas.length > 0 && (
+                            <Btn variant="outline" size="sm" onClick={() => setModal("entradas")}>
+                                + Lote de entradas
+                            </Btn>
+                        )}
+                        {!finalizado && (
+                            <Btn size="sm" onClick={() => setModal("agregar")}>
+                                + Agregar jornadas
+                            </Btn>
+                        )}
+                    </div>
+                </div>
+                <div className="grid grid-cols-[repeat(auto-fill,minmax(16rem,1fr))] gap-3">
+                    {jornadas.map((jornada) => (
+                        <div key={jornada.id} className="flex flex-col">
+                            <TarjetaJornada
+                                jornada={jornada}
+                                titulo={titulos[jornada.id]}
+                                to={RUTAS.eventos.jornada(evento.id, jornada.id)}
+                                faltantes={faltantesPorId.get(jornada.id)}
+                                className="flex-1 rounded-b-none"
+                            />
+                            <ResumenLotesJornada
+                                idEvento={evento.id}
+                                jornada={jornada}
+                                lotes={lotes.filter((l) => l.idJornada === jornada.id)}
+                            />
+                        </div>
+                    ))}
+                </div>
+            </ContenedorDatos>
+
+            {/* ── PUNTOS DE VENTA: a quién se le entregaron tickets y qué falta rendir ── */}
+            {evento.estado !== "Borrador" && <PuntosVentaDelEvento idEvento={evento.id} locales={locales} />}
+
+            {/* ── VENTANAS ─────────────────────────────────────────────────── */}
+            {/* El Modal no renderiza nada cerrado: cada vez que se abre, el formulario arranca con los datos actuales */}
+            <Modal isOpen={modal === "editar"} closeModal={() => setModal(null)} title="Editar evento">
+                <div className="w-[min(90vw,32rem)]">
+                    <EventoForm
+                        modo="editar"
+                        evento={evento}
+                        onUpdated={(actualizado) => {
+                            // El PUT devuelve solo los datos propios del evento: se mezclan con lo que ya hay
+                            setEvento((prev) => (prev ? { ...prev, ...actualizado } : prev));
+                            setModal(null);
+                        }}
+                        onCancel={() => setModal(null)}
+                    />
+                </div>
+            </Modal>
+
+            <AgregarJornadasModal
+                isOpen={modal === "agregar"}
+                idEvento={evento.id}
+                jornadasDelEvento={jornadas}
+                onAgregadas={async () => {
+                    setModal(null);
+                    await recargar();
+                }}
+                onCancelar={() => setModal(null)}
+            />
+
+            <LoteEntradasModal
+                isOpen={modal === "entradas"}
+                jornadas={conEntradas}
+                titulos={titulos}
+                onCreado={async () => {
+                    setModal(null);
+                    // Las entradas nuevas cambian lo que le falta a cada jornada para publicarse
+                    await recargar();
+                }}
+                onCancelar={() => setModal(null)}
+            />
+
+            <PublicarEventoModal
+                isOpen={modal === "publicar"}
+                estadoEvento={evento.estado}
+                revision={revision}
+                titulos={titulos}
+                // Mientras no se sabe (null) se deja intentar: el backend igual lo controla
+                tieneImagen={tieneImagen !== false}
+                onConfirmar={async (confirmarIncompletas) => {
+                    await publicarEvento(evento.id, confirmarIncompletas);
+                    setModal(null);
+                    await recargar();
+                }}
+                onCancelar={() => setModal(null)}
+            />
+
+            <ConfirmarAccion
+                isOpen={modal === "suspender"}
+                title="Suspender jornadas"
+                mensaje="Suspender todas las jornadas activas del evento (la venta se corta hasta reprogramar cada una)"
+                variante="primary"
+                onConfirmar={async () => {
+                    await suspenderEvento(evento.id);
+                    setModal(null);
+                    await recargar();
+                }}
+                onCancelar={() => setModal(null)}
+            />
+
+            <ConfirmarAccion
+                isOpen={modal === "finalizar"}
+                title="Finalizar evento"
+                mensaje={`Finalizar el evento${avisoBorradores} (no se puede deshacer)`}
+                onConfirmar={async () => {
+                    await finalizarEvento(evento.id, borradores > 0);
+                    setModal(null);
+                    await recargar();
+                }}
+                onCancelar={() => setModal(null)}
+            />
+
+            <ConfirmarAccion
+                isOpen={modal === "cancelar"}
+                title="Cancelar evento"
+                mensaje={`Cancelar el evento y sus ${abiertas.length} jornada(s) activas o suspendidas${avisoBorradores} (los tickets asignados a locales quedan pendientes de su rendición; no se puede deshacer)`}
+                onConfirmar={async () => {
+                    await cancelarEvento(evento.id, borradores > 0);
+                    setModal(null);
+                    await recargar();
+                }}
+                onCancelar={() => setModal(null)}
+            />
+
+            {/* Finalizar con jornadas sin cierre: el sistema pide resolverlas una por una */}
+            <Modal isOpen={modal === "pendientes"} closeModal={() => setModal(null)} title="Antes de finalizar" maxWidth="480px">
+                <div className="flex flex-col gap-4 text-sm">
+                    <p className="text-gray-700">
+                        Estas jornadas todavía no tienen cierre. Finalizalas si ya se realizaron, o cancelalas, y
+                        después finalizá el evento:
+                    </p>
+                    <ul className="flex flex-col gap-2">
+                        {abiertas.map((jornada) => (
+                            <li key={jornada.id} className="flex items-center justify-between gap-3">
+                                <Link
+                                    to={RUTAS.eventos.jornada(evento.id, jornada.id)}
+                                    className="font-medium text-blue-600 hover:underline"
+                                >
+                                    {titulos[jornada.id]} ({fechaCortaConDia(jornada.fechaHoraInicio)})
+                                </Link>
+                                <Etiqueta color={coloresEstadoEvento[jornada.estado]}>{jornada.estado}</Etiqueta>
+                            </li>
+                        ))}
+                    </ul>
+                    <Btn variant="outline" onClick={() => setModal(null)}>
+                        Entendido
+                    </Btn>
+                </div>
+            </Modal>
         </main>
     );
 };

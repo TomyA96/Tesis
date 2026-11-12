@@ -18,6 +18,9 @@ export type JornadaFormData = {
     capacidad: string;
 };
 
+// Mismo límite que el @MaxLength del backend (CreateJornadaDto)
+export const NOMBRE_JORNADA_MAX = 100;
+
 // Los campos que escribe el usuario: idLocal no se edita
 export type CampoJornada = Exclude<keyof JornadaFormData, "idLocal">;
 
@@ -55,12 +58,13 @@ const NOMBRE_AUTOMATICO = /^(Día|Fecha) \d+$/;
 /*
     Ordena por fecha y vuelve a numerar según la posición. Solo toca los
     nombres automáticos: uno escrito a mano ("Semifinal") se respeta, aunque
-    cuenta para la numeración de las que siguen.
+    cuenta para la numeración de las que siguen. `desde` es cuántas jornadas
+    ya tiene el evento: al agregar a uno ya creado, la numeración sigue de ahí.
 */
-export const renumerarJornadas = (jornadas: JornadaFormData[]) =>
+export const renumerarJornadas = (jornadas: JornadaFormData[], desde = 0) =>
     ordenarJornadas(jornadas).map((jornada, indice) => {
         const automatico = NOMBRE_AUTOMATICO.exec(jornada.nombre.trim());
-        return automatico ? { ...jornada, nombre: `${automatico[1]} ${indice + 1}` } : jornada;
+        return automatico ? { ...jornada, nombre: `${automatico[1]} ${desde + indice + 1}` } : jornada;
     });
 
 // Cuándo empieza y termina una fila; null si todavía no tiene los datos para saberlo
@@ -92,6 +96,46 @@ export const hallarSuperposiciones = (jornadas: JornadaFormData[]): [number, num
         }
     }
     return choques;
+};
+
+/*
+    Revisa los campos de UNA fila y devuelve el primer problema que encuentra,
+    o null si está todo bien. Repite las reglas del backend (CreateJornadaDto)
+    y suma que el inicio no puede haber pasado. Va antes de formularioAJornada,
+    que asume datos válidos.
+
+    `conFechas: false` es para editar una jornada Activa o Suspendida: sus
+    fechas están bloqueadas y no se mandan, así que no se revisan (si no, una
+    jornada que ya empezó no se podría editar por "inicio en el pasado").
+*/
+export const validarJornada = (jornada: JornadaFormData, { conFechas = true } = {}): string | null => {
+    if (jornada.nombre.trim().length > NOMBRE_JORNADA_MAX) {
+        return `El nombre no puede superar los ${NOMBRE_JORNADA_MAX} caracteres`;
+    }
+
+    let inicio: Date | null = null;
+    if (conFechas) {
+        if (!jornada.fecha) return "Falta la fecha";
+        if (!jornada.hora) return "Falta la hora de inicio";
+
+        inicio = combinarFechaHora(jornada.fecha, jornada.hora);
+        if (Number.isNaN(inicio.getTime())) return "La fecha o la hora no son válidas";
+    }
+
+    if (!jornada.direccion.trim()) return "Falta la dirección";
+
+    // Number("") da 0 y Number("abc") da NaN: los dos quedan afuera de estas condiciones
+    if (conFechas) {
+        const duracion = Number(jornada.duracion);
+        if (!Number.isFinite(duracion) || duracion <= 0) return "La duración debe ser mayor a 0";
+    }
+
+    const capacidad = Number(jornada.capacidad);
+    if (!Number.isInteger(capacidad) || capacidad < 1) return "La capacidad debe ser un número entero mayor a 0";
+
+    if (inicio && inicio <= new Date()) return "El inicio de la jornada tiene que ser posterior al momento actual";
+
+    return null;
 };
 
 export const jornadaVacia = (): JornadaFormData => ({
@@ -142,3 +186,11 @@ export const formularioAJornada = (datos: JornadaFormData): CreateJornada => {
         capacidad: Number(datos.capacidad),
     };
 };
+
+/*
+    Cómo se muestra una jornada en listas y títulos: su nombre, o "Jornada N"
+    según su posición si no tiene. `indice` es la posición en la lista de
+    jornadas del evento ordenada por fecha (empieza en 0).
+*/
+export const nombreJornada = (jornada: { nombre: string | null }, indice: number) =>
+    jornada.nombre || `Jornada ${indice + 1}`;

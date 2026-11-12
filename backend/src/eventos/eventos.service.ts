@@ -6,6 +6,7 @@ import { UpdateEventoDto } from './dtos/update.evento.dto';
 import { ImagenEventoService } from '../imagen-evento/imagen-evento.service';
 import { JornadasService } from '../jornadas/jornadas.service';
 import { limiteVentaOnline } from '../jornadas/utils/venta-online';
+import { anularTicketsSinVender, ticketsSinRendir } from '../entradas/utils/tickets';
 
 type ConJornadas = { jornadas: { fechaHoraInicio: Date; fechaHoraFin: Date }[] };
 
@@ -94,7 +95,18 @@ export class EventosService {
                     ...this.jornadasOrdenadas,
                     include: {
                         entradas: {
-                            where: { estado: 'Disponible', habilitada: true, esFisica: false },
+                            /*
+                                Un lote sin tickets a la venta está agotado y no se ofrece.
+                                Una reserva vencida cuenta como libre: se libera recién
+                                cuando alguien compra (ver liberarReservasVencidas).
+                            */
+                            where: {
+                                estado: 'Disponible', habilitada: true, esFisica: false,
+                                tickets: { some: { OR: [
+                                    { estado: 'Disponible' },
+                                    { estado: 'Reservado', orden: { expiraEn: { lte: new Date() } } },
+                                ] } },
+                            },
                             select: { id: true, descripcion: true, precio: true },
                             orderBy: { precio: 'asc' }
                         }
@@ -110,14 +122,11 @@ export class EventosService {
     }
 
     // Crea el evento y todas sus jornadas en una sola operación: se guarda todo o nada
-    create(data: CreateEventoDto) {
+    createEvento(data: CreateEventoDto) {
         const { jornadas, ...evento } = data;
 
-        for (const jornada of jornadas) {
-            if (jornada.fechaHoraFin <= jornada.fechaHoraInicio) {
-                throw new BadRequestException('La fecha de fin de cada jornada debe ser posterior a la de inicio');
-            }
-        }
+        // Fin posterior al inicio, inicio futuro y sin superposición entre las jornadas del evento
+        this.jornada.validarFechasNuevas(jornadas);
 
         return this.prisma.evento.create({
             data: { ...evento, jornadas: { create: jornadas } },
@@ -177,22 +186,56 @@ export class EventosService {
         return evento;
     }
 
+    // Qué le falta a cada jornada en Borrador para publicarse (la pantalla lo muestra antes de confirmar)
+    async revisarPublicacion(id: number) {
+        await this.obtenerEvento(id);
+        return this.jornada.revisarPublicacion(id);
+    }
+
     /*
-        Publicar el evento lo habilita a vender, pero no publica ninguna jornada:
-        cada una se publica por separado (y solo si el evento está Activo).
+        Publica en un solo paso: si el evento está en Borrador lo activa, y
+        publica todas sus jornadas COMPLETAS. Con el evento ya Activo sirve
+        para publicar las jornadas que se completaron (o agregaron) después.
+
+        Las incompletas quedan en Borrador. Como eso puede no ser lo que el
+        usuario espera, si hay alguna se exige que lo confirme
+        (confirmarIncompletas); si no, se rechaza sin tocar nada.
     */
-    async publicar(id: number) {
+    async publicar(id: number, confirmarIncompletas = false) {
         const evento = await this.obtenerEvento(id);
 
-        if (evento.estado !== 'Borrador') {
-            throw new ConflictException('Solo se pueden publicar eventos que estén en estado Borrador');
+        if (evento.estado !== 'Borrador' && evento.estado !== 'Activo') {
+            throw new ConflictException('Solo se pueden publicar eventos en Borrador o Activos');
         }
         const imagenes = await this.imagenEventoService.findAllByEvento(id);
         if (imagenes.length === 0) {
             throw new ConflictException('No se puede publicar un evento sin una imagen publicitaria');
         }
 
-        await this.prisma.evento.update({ where: { id }, data: { estado: 'Activo' } });
+        const revision = await this.jornada.revisarPublicacion(id);
+        const completas = revision.filter((r) => r.faltantes.length === 0);
+        const incompletas = revision.length - completas.length;
+
+        if (revision.length === 0) {
+            throw new ConflictException('El evento no tiene jornadas en borrador para publicar');
+        }
+        // Un evento activo sin nada para vender no tiene sentido: hace falta al menos una completa
+        if (completas.length === 0) {
+            throw new ConflictException('Ninguna jornada está completa para publicarse: revisá lo que le falta a cada una');
+        }
+        if (incompletas > 0 && !confirmarIncompletas) {
+            throw new ConflictException(`${incompletas} jornada(s) no están completas y quedarían sin publicar. Confirmá para publicar solo las completas`);
+        }
+
+        // Todo o nada: si falla una jornada, ni el evento ni las demás quedan publicados a medias
+        await this.prisma.$transaction(async (tx) => {
+            if (evento.estado === 'Borrador') {
+                await tx.evento.update({ where: { id }, data: { estado: 'Activo' } });
+            }
+            for (const jornada of completas) {
+                await this.jornada.publicarEnTransaccion(tx, jornada.id);
+            }
+        });
         return this.obtenerEvento(id);
     }
 
@@ -236,12 +279,40 @@ export class EventosService {
         if (cerradas.length === 0) {
             throw new ConflictException('El evento no tuvo ninguna jornada: si no se va a realizar, eliminalo');
         }
+        await this.validarRendicionesCompletas(id);
 
         await this.prisma.$transaction(async (tx) => {
             await this.resolverBorradores(tx, id, descartarBorradores);
             await tx.evento.update({ where: { id }, data: { estado: 'Finalizado' } });
         });
         return this.obtenerEvento(id);
+    }
+
+    /*
+        Finalizar es "el evento está cerrado": ningún local puede seguir con
+        tickets sin rendir. Las deudas de plata no frenan el cierre: se siguen
+        cobrando con rendiciones de solo pago.
+        Cancelar, en cambio, no se bloquea: es una urgencia, y los locales
+        rinden después.
+    */
+    private async validarRendicionesCompletas(idEvento: number) {
+        const pendientes = await this.prisma.ticketEvento.groupBy({
+            by: ['idPuntoVenta'],
+            where: ticketsSinRendir(idEvento),
+            _count: true,
+        });
+        if (pendientes.length === 0) return;
+
+        const puntos = await this.prisma.puntoVenta.findMany({
+            where: { id: { in: pendientes.map((p) => p.idPuntoVenta as number) } },
+            select: { id: true, nombre: true },
+        });
+        const detalle = pendientes
+            .map((p) => `${puntos.find((punto) => punto.id === p.idPuntoVenta)?.nombre} (${p._count})`)
+            .join(', ');
+        throw new ConflictException(
+            `Hay tickets asignados a puntos de venta sin rendir: ${detalle}. Registrá sus rendiciones antes de finalizar el evento`,
+        );
     }
 
     /*
@@ -268,6 +339,7 @@ export class EventosService {
             await tx.entrada.deleteMany({
                 where: { idJornada: { in: idsACancelar }, estado: 'Borrador', tickets: { none: {} } }
             });
+            await anularTicketsSinVender(tx, idsACancelar);
             await tx.jornada.updateMany({ where: { id: { in: idsACancelar } }, data: { estado: 'Cancelado' } });
             await tx.evento.update({ where: { id }, data: { estado: 'Finalizado' } });
         });

@@ -39,6 +39,15 @@ const permisos = [
     { codigo: 'entradas.imprimir', descripcion: 'Generar tickets físicos' },
     { codigo: 'entradas.vender', descripcion: 'Vender entradas en puerta o boletería' },
 
+    // Tickets (los de cada lote, ya creados)
+    { codigo: 'tickets.ver', descripcion: 'Ver los tickets de una jornada' },
+    { codigo: 'tickets.asignar', descripcion: 'Asignar tickets físicos a puntos de venta' },
+    { codigo: 'tickets.anular', descripcion: 'Anular tickets que no se vendieron' },
+
+    // Rendiciones (lo que vendieron los puntos de venta)
+    { codigo: 'rendiciones.ver', descripcion: 'Ver lo pendiente y el historial de rendiciones' },
+    { codigo: 'rendiciones.registrar', descripcion: 'Registrar la rendición de un punto de venta' },
+
     // Ventas
     { codigo: 'ventas.ver', descripcion: 'Ver las ventas y la recaudación de un evento' },
 
@@ -57,6 +66,12 @@ const permisos = [
     { codigo: 'proveedores.crear', descripcion: 'Crear proveedores' },
     { codigo: 'proveedores.editar', descripcion: 'Editar proveedores' },
     { codigo: 'proveedores.eliminar', descripcion: 'Eliminar proveedores' },
+
+    // Puntos de venta (locales a los que se les reparten tickets físicos)
+    { codigo: 'puntosVenta.ver', descripcion: 'Ver puntos de venta' },
+    { codigo: 'puntosVenta.crear', descripcion: 'Crear puntos de venta' },
+    { codigo: 'puntosVenta.editar', descripcion: 'Editar puntos de venta' },
+    { codigo: 'puntosVenta.eliminar', descripcion: 'Eliminar puntos de venta' },
 
     // Fuentes de ingreso
     { codigo: 'fuentes.ver', descripcion: 'Ver fuentes de ingreso' },

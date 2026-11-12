@@ -1,27 +1,34 @@
 import {api} from './api.ts';
 
-export const ESTADOS_ENTRADA = ["Disponible", "Borrador"] as const;
+// Disponible: publicado (online) o impreso (física). Anulado: cortado para siempre.
+export const ESTADOS_ENTRADA = ["Disponible", "Borrador", "Anulado"] as const;
 export type EstadoEntrada = typeof ESTADOS_ENTRADA[number];
-//export const opcionesEstadoEntrada = ESTADOS_ENTRADA.map((estado) => ({ label: estado, value: estado }));
 
 export interface Entrada {
     id: number;
-    idEvento: number;
+    idJornada: number;
     descripcion: string;
     precio: number;
     esFisica: boolean;
     estado: EstadoEntrada;
-    cantidad: number | null;
+    // Cuántos tickets tiene el lote: se crean todos al publicarlo o imprimirlo
+    cantidad: number;
+    // Solo cuenta en un lote online publicado: false = venta pausada
     habilitada: boolean;
-    cantidadTicket: number;
+    vendidos: number;
+    anulados: number;
+    // Solo cuentan en un lote físico: los que tiene el organizador (Impreso) y los que están en locales (Asignado)
+    enMano: number;
+    enLocales: number;
 }
 
 export interface CreateEntrada {
-    idEvento: number;
+    // Las entradas son de cada jornada, no del evento
+    idJornada: number;
     descripcion: string;
     precio: number;
     esFisica: boolean;
-    cantidad?: number;
+    cantidad: number;
 }
 
 export interface UpdateEntrada{
@@ -30,8 +37,23 @@ export interface UpdateEntrada{
     cantidad?: number;
 }
 
-export function getEntradas(idEvento: number){
-    return api.get<Entrada[]>(`/entradas?idEvento=${idEvento}`)
+// Los datos de un lote sin la jornada, más las jornadas donde crearlo (uno en cada una)
+export interface CreateEntradasLote extends Omit<CreateEntrada, "idJornada"> {
+    idsJornadas: number[];
+}
+
+// El backend crea un lote en cada jornada elegida, o en ninguna si alguna tiene un problema
+export function createEntradasLote(data: CreateEntradasLote) {
+    return api.post<Entrada[]>("/entradas/lote", data);
+}
+
+export function getEntradasDeJornada(idJornada: number){
+    return api.get<Entrada[]>(`/entradas?idJornada=${idJornada}`)
+}
+
+// Todos los lotes del evento, de todas sus jornadas (ordenados por fecha de jornada)
+export function getEntradasDeEvento(idEvento: number) {
+    return api.get<Entrada[]>(`/entradas?idEvento=${idEvento}`);
 }
 
 export function createEntrada(entrada: CreateEntrada) {
@@ -54,6 +76,12 @@ export function deshabilitarEntrada(id: number){
     return api.put<Entrada>(`/entradas/${id}/deshabilitar`, {})
 }
 
+// Corta el lote para siempre: sus tickets sin vender quedan anulados
+export function anularEntrada(id: number){
+    return api.put<Entrada>(`/entradas/${id}/anular`, {})
+}
+
+// Imprimir lote: crea los tickets físicos y descarga el PDF
 export async function imprimirEntrada(id: number, descripcion: string) {
     const blob = await api.postBlob(`/entradas/${id}/imprimir`, {});
     const descripcionSegura = descripcion.replace(/[\\/:*?"<>|]/g, '');

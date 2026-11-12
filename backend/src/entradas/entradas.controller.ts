@@ -2,6 +2,7 @@ import { BadRequestException, Controller, Get, Post, Put, Delete, Param, Body, Q
 import { EstadoEntrada } from '@prisma/client';
 import { EntradasService } from './entradas.service';
 import { CreateEntradaDto } from './dtos/create.entrada.dto';
+import { CreateEntradasLoteDto } from './dtos/create.entradas-lote.dto';
 import { UpdateEntradaDto } from './dtos/update.entrada.dto';
 import { Permisos } from '../auth/decorators/permisos.decorator';
 import { AuthGuard } from '../auth/guards/auth.guard';
@@ -36,6 +37,13 @@ export class EntradasController {
         return this.entradasService.createEntrada(data)
     }
 
+    // El mismo lote en varias jornadas (uno en cada una), todo o nada
+    @Permisos('entradas.crear')
+    @Post('lote')
+    createLote(@Body() data: CreateEntradasLoteDto) {
+        return this.entradasService.createLote(data)
+    }
+
     @Permisos('entradas.editar')
     @Put(':id')
     updateEntrada(@Param('id') id: string, @Body() data: UpdateEntradaDto) {
@@ -58,6 +66,13 @@ export class EntradasController {
     @Put(':id/deshabilitar')
     deshabilitarEntrada(@Param('id') id: string) {
         return this.entradasService.deshabilitarEntrada(Number(id))
+    }
+
+    // Reemplaza a eliminar para un lote que ya tiene tickets: por eso usa el mismo permiso
+    @Permisos('entradas.eliminar')
+    @Put(':id/anular')
+    anularEntrada(@Param('id') id: string) {
+        return this.entradasService.anularEntrada(Number(id))
     }
 
     @Permisos('entradas.imprimir')

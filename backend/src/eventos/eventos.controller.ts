@@ -7,7 +7,9 @@ import { CreateEventoDto } from './dtos/create.evento.dto';
 import { Permisos } from '../auth/decorators/permisos.decorator';
 import { UpdateEventoDto } from './dtos/update.evento.dto';
 import { CreateJornadaDto } from '../jornadas/dtos/create.jornada.dto';
+import { CreateJornadasLoteDto } from '../jornadas/dtos/create.jornadas-lote.dto';
 import { ConcluirEventoDto } from './dtos/concluir.evento.dto';
+import { PublicarEventoDto } from './dtos/publicar.evento.dto';
 
 @UseGuards(AuthGuard, PermissionsGuard)
 @Controller('eventos')
@@ -42,7 +44,7 @@ export class EventosController {
     @Permisos('eventos.crear')
     @Post()
     create(@Body() data: CreateEventoDto) {
-        return this.eventosService.create(data);
+        return this.eventosService.createEvento(data);
     }
 
     @Permisos('eventos.editar')
@@ -51,16 +53,31 @@ export class EventosController {
         return this.jornadasService.create(Number(id), data);
     }
 
+    // Varias jornadas de una vez (todas o ninguna)
+    @Permisos('eventos.editar')
+    @Post(':id/jornadas/lote')
+    addJornadas(@Param('id') id: string, @Body() data: CreateJornadasLoteDto) {
+        return this.jornadasService.createVarias(Number(id), data.jornadas);
+    }
+
     @Permisos('eventos.editar')
     @Put(':id')
     async updateEvento(@Param('id') id: string, @Body() data: UpdateEventoDto) {
         return this.eventosService.updateEvento(Number(id), data);
     }
 
+    // Qué le falta a cada jornada en Borrador para poder publicarse
+    @Permisos('eventos.ver')
+    @Get(':id/publicacion')
+    revisarPublicacion(@Param('id') id: string) {
+        return this.eventosService.revisarPublicacion(Number(id));
+    }
+
+    // Activa el evento (si está en Borrador) y publica sus jornadas completas
     @Permisos('eventos.publicar')
     @Put(':id/publicar')
-    publicar(@Param('id') id: string) {
-        return this.eventosService.publicar(Number(id));
+    publicar(@Param('id') id: string, @Body() data?: PublicarEventoDto) {
+        return this.eventosService.publicar(Number(id), data?.confirmarIncompletas);
     }
 
     // Suspende todas las jornadas activas del evento; el evento sigue Activo

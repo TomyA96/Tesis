@@ -7,6 +7,7 @@ import {
     formularioAJornada,
     jornadaAFormulario,
     jornadaVacia,
+    validarJornada,
     type CampoJornada,
     type JornadaFormData,
 } from "../utils/jornadaForm";
@@ -38,8 +39,10 @@ const JornadaForm = ({ modo, idEvento, jornada, onCreated, onUpdated, onCancel }
     const [datos, setDatos] = useState<JornadaFormData>(jornada ? jornadaAFormulario(jornada) : jornadaVacia());
     const [error, setError] = useState("");
 
+    // Como en CrearEventoForm: si el usuario corrige algo, el aviso anterior ya no corresponde
     const handleChange = (campo: CampoJornada, valor: string) => {
         setDatos((prev) => ({ ...prev, [campo]: valor }));
+        setError("");
     };
 
     // El backend rechaza cambiar las fechas de una jornada que ya no está en Borrador
@@ -50,18 +53,28 @@ const JornadaForm = ({ modo, idEvento, jornada, onCreated, onUpdated, onCancel }
         setError("");
 
         /*
-            TODO: validaciones antes de convertir (capacidad > 0, duración > 0,
-            y al crear, que el inicio sea futuro, como hace EventoForm).
-            TODO: en modo "editar" con fechasDeshabilitadas, no mandar las
-            fechas: el backend responde 409 si llegan en una jornada que no
-            está en Borrador.
+            Las mismas reglas que al crear el evento (validarJornada), antes de
+            convertir: formularioAJornada asume datos válidos. Con las fechas
+            bloqueadas se revisa solo lo que se puede editar.
         */
+        const problema = validarJornada(datos, { conFechas: !fechasDeshabilitadas });
+        if (problema) {
+            setError(problema);
+            return;
+        }
+
         try {
             const data = formularioAJornada(datos);
             if (modo === "crear") {
                 onCreated(await createJornada(idEvento, data));
             } else if (modo === "editar" && jornada) {
-                onUpdated(await updateJornada(jornada.id, data));
+                /*
+                    Con las fechas bloqueadas no se mandan: el backend responde
+                    409 si llegan en una jornada que no está en Borrador (aunque
+                    sean las mismas). Se sacan del objeto con desestructuración.
+                */
+                const { fechaHoraInicio, fechaHoraFin, ...sinFechas } = data;
+                onUpdated(await updateJornada(jornada.id, fechasDeshabilitadas ? sinFechas : data));
             }
         } catch (err) {
             setError(err instanceof Error ? err.message : "Error al guardar la jornada");
@@ -69,7 +82,8 @@ const JornadaForm = ({ modo, idEvento, jornada, onCreated, onUpdated, onCancel }
     };
 
     return (
-        <Formulario autoComplete="off" onSubmit={onSubmit}>
+        // noValidate: las validaciones son las de onSubmit, así no aparecen también los globos del navegador
+        <Formulario autoComplete="off" noValidate onSubmit={onSubmit}>
             <CamposJornada
                 datos={datos}
                 onChange={handleChange}
@@ -77,7 +91,11 @@ const JornadaForm = ({ modo, idEvento, jornada, onCreated, onUpdated, onCancel }
                 fechasDeshabilitadas={fechasDeshabilitadas}
             />
 
-            {error && <span className="text-sm text-red-600">{error}</span>}
+            {error && (
+                <span role="alert" className="text-sm text-red-600">
+                    {error}
+                </span>
+            )}
 
             {/* En modo "ver" no va ningún botón: las acciones de la jornada viven en la página */}
             {modo !== "ver" && (
