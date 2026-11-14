@@ -14,6 +14,8 @@ export const RUTAS = {
         inicio: "/",
         detalle: (idEvento: number | string) => `/eventos/${idEvento}`,
         comprar: (idEvento: number | string) => `/eventos/${idEvento}/comprar`,
+        // A esta pantalla vuelve el cliente desde Mercado Pago (ver MercadoPagoService.crearOrder en el backend)
+        resultadoCompra: "/compra/resultado",
     },
 
     admin: {

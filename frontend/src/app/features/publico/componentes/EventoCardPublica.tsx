@@ -1,9 +1,9 @@
 import { Link } from "react-router-dom";
-import { CalendarDays, MapPin } from "lucide-react";
+import { CalendarDays } from "lucide-react";
 import { RUTAS } from "../../../constantes/Rutas";
 import { API_URL } from "../../../services/api";
 import type { EventoConImagenes } from "../../../services/eventosService";
-import { fechaArgentina, horaArgentina } from "../../../utils/zonaHoraria";
+import { fechasDelEvento } from "../fechasEvento";
 
 type EventoCardPublicaProps = {
     evento: EventoConImagenes;
@@ -28,14 +28,11 @@ const EventoCardPublica = ({ evento }: EventoCardPublicaProps) => {
 
                 <div className="flex items-center gap-1.5 text-sm text-gray-600">
                     <CalendarDays className="w-4 h-4 text-marca" />
-                    <span>{fechaArgentina(evento.fechaHoraInicio)}</span>
-                    <span>{horaArgentina(evento.fechaHoraInicio)}</span>
+                    <span>{fechasDelEvento(evento.jornadas)}</span>
                 </div>
-
-                <div className="flex items-center gap-1.5 text-sm text-gray-600">
-                    <MapPin className="w-4 h-4 text-marca" />
-                    <span>{evento.ubicacion}</span>
-                </div>
+                {evento.jornadas.length > 1 && (
+                    <span className="text-xs text-gray-500">{evento.jornadas.length} eventos</span>
+                )}
             </div>
         </article>
         </Link>

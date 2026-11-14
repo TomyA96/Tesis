@@ -110,6 +110,13 @@ const CompraPage = () => {
                     telefono: datos.telefono || undefined,
                 },
             });
+            // Hay algo para cobrar: se lleva al cliente a la pantalla de pago de Mercado Pago.
+            // El botón queda bloqueado (no se hace finally): la página va a cambiar sola.
+            if (ordenCreada.estado === "Pendiente" && ordenCreada.urlPago) {
+                window.location.href = ordenCreada.urlPago;
+                return;
+            }
+            // Compra gratuita: ya quedó aprobada, no hay nada que pagar
             setOrden(ordenCreada);
             setPaso("confirmacion");
         } catch (err) {
@@ -169,10 +176,10 @@ const CompraPage = () => {
                     />
                 )}
 
-                {/* Provisorio: cuando esté Mercado Pago, una orden Pendiente lleva al pago. */}
+                {/* Solo se llega acá con una compra gratuita: las que se pagan siguen en Mercado Pago */}
                 {paso === "confirmacion" && orden && (
                     <div className="flex flex-col gap-4">
-                        <p>Orden N° {orden.id}: {orden.estado === "Aprobada" ? "tus entradas quedaron confirmadas." : "quedó pendiente de pago."}</p>
+                        <p>Orden N° {orden.id}: {orden.estado === "Aprobada" ? "tus entradas quedaron confirmadas." : "quedó registrada."}</p>
                         <div className="flex justify-end">
                             <Btn type="button" onClick={volverAlEvento}>Volver al evento</Btn>
                         </div>

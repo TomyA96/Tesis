@@ -56,8 +56,13 @@ export interface EntradaPublica {
     precio: string;
 }
 
-// Las entradas ya no cuelgan del evento sino de cada jornada
+/*
+    Las entradas ya no cuelgan del evento sino de cada jornada. Llegan vacías
+    si la jornada está agotada o si su venta online ya cerró (unas horas
+    antes del inicio): la pantalla la muestra como "Agotada".
+*/
 export interface JornadaConEntradas extends Jornada {
+    ventaOnlineAbierta: boolean;
     entradas: EntradaPublica[];
 }
 

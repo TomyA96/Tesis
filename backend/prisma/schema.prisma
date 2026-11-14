@@ -267,15 +267,19 @@ model Cliente {
 }
 
 model OrdenCompra {
-  id        Int         @id @default(autoincrement())
-  idCliente Int?
-  canal     CanalVenta // quién la creó
-  fechaHora DateTime    @default(now())
-  total     Decimal
-  estado    EstadoOrden
+  id                 Int         @id @default(autoincrement())
+  idCliente          Int?
+  canal              CanalVenta // quién la creó
+  fechaHora          DateTime    @default(now())
+  total              Decimal
+  estado             EstadoOrden
   // Hasta cuándo las entradas de una orden Pendiente quedan reservadas. Las órdenes
   // gratuitas, que se aprueban en el momento, no la necesitan.
-  expiraEn  DateTime?
+  expiraEn           DateTime?
+  // Mercado Pago: id de la order creada para cobrar esta orden (unico: es como el webhook
+  // la encuentra) y el link de pago, por si el cliente vuelve a abrirlo antes de que venza.
+  idOrdenMercadoPago String?     @unique
+  urlPago            String?
 
   tickets  TicketEvento[]
   detalles DetalleOrdenCompra[]
@@ -359,15 +363,15 @@ model PuntoVenta {
 // Cada vez que el organizador le da tickets físicos a un local: qué tickets y cuándo.
 // Sirve para el comprobante de entrega y para saber qué se le dio a cada local.
 model Entrega {
-  id           Int      @id @default(autoincrement())
-  idPuntoVenta Int
-  idEvento     Int
-  idUsuario    Int // quién la hizo
-  fechaHora    DateTime @default(now())
+  id               Int      @id @default(autoincrement())
+  idPuntoVenta     Int
+  idEvento         Int
+  idUsuario        Int // quién la hizo
+  fechaHora        DateTime @default(now())
   // Cuántos tickets salieron al registrarla. Si después se corrige (se le quitan o
   // pasan a otro local), los actuales son los que siguen apuntando a esta entrega.
   cantidadOriginal Int
-  observacion  String?
+  observacion      String?
 
   puntoVenta PuntoVenta     @relation(fields: [idPuntoVenta], references: [id])
   evento     Evento         @relation(fields: [idEvento], references: [id])

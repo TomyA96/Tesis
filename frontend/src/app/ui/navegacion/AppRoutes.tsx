@@ -6,6 +6,7 @@ import HomePage from "../../features/publico/pages/HomePage";
 import EventoDetallePage from "../../features/publico/pages/EventoDetallePage";
 import PublicLayout from "../../layouts/PublicLayout";
 import CompraPage from "../../features/publico/pages/CompraPage";
+import ResultadoCompraPage from "../../features/publico/pages/ResultadoCompraPage";
 
 /*
     Todo lo de /admin se carga con lazy() en vez de import estático: así
@@ -46,6 +47,7 @@ const AppRoutes = () => {
                 <Route path="/" element={<HomePage/>} />
                 <Route path="/eventos/:idEvento" element={<EventoDetallePage/>} />
                 <Route path="/eventos/:idEvento/comprar" element={<CompraPage/>} />
+                <Route path="/compra/resultado" element={<ResultadoCompraPage/>} />
             </Route>
             <Route path="/login" element={<LoginPage />} />
             <Route element={<ProtectedRoute/>}>
