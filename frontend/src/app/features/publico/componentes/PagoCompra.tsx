@@ -1,5 +1,5 @@
 import Btn from "../../../ui/componentes/Btn";
-import type { DatosComprador, LineaCompra } from "../compra";
+import { agruparPorJornada, type DatosComprador, type LineaCompra } from "../compra";
 import { formatPrecioEntrada } from "../../../utils/formatoPrecio";
 
 type PagoCompraProps = {
@@ -27,20 +27,26 @@ const PagoCompra = ({ lineas, total, datos, enviando, error, onPagar, onVolver }
 
                 {lineas.length > 0 ? (
                     <>
-                        <ul className="flex flex-col gap-2">
-                            {lineas.map((linea) => (
-                                <li key={linea.idEntrada} className="flex justify-between items-end gap-2 font-semibold">
-                                    <span>
-                                        {linea.descripcion}
-                                        <span className="ml-2 text-sm font-normal text-gray-500">
-                                            {linea.cantidad} × {formatPrecioEntrada(linea.precioUnitario)}
-                                        </span>
-                                    </span>
-                                    <span aria-hidden="true" className="flex-1 border-b-2 border-dotted border-gray-300 mb-1" />
-                                    <span>{formatPrecioEntrada(linea.precioUnitario * linea.cantidad)}</span>
-                                </li>
-                            ))}
-                        </ul>
+                        {/* Agrupadas por jornada: "General" del viernes y del sábado son entradas distintas */}
+                        {agruparPorJornada(lineas).map((grupo) => (
+                            <div key={grupo.titulo} className="flex flex-col gap-2">
+                                <h3 className="text-xs font-semibold uppercase tracking-wide text-gray-500">{grupo.titulo}</h3>
+                                <ul className="flex flex-col gap-2">
+                                    {grupo.lineas.map((linea) => (
+                                        <li key={linea.idEntrada} className="flex justify-between items-end gap-2 font-semibold">
+                                            <span>
+                                                {linea.descripcion}
+                                                <span className="ml-2 text-sm font-normal text-gray-500">
+                                                    {linea.cantidad} × {formatPrecioEntrada(linea.precioUnitario)}
+                                                </span>
+                                            </span>
+                                            <span aria-hidden="true" className="flex-1 border-b-2 border-dotted border-gray-300 mb-1" />
+                                            <span>{formatPrecioEntrada(linea.precioUnitario * linea.cantidad)}</span>
+                                        </li>
+                                    ))}
+                                </ul>
+                            </div>
+                        ))}
 
                         <div className="flex justify-between items-center pt-3 border-t border-gray-300">
                             <span className="font-semibold">Total a pagar</span>

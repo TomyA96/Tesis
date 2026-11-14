@@ -30,9 +30,10 @@ import { MovimientoFinancieroModule } from './movimiento-financiero/movimiento-f
 import { AuthModule } from './auth/auth.module';
 import { FuentesIngresoModule } from './fuentes-ingreso/fuentes-ingreso.module';
 import { ComprasModule } from './compras/compras.module';
+import { MercadoPagoModule } from './mercado-pago/mercado-pago.module';
 
 @Module({
-  imports: [PrismaModule, PuntoVentaModule, UsuariosModule, PerfilesModule, UsuarioPerfilModule, PermisoPerfilModule, PermisosModule, AuditoriasModule, EventosModule, EntradasModule, ClientesModule, OrdenCompraModule, TicketEventoModule, ReembolsosModule, AccesosModule, ImagenEventoModule, ProductosModule, ProductoEventoModule, VentaBuffetModule, DetalleVentaBuffetModule, RubrosModule, ProveedoresModule, ProveedorRubroModule, MovimientoFinancieroModule, AuthModule, FuentesIngresoModule, ComprasModule, RendicionesModule, EntregasModule],
+  imports: [PrismaModule, PuntoVentaModule, UsuariosModule, PerfilesModule, UsuarioPerfilModule, PermisoPerfilModule, PermisosModule, AuditoriasModule, EventosModule, EntradasModule, ClientesModule, OrdenCompraModule, TicketEventoModule, ReembolsosModule, AccesosModule, ImagenEventoModule, ProductosModule, ProductoEventoModule, VentaBuffetModule, DetalleVentaBuffetModule, RubrosModule, ProveedoresModule, ProveedorRubroModule, MovimientoFinancieroModule, AuthModule, FuentesIngresoModule, ComprasModule, RendicionesModule, EntregasModule, MercadoPagoModule],
   controllers: [AppController],
   providers: [AppService],
 })

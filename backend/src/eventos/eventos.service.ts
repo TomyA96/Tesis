@@ -84,14 +84,20 @@ export class EventosService {
         return evento ? this.resumir(evento) : null;
     }
 
+    /*
+        El detalle muestra todas las jornadas activas que todavía no empezaron.
+        Las que no tienen nada para vender online (lotes agotados, o la venta
+        online ya cerró por estar cerca del inicio) llegan con entradas vacías
+        y la pantalla las muestra como "Agotada". El evento se muestra solo si
+        al menos una jornada se puede comprar.
+    */
     async findOneEventoPublico(id: number) {
-        const vendibles = this.jornadasVendibles();
         const evento = await this.prisma.evento.findFirst({
-            where: { id, estado: 'Activo', jornadas: { some: vendibles } },
+            where: { id, estado: 'Activo', jornadas: { some: this.jornadasVendibles() } },
             include: {
                 imagenes: true,
                 jornadas: {
-                    where: vendibles,
+                    where: { estado: 'Activo', fechaHoraInicio: { gt: new Date() } },
                     ...this.jornadasOrdenadas,
                     include: {
                         entradas: {
@@ -118,7 +124,13 @@ export class EventosService {
         if (!evento) {
             throw new NotFoundException('El evento no existe o no esta activo');
         }
-        return this.resumir(evento);
+        // Con la venta online cerrada sus lotes no se ofrecen, aunque les queden tickets
+        const limite = limiteVentaOnline();
+        const jornadas = evento.jornadas.map((jornada) => {
+            const ventaOnlineAbierta = jornada.fechaHoraInicio > limite;
+            return { ...jornada, ventaOnlineAbierta, entradas: ventaOnlineAbierta ? jornada.entradas : [] };
+        });
+        return this.resumir({ ...evento, jornadas });
     }
 
     // Crea el evento y todas sus jornadas en una sola operación: se guarda todo o nada

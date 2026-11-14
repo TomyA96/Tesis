@@ -15,10 +15,14 @@ export interface CompraEnviada {
 
 // La orden que devuelve el backend. Los montos llegan como texto porque en
 // la base son Decimal: convertirlos con Number() antes de formatearlos.
+export type EstadoOrden = 'Pendiente' | 'Aprobada' | 'Fallida' | 'Cancelada';
+
 export interface OrdenCompraCreada {
     id: number;
-    estado: 'Pendiente' | 'Aprobada' | 'Fallida' | 'Cancelada';
+    estado: EstadoOrden;
     total: string;
+    // Link de la pantalla de pago de Mercado Pago. Solo viene si hay algo para cobrar.
+    urlPago: string | null;
     detalles: {
         idEntrada: number;
         cantidad: number;
@@ -30,4 +34,9 @@ export interface OrdenCompraCreada {
 
 export function crearCompra(compra: CompraEnviada) {
     return api.post<OrdenCompraCreada>('/compras', compra);
+}
+
+// Para la pantalla a la que se vuelve después de pagar: el backend confirma el pago con Mercado Pago
+export function getEstadoCompra(idOrden: number) {
+    return api.get<{ id: number; estado: EstadoOrden }>(`/compras/${idOrden}/estado`);
 }
