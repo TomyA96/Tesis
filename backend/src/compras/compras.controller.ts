@@ -2,6 +2,7 @@ import { Body, Controller, Get, Headers, HttpCode, Param, ParseIntPipe, Post, Qu
 import { ComprasService } from './compras.service';
 import { CreateCompraDto } from './dtos/create.compra.dto';
 import { MercadoPagoService } from '../mercado-pago/mercado-pago.service';
+import { claveDeOrden } from './utils/clave-orden';
 
 // Rutas públicas: las usa el cliente que compra (sin login) y Mercado Pago.
 @Controller('compras')
@@ -11,15 +12,23 @@ export class ComprasController {
         private mercadoPago: MercadoPagoService,
     ) {}
 
+    // Con la clave, una compra gratuita (que se aprueba en el momento) puede mostrar sus entradas enseguida
     @Post()
-    createCompra(@Body() compraData: CreateCompraDto) {
-        return this.comprasService.createCompra(compraData);
+    async createCompra(@Body() compraData: CreateCompraDto) {
+        const orden = await this.comprasService.createCompra(compraData);
+        return { ...orden, clave: claveDeOrden(orden.id) };
     }
 
     // Lo consulta la pantalla a la que el cliente vuelve después de pagar
     @Get(':id/estado')
     estado(@Param('id', ParseIntPipe) id: number) {
         return this.comprasService.estadoDeCompra(id);
+    }
+
+    // Las entradas de una compra aprobada, con sus QR. Pide la clave: el número de orden solo no alcanza
+    @Get(':id/entradas')
+    entradas(@Param('id', ParseIntPipe) id: number, @Query('clave') clave: string | undefined) {
+        return this.comprasService.entradasDeCompra(id, clave ?? '');
     }
 
     /*

@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { Outlet, useParams } from "react-router-dom";
-import { ArrowLeft, CalendarDays, Clock } from "lucide-react";
-import LinkBtn from "../../../ui/componentes/LinkBtn";
+import { CalendarDays, Clock, Wrench } from "lucide-react";
+import EncabezadoPagina, { LinkVolver } from "../../../ui/componentes/EncabezadoPagina";
 import ContenedorDatos from "../../../ui/componentes/ContenedorDatos";
 import { RUTAS } from "../../../constantes/Rutas";
 import { getJornada, type Jornada } from "../../../services/jornadasService";
@@ -42,10 +42,7 @@ const ContenidoJornada = ({ idJornada }: ContenidoJornadaProps) => {
 
     const volver = (
         <div className="px-6">
-            <LinkBtn variant="outline" size="sm" to={RUTAS.operaciones.inicio} className="inline-flex items-center gap-2">
-                <ArrowLeft className="h-4 w-4" />
-                Volver a operaciones
-            </LinkBtn>
+            <LinkVolver to={RUTAS.operaciones.inicio} label="Operaciones" />
         </div>
     );
 
@@ -64,30 +61,32 @@ const ContenidoJornada = ({ idJornada }: ContenidoJornadaProps) => {
     const habilitada = estaOperable(jornada);
 
     return (
-        <div className="flex flex-col gap-4">
-            {volver}
-
+        <div className="flex flex-col gap-6 pb-8">
+            {/* Sobre qué jornada se está trabajando: el evento va arriba, junto a la sección */}
             <div className="px-6">
-                <div className="flex flex-wrap items-center justify-between gap-x-6 gap-y-1 rounded-xl border border-gray-200 bg-white px-5 py-3">
-                    <div>
-                        <p className="text-xs font-semibold uppercase tracking-wide text-gray-400">{nombreEvento}</p>
-                        <p className="text-lg font-bold text-gray-900">{jornada.nombre ?? `Jornada #${jornada.id}`}</p>
-                    </div>
-                    <div className="flex flex-wrap gap-x-5 gap-y-1 text-sm text-gray-600">
-                        <span className="flex items-center gap-2">
-                            <CalendarDays className="h-4 w-4 text-gray-400" />
-                            {fechaArgentina(jornada.fechaHoraInicio)}
-                        </span>
-                        <span className="flex items-center gap-2">
-                            <Clock className="h-4 w-4 text-gray-400" />
-                            {horaArgentina(jornada.fechaHoraInicio)} a {horaArgentina(jornada.fechaHoraFin)} hs
-                        </span>
-                    </div>
-                </div>
+                <EncabezadoPagina
+                    volver={{ to: RUTAS.operaciones.inicio, label: "Operaciones" }}
+                    icono={<Wrench />}
+                    seccion={nombreEvento ? `Operaciones · ${nombreEvento}` : "Operaciones"}
+                    titulo={jornada.nombre ?? `Jornada #${jornada.id}`}
+                    acciones={
+                        <div className="flex flex-wrap gap-x-5 gap-y-1 text-sm text-slate-600">
+                            <span className="flex items-center gap-2">
+                                <CalendarDays className="h-4 w-4 text-slate-400" />
+                                {fechaArgentina(jornada.fechaHoraInicio)}
+                            </span>
+                            <span className="flex items-center gap-2">
+                                <Clock className="h-4 w-4 text-slate-400" />
+                                {horaArgentina(jornada.fechaHoraInicio)} a {horaArgentina(jornada.fechaHoraFin)} hs
+                            </span>
+                        </div>
+                    }
+                />
             </div>
 
             {habilitada ? (
-                <Outlet />
+                // Las pantallas de adentro reciben la jornada ya cargada (useOutletContext): no la vuelven a pedir
+                <Outlet context={jornada} />
             ) : (
                 <ContenedorDatos className="mx-6 flex flex-col items-center gap-3 p-10 text-center">
                     <h2 className="text-lg font-semibold text-gray-800">Esta jornada no está habilitada para operar</h2>

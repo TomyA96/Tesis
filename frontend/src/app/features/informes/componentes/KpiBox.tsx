@@ -1,7 +1,7 @@
 type KpiBoxProps = {
   titulo: string;
   valor: string;
-  descripcion?: string;
+  descripcion?: React.ReactNode;
   badge?: string;
   color?: "default" | "success" | "warning" | "danger";
 };
@@ -33,7 +33,7 @@ const KpiBox = ({
         )}
       </div>
       <p className="mt-5 text-3xl font-bold tracking-tight text-slate-900">{valor}</p>
-      {descripcion && <p className="mt-2 text-sm text-slate-500 leading-relaxed">{descripcion}</p>}
+      {descripcion && <div className="mt-2 text-sm text-slate-500 leading-relaxed">{descripcion}</div>}
     </article>
   );
 };

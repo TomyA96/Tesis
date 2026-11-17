@@ -55,8 +55,10 @@ export const RUTAS = {
     },
 
     informes: {
+        // El inicio de Informes es el resumen anual
         inicio: "/admin/informes",
-        resumenAnual: "/admin/informes/resumen-anual",
+        // Informe de un evento: General es la pestaña a la que se entra; las otras tres cuelgan de ella
+        general: (idEvento: number | string) => `/admin/eventos/${idEvento}/informes`,
         entradas: (idEvento: number | string) => `/admin/eventos/${idEvento}/informes/entradas`,
         buffet: (idEvento: number | string) => `/admin/eventos/${idEvento}/informes/buffet`,
         finanzas: (idEvento: number | string) => `/admin/eventos/${idEvento}/informes/finanzas`,

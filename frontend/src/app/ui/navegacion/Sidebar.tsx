@@ -1,7 +1,6 @@
 import Menu from "./Menu";  
 import InfoUser  from "../componentes/InfoUser";
 import Btn from "../componentes/Btn";
-import { useState } from "react";
 import { RUTAS } from "../../constantes/Rutas";
 import { cn } from "../../../lib/cn";
 import { useAuth } from "../../context/AuthContext";
@@ -17,15 +16,29 @@ import {
     LogOut
 } from "lucide-react";
 
-import { NavLink } from "react-router-dom";
+import { NavLink, useLocation } from "react-router-dom";
 
 type SidebarSeccion = "seguridad" | "eventos" | "administración" | "informes" | "operaciones" | null;
 
+/*
+    A qué sección pertenece la página que se está viendo. La URL es la que
+    decide qué sección se pinta y se abre: así queda bien también al
+    recargar, o al llegar desde un link de otra pantalla. Algunas páginas
+    viven bajo /admin/eventos/:id pero son de otro módulo (el informe y la
+    administración de un evento), por eso se miran antes que Eventos.
+*/
+const seccionDe = (ruta: string): SidebarSeccion => {
+    if (ruta.startsWith("/admin/seguridad")) return "seguridad";
+    if (ruta.startsWith("/admin/informes") || /^\/admin\/eventos\/[^/]+\/informes/.test(ruta)) return "informes";
+    if (ruta.startsWith("/admin/administracion") || /^\/admin\/eventos\/[^/]+\/administracion/.test(ruta)) return "administración";
+    if (ruta.startsWith("/admin/operaciones")) return "operaciones";
+    if (ruta.startsWith("/admin/eventos")) return "eventos";
+    return null;
+};
+
 const Sidebar = () => {
-    const [activarSeccion, setActivarSeccion] = useState<SidebarSeccion>(null);
-    const toggleSeccion = (seccion: SidebarSeccion) => {
-        setActivarSeccion(prev => prev === seccion ? null : seccion);
-    };
+    // Solo una sección abierta a la vez: la de la página actual. Volver a tocarla lleva a su inicio sin cerrarla.
+    const seccionActual = seccionDe(useLocation().pathname);
 
     const { logout, user } = useAuth();
 
@@ -53,23 +66,27 @@ const Sidebar = () => {
             
             <ul className="space-y-0.5">
                 <li>
+                    {/* end: solo está activo en /admin exacto, no en todas las páginas que empiezan con /admin */}
                     <NavLink
-                        onClick={() => setActivarSeccion(null)}
+                        end
                         to={RUTAS.admin.inicio}
-                        className={cn("w-full flex items-center gap-3 px-4 py-2.5 rounded-md",
-                            "text-sm font-semibold text-gray-400 hover:bg-white/5 hover:text-gray-200",
-                            "transition-colors duration-150 cursor-pointer")}
+                        className={({ isActive }) => cn("w-full flex items-center gap-3 px-4 py-2.5 rounded-md",
+                            "text-sm font-semibold transition-colors duration-150 cursor-pointer",
+                            isActive ? "bg-white/[0.06] text-white" : "text-gray-400 hover:bg-white/5 hover:text-gray-200")}
                     >
-                        <Home className="w-4 h-4 opacity-70" />
-                        Inicio
+                        {({ isActive }) => (
+                            <>
+                                <Home className={cn("w-4 h-4 transition-opacity", isActive ? "opacity-100" : "opacity-70")} />
+                                Inicio
+                            </>
+                        )}
                     </NavLink>
                 </li>
                 {/* ── SECCIONES ─────────────────────────────────────────── */}
                     <Menu
                         area="Seguridad"
                         icono={<Shield className="w-4 h-4" />}
-                        isOpen={activarSeccion === "seguridad"}
-                        onToggle={() => toggleSeccion("seguridad")}
+                        activa={seccionActual === "seguridad"}
                         href={RUTAS.seguridad.inicio}
                         opciones={[
                             { label: "Usuarios", href: RUTAS.seguridad.usuarios },
@@ -80,8 +97,7 @@ const Sidebar = () => {
                     <Menu
                         area="Eventos"
                         icono={<CalendarDays className="w-4 h-4" />}
-                        isOpen={activarSeccion === "eventos"}
-                        onToggle={() =>toggleSeccion("eventos")}
+                        activa={seccionActual === "eventos"}
                         href={RUTAS.eventos.inicio}
                         opciones={[
                             {label: "Crear Evento", href: RUTAS.eventos.crear},
@@ -91,8 +107,7 @@ const Sidebar = () => {
                     <Menu
                         area="Administración"
                         icono={<PencilLine  className="w-4 h-4" />}
-                        isOpen={activarSeccion === "administración"}
-                        onToggle={() => toggleSeccion("administración")}
+                        activa={seccionActual === "administración"}
                         href={RUTAS.administracion.inicio}
                         opciones={[
                             { label: "Productos", href: RUTAS.administracion.productos },
@@ -101,25 +116,22 @@ const Sidebar = () => {
                             { label: "Rubros", href: RUTAS.administracion.rubros }
                         ]}
                     />
+                    {/*
+                        Informes y Operaciones tienen una sola pantalla de inicio: van
+                        sin submenú (una opción que repite el botón de arriba confunde).
+                        Cuando sumen otra pantalla, se le pasan opciones y el submenú aparece.
+                    */}
                     <Menu
                         area="Informes"
                         icono={<BarChart2 className="w-4 h-4" />}
-                        isOpen={activarSeccion === "informes"}
+                        activa={seccionActual === "informes"}
                         href={RUTAS.informes.inicio}
-                        onToggle={( ) =>toggleSeccion("informes")}
-                        opciones={[
-                            { label: "Resumen anual", href: RUTAS.informes.resumenAnual }
-                        ]}
                     />
                     <Menu
                         area="Operaciones"
                         icono={<Wrench className="w-4 h-4" />}
-                        isOpen={activarSeccion === "operaciones"}
+                        activa={seccionActual === "operaciones"}
                         href={RUTAS.operaciones.inicio}
-                        onToggle={() => toggleSeccion("operaciones")}
-                        opciones={[
-                            { label: "Jornadas activas", href: RUTAS.operaciones.inicio }
-                        ]}
                     />
 
                 

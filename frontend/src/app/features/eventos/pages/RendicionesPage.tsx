@@ -1,6 +1,8 @@
 import { useEffect, useState } from "react";
-import { Link, useParams, useSearchParams } from "react-router-dom";
+import { useParams, useSearchParams } from "react-router-dom";
 import Header from "../../../ui/componentes/Header";
+import EncabezadoPagina from "../../../ui/componentes/EncabezadoPagina";
+import { CalendarDays } from "lucide-react";
 import LinkBtn from "../../../ui/componentes/LinkBtn";
 import ContenedorDatos from "../../../ui/componentes/ContenedorDatos";
 import PanelRendicion from "../componentes/PanelRendicion";
@@ -73,24 +75,19 @@ const RendicionesPage = () => {
     const historial = idLocal ? rendiciones.filter((r) => r.puntoVenta.id === idLocal) : rendiciones;
 
     return (
-        <main className="flex flex-col gap-6 px-8">
+        <main className="flex flex-col gap-6 px-6 pb-8">
+            <EncabezadoPagina
+                volver={{ to: RUTAS.eventos.detalle(evento.id), label: evento.nombre }}
+                icono={<CalendarDays />}
+                seccion="Eventos"
+                titulo="Rendiciones"
+                acciones={
+                    <LinkBtn to={RUTAS.eventos.tickets(evento.id)} variant="outline" size="sm">
+                        Entregar tickets
+                    </LinkBtn>
+                }
+            />
             <ContenedorDatos>
-                <Header
-                    titulo={
-                        <span className="flex items-center gap-2">
-                            <Link to={RUTAS.eventos.detalle(evento.id)} className="text-gray-500 hover:underline">
-                                {evento.nombre}
-                            </Link>
-                            <span className="text-gray-300">›</span>
-                            Rendiciones
-                        </span>
-                    }
-                    action={
-                        <LinkBtn to={RUTAS.eventos.tickets(evento.id)} variant="outline" size="sm">
-                            Entregar tickets
-                        </LinkBtn>
-                    }
-                />
 
                 {aviso && <p role="status" className="px-6 pt-3 text-sm text-emerald-700">{aviso}</p>}
 

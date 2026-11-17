@@ -1,6 +1,7 @@
 import { BadGatewayException, Injectable, InternalServerErrorException, Logger } from '@nestjs/common';
 import { Prisma } from '@prisma/client';
 import { createHmac, randomUUID, timingSafeEqual } from 'crypto';
+import { claveDeOrden } from '../compras/utils/clave-orden';
 
 const URL_API = 'https://api.mercadopago.com';
 
@@ -62,8 +63,9 @@ export class MercadoPagoService {
     async crearOrder(datos: DatosOrder): Promise<OrderCreada> {
         // A dónde vuelve el cliente después de pagar. Los tres casos (aprobado, pendiente,
         // rechazado) van a la misma pantalla: ella consulta el estado real a nuestro backend.
+        // La clave le permite ver sus entradas con los QR (ver utils/clave-orden).
         const frontend = process.env.FRONTEND_URL ?? 'http://localhost:5173';
-        const urlRetorno = `${frontend}/compra/resultado?orden=${datos.idOrden}`;
+        const urlRetorno = `${frontend}/compra/resultado?orden=${datos.idOrden}&clave=${claveDeOrden(datos.idOrden)}`;
 
         // Mercado Pago pide los montos como texto con dos decimales ("1000.00")
         const cuerpo = {

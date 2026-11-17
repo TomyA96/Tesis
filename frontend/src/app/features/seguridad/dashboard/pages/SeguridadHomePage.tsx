@@ -4,6 +4,7 @@ import Card from "../../../../ui/componentes/Card";
 import GenericTable from "../../../../ui/componentes/GenericTable/GenericTable";
 import ContenedorDatos from "../../../../ui/componentes/ContenedorDatos";
 import Header from "../../../../ui/componentes/Header";
+import EncabezadoPagina from "../../../../ui/componentes/EncabezadoPagina";
 import { RUTAS } from "../../../../constantes/Rutas";
 import { Users, UserCheck, Shield, AlertTriangle } from "lucide-react";
 import { auditoriasMock } from "../../auditorias/auditorias.mock";
@@ -22,13 +23,10 @@ import type { Auditoria } from "../../auditorias/types";
 const SeguridadHomePage = () => {
     return (
         // gap-8 separa las secciones verticalmente de forma uniforme
-        <main className="flex flex-col gap-8 p-8">
+        <main className="flex flex-col gap-6 px-6 pb-8">
 
             {/* ── TÍTULO PRINCIPAL ──────────────────────────────────────────── */}
-            {/* Solo un h1 por página — los demás títulos son h2 */}
-            <ContenedorDatos>
-                <Header titulo="Panel de Seguridad"/>
-            </ContenedorDatos>
+            <EncabezadoPagina icono={<Shield />} seccion="Seguridad" titulo="Panel de seguridad" />
             
 
             {/* ── CARDS DE MÉTRICAS ─────────────────────────────────────────── */}

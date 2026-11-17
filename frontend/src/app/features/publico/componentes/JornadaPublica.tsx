@@ -14,12 +14,31 @@ type JornadaPublicaProps = {
 };
 
 /*
+    Si la jornada se suspendió o se canceló, en vez de las entradas se le
+    avisa a quien ya compró qué pasa con lo suyo.
+*/
+const avisos: Partial<Record<JornadaConEntradas["estado"], { etiqueta: string; estilo: string; texto: string }>> = {
+    Suspendido: {
+        etiqueta: "Suspendida",
+        estilo: "bg-amber-100 text-amber-800",
+        texto: "Esta fecha fue suspendida. Si ya tenés entradas, siguen siendo válidas para la nueva fecha.",
+    },
+    Cancelado: {
+        etiqueta: "Cancelada",
+        estilo: "bg-red-100 text-red-700",
+        texto: "Esta fecha fue cancelada. Si compraste entradas, comunicate con la organización por el reembolso.",
+    },
+};
+
+/*
     Una jornada del evento en el detalle público: una card que se despliega
     y muestra sus entradas para elegir. Arriba, lo que hace falta para ir:
     fecha, hora de inicio y dirección. Si no le queda nada para vender
-    online, se ve como "Agotada" y no se despliega.
+    online, se ve como "Agotada" y no se despliega. Si está suspendida o
+    cancelada, tampoco: muestra el aviso.
 */
 const JornadaPublica = ({ jornada, titulo, abierta, onAlternar, cantidades, onCambiarCantidad }: JornadaPublicaProps) => {
+    const aviso = avisos[jornada.estado];
     const agotada = jornada.entradas.length === 0;
     const elegidas = jornada.entradas.reduce((suma, e) => suma + (cantidades[e.id] ?? 0), 0);
     const desplegada = abierta && !agotada;
@@ -36,7 +55,11 @@ const JornadaPublica = ({ jornada, titulo, abierta, onAlternar, cantidades, onCa
                 <div className="flex min-w-0 flex-1 flex-col gap-1.5">
                     <div className="flex flex-wrap items-center gap-2">
                         <h3 className={cn("text-lg font-semibold", agotada ? "text-gray-400" : "text-noche")}>{titulo}</h3>
-                        {agotada && (
+                        {aviso ? (
+                            <span className={cn("rounded-full px-2.5 py-0.5 text-xs font-semibold uppercase tracking-wide", aviso.estilo)}>
+                                {aviso.etiqueta}
+                            </span>
+                        ) : agotada && (
                             <span className="rounded-full bg-gray-200 px-2.5 py-0.5 text-xs font-semibold uppercase tracking-wide text-gray-600">
                                 Agotada
                             </span>
@@ -61,6 +84,7 @@ const JornadaPublica = ({ jornada, titulo, abierta, onAlternar, cantidades, onCa
                             <span className="truncate">{jornada.direccion}</span>
                         </span>
                     </div>
+                    {aviso && <p className="text-sm text-gray-600">{aviso.texto}</p>}
                 </div>
                 {!agotada && (
                     <ChevronDown className={cn("mt-1 h-5 w-5 shrink-0 text-gray-400 transition-transform", desplegada && "rotate-180")} />

@@ -10,6 +10,7 @@ import DatosCompradorForm from "../forms/DatosCompradorForm";
 import { datosVacios, MAX_POR_COMPRA, totalDeLineas, type DatosComprador, type LineaCompra } from "../compra";
 import FondoMosaico from "../../../ui/componentes/FondoMosaico";
 import { crearCompra, type OrdenCompraCreada } from "../../../services/comprasService";
+import EntradasCompradas from "../componentes/EntradasCompradas";
 
 type Paso = "resumen" | "datos" | "pago" | "confirmacion";
 
@@ -180,6 +181,7 @@ const CompraPage = () => {
                 {paso === "confirmacion" && orden && (
                     <div className="flex flex-col gap-4">
                         <p>Orden N° {orden.id}: {orden.estado === "Aprobada" ? "tus entradas quedaron confirmadas." : "quedó registrada."}</p>
+                        {orden.estado === "Aprobada" && <EntradasCompradas idOrden={orden.id} clave={orden.clave} />}
                         <div className="flex justify-end">
                             <Btn type="button" onClick={volverAlEvento}>Volver al evento</Btn>
                         </div>

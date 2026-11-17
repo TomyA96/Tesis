@@ -3,7 +3,8 @@ import GenericTable from "../../../../ui/componentes/GenericTable/GenericTable";
 import FiltroUsuarios, { aplicarFiltrosUsuarios, filtrosUsuariosVacios, type FiltrosUsuarios } from "../components/FiltroUsuarios";
 import CrearUsuarioModal from "../modals/CrearUsuarioModal.tsx";
 import EditarUsuarioModal from "../modals/EditarUsuarioModal.tsx";
-import Header from "../../../../ui/componentes/Header";
+import EncabezadoPagina from "../../../../ui/componentes/EncabezadoPagina";
+import { Shield } from "lucide-react";
 import ConfirmarAccion from "../../../../ui/componentes/ConfirmarAccion";
 import ContenedorDatos from "../../../../ui/componentes/ContenedorDatos";
 import { useState, useEffect, useMemo } from "react";
@@ -54,24 +55,20 @@ const UsuariosPage = () => {
   
     
     return (
-        <main className=" gap-6 px-8 ">
-
-            
+        <main className="flex flex-col gap-6 px-6 pb-8">
+            <EncabezadoPagina
+                icono={<Shield />}
+                seccion="Seguridad"
+                titulo="Usuarios"
+                acciones={
+                    <Btn onClick={() => setActivarModal("crearUsuario")}>
+                        + Crear Usuario
+                    </Btn>
+                }
+            />
 
             {/* ── CONTENIDO PRINCIPAL ───────────────────────────────────────── */}
             <ContenedorDatos>
-                {/* 
-                    Header dentro del ContenedorDatos — así el título,
-                    el botón y la tabla son una sola unidad visual cohesiva.
-                */}
-                <Header
-                    titulo="Gestión de Usuarios"
-                    action={
-                        <Btn onClick={() => setActivarModal("crearUsuario")}>
-                            + Crear Usuario
-                        </Btn>
-                    }
-                />
 
                 {error && (
                     <p className="px-6 pt-4 text-sm text-red-600">{error}</p>

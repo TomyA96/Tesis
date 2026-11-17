@@ -54,6 +54,16 @@ export class AccesosService {
         });
     }
 
+    // Cuántos ingresaron sobre la capacidad de la jornada
+    async resumen(idJornada: number) {
+        const jornada = await this.prisma.jornada.findUnique({ where: { id: idJornada }, select: { capacidad: true } });
+        if (!jornada) {
+            throw new NotFoundException('La jornada no existe');
+        }
+        const ingresaron = await this.prisma.acceso.count({ where: { ticket: { entrada: { idJornada } } } });
+        return { ingresaron, capacidad: jornada.capacidad };
+    }
+
     // Ingreso normal: el ticket se identifica por el código del QR
     async registrarAccesoPorQR(idJornada: number, data: CreateAccesoDto, idUsuario: number) {
         await this.validarJornadaOperable(idJornada);

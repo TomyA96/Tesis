@@ -8,6 +8,9 @@ import { JornadasService } from '../jornadas/jornadas.service';
 import { limiteVentaOnline } from '../jornadas/utils/venta-online';
 import { anularTicketsSinVender, ticketsSinRendir } from '../entradas/utils/tickets';
 
+// Cuántos días después de su fecha original se sigue mostrando al público una jornada cancelada
+const DIAS_CANCELADA_VISIBLE = 7;
+
 type ConJornadas = { jornadas: { fechaHoraInicio: Date; fechaHoraFin: Date }[] };
 
 @Injectable()
@@ -41,6 +44,33 @@ export class EventosService {
         return { estado: 'Activo', fechaHoraInicio: { gt: limiteVentaOnline() } } as const;
     }
 
+    /*
+        Jornadas con un aviso para el público: las
+        suspendidas (mientras sigan así, aunque su fecha ya haya pasado) y las
+        canceladas hasta una semana después de su fecha original, para que
+        quien compró se entere en vez de encontrarse con que el evento
+        desapareció. Se muestran sin venta.
+    */
+    private jornadasConAviso(): Prisma.JornadaWhereInput {
+        const canceladasDesde = new Date(Date.now() - DIAS_CANCELADA_VISIBLE * 24 * 60 * 60 * 1000);
+        return {
+            OR: [
+                { estado: 'Suspendido' },
+                { estado: 'Cancelado', fechaHoraInicio: { gt: canceladasDesde } },
+            ],
+        };
+    }
+
+    // Las que se muestran en el detalle: las activas que todavía no empezaron (aunque ya no se vendan online) y las que tienen aviso
+    private jornadasVisiblesAlPublico(): Prisma.JornadaWhereInput {
+        return { OR: [{ estado: 'Activo', fechaHoraInicio: { gt: new Date() } }, this.jornadasConAviso()] };
+    }
+
+    // Un evento aparece si tiene algo para comprar o algún aviso que dar
+    private eventoVisibleAlPublico(): Prisma.EventoWhereInput {
+        return { estado: 'Activo', jornadas: { some: { OR: [this.jornadasVendibles(), this.jornadasConAviso()] } } };
+    }
+
     async findAll() {
         const eventos = await this.prisma.evento.findMany({ include: { jornadas: this.jornadasOrdenadas } });
         return this.porFechaDeInicio(eventos.map((e) => this.resumir(e)));
@@ -61,16 +91,18 @@ export class EventosService {
     }
 
     /*
-        Solo eventos Activos con al menos una jornada que se pueda comprar: un
-        evento activo que no tiene nada para vender no se muestra al público.
+        Eventos Activos con al menos una jornada que se pueda comprar, o una
+        suspendida o cancelada hace poco (ver jornadasVisiblesAlPublico): el
+        público tiene que enterarse de esos cambios aunque no haya nada para
+        comprar.
     */
     async findAllActivos() {
-        const vendibles = this.jornadasVendibles();
+        const visibles = this.jornadasVisiblesAlPublico();
         const eventos = await this.prisma.evento.findMany({
-            where: { estado: 'Activo', jornadas: { some: vendibles } },
+            where: this.eventoVisibleAlPublico(),
             include: {
                 imagenes: true,
-                jornadas: { where: vendibles, ...this.jornadasOrdenadas }
+                jornadas: { where: visibles, ...this.jornadasOrdenadas }
             }
         });
         return this.porFechaDeInicio(eventos.map((e) => this.resumir(e)));
@@ -85,19 +117,21 @@ export class EventosService {
     }
 
     /*
-        El detalle muestra todas las jornadas activas que todavía no empezaron.
-        Las que no tienen nada para vender online (lotes agotados, o la venta
-        online ya cerró por estar cerca del inicio) llegan con entradas vacías
-        y la pantalla las muestra como "Agotada". El evento se muestra solo si
-        al menos una jornada se puede comprar.
+        El detalle muestra las jornadas activas que todavía no empezaron y las
+        suspendidas o canceladas que el público tiene que ver (ver
+        jornadasVisiblesAlPublico). Las que no tienen nada para vender online
+        (lotes agotados, la venta online ya cerró, o no están activas) llegan
+        con entradas vacías: la pantalla las muestra como "Agotada",
+        "Suspendida" o "Cancelada" según su estado.
     */
     async findOneEventoPublico(id: number) {
+        const visibles = this.jornadasVisiblesAlPublico();
         const evento = await this.prisma.evento.findFirst({
-            where: { id, estado: 'Activo', jornadas: { some: this.jornadasVendibles() } },
+            where: { id, ...this.eventoVisibleAlPublico() },
             include: {
                 imagenes: true,
                 jornadas: {
-                    where: { estado: 'Activo', fechaHoraInicio: { gt: new Date() } },
+                    where: visibles,
                     ...this.jornadasOrdenadas,
                     include: {
                         entradas: {
@@ -124,10 +158,10 @@ export class EventosService {
         if (!evento) {
             throw new NotFoundException('El evento no existe o no esta activo');
         }
-        // Con la venta online cerrada sus lotes no se ofrecen, aunque les queden tickets
+        // Con la venta online cerrada (o la jornada suspendida o cancelada) sus lotes no se ofrecen, aunque les queden tickets
         const limite = limiteVentaOnline();
         const jornadas = evento.jornadas.map((jornada) => {
-            const ventaOnlineAbierta = jornada.fechaHoraInicio > limite;
+            const ventaOnlineAbierta = jornada.estado === 'Activo' && jornada.fechaHoraInicio > limite;
             return { ...jornada, ventaOnlineAbierta, entradas: ventaOnlineAbierta ? jornada.entradas : [] };
         });
         return this.resumir({ ...evento, jornadas });
@@ -308,52 +342,106 @@ export class EventosService {
         rinden después.
     */
     private async validarRendicionesCompletas(idEvento: number) {
-        const pendientes = await this.prisma.ticketEvento.groupBy({
-            by: ['idPuntoVenta'],
-            where: ticketsSinRendir(idEvento),
-            _count: true,
-        });
+        const pendientes = await this.ticketsSinRendirPorLocal(idEvento);
         if (pendientes.length === 0) return;
 
-        const puntos = await this.prisma.puntoVenta.findMany({
-            where: { id: { in: pendientes.map((p) => p.idPuntoVenta as number) } },
-            select: { id: true, nombre: true },
-        });
-        const detalle = pendientes
-            .map((p) => `${puntos.find((punto) => punto.id === p.idPuntoVenta)?.nombre} (${p._count})`)
-            .join(', ');
+        const detalle = pendientes.map((p) => `${p.puntoVenta.nombre} (${p.cantidad})`).join(', ');
         throw new ConflictException(
             `Hay tickets asignados a puntos de venta sin rendir: ${detalle}. Registrá sus rendiciones antes de finalizar el evento`,
         );
     }
 
+    // Cuántos tickets le quedan por rendir a cada local. La usan finalizar (para frenar) y el panel de pendientes (para avisar)
+    private async ticketsSinRendirPorLocal(idEvento: number) {
+        const pendientes = await this.prisma.ticketEvento.groupBy({
+            by: ['idPuntoVenta'],
+            where: ticketsSinRendir(idEvento),
+            _count: true,
+        });
+        if (pendientes.length === 0) return [];
+
+        const puntos = await this.prisma.puntoVenta.findMany({
+            where: { id: { in: pendientes.map((p) => p.idPuntoVenta as number) } },
+            select: { id: true, nombre: true },
+        });
+        return pendientes.map((p) => ({
+            puntoVenta: puntos.find((punto) => punto.id === p.idPuntoVenta) ?? { id: p.idPuntoVenta as number, nombre: 'Punto de venta' },
+            cantidad: p._count,
+        }));
+    }
+
     /*
-        Cancela el evento completo: todas las jornadas Activas o Suspendidas
-        pasan a Cancelado y el evento queda Finalizado. El estado Cancelado
-        queda solo en cada jornada.
+        Eventos activos que ya concluyeron todas sus jornadas: solo falta
+        cerrarlos. Una jornada concluyó si se finalizó, se canceló o ya pasó
+        su horario; una suspendida no (todavía se puede reprogramar). Las de
+        Borrador no cuentan: nunca se publicaron y al finalizar se descartan.
+
+        Por cada evento dice qué falta, con los mismos criterios que frena
+        finalizar: jornadas que siguen Activas y tickets sin rendir. Se
+        muestran todos, sin importar el año: un evento viejo sin cerrar es
+        justo el que más importa ver.
     */
-    async cancelar(id: number, descartarBorradores = false) {
+    async pendientesDeCierre() {
+        const ahora = new Date();
+        const activos = await this.prisma.evento.findMany({
+            where: { estado: 'Activo' },
+            include: { jornadas: this.jornadasOrdenadas },
+        });
+
+        const concluidos = activos.filter((evento) => {
+            const publicadas = evento.jornadas.filter((j) => j.estado !== 'Borrador');
+            return publicadas.length > 0 && publicadas.every(
+                (j) => j.estado === 'Finalizado' || j.estado === 'Cancelado' || (j.estado === 'Activo' && j.fechaHoraFin <= ahora),
+            );
+        });
+
+        const pendientes = await Promise.all(concluidos.map(async (evento) => ({
+            id: evento.id,
+            nombre: evento.nombre,
+            // El más viejo primero: es el que hace más tiempo espera el cierre
+            fechaHoraFin: new Date(Math.max(...evento.jornadas.map((j) => j.fechaHoraFin.getTime()))),
+            jornadasSinFinalizar: evento.jornadas
+                .map((j, i) => ({ id: j.id, nombre: j.nombre || `Jornada ${i + 1}`, estado: j.estado }))
+                .filter((j) => j.estado === 'Activo')
+                .map(({ id, nombre }) => ({ id, nombre })),
+            ticketsSinRendir: await this.ticketsSinRendirPorLocal(evento.id),
+            jornadasBorrador: evento.jornadas.filter((j) => j.estado === 'Borrador').length,
+        })));
+        return pendientes.sort((a, b) => a.fechaHoraFin.getTime() - b.fechaHoraFin.getTime());
+    }
+
+    /*
+        Cancela de una vez las jornadas que se pueden cancelar, con la misma
+        regla que cancelarlas una por una: las suspendidas y las activas que
+        todavía no empezaron. Las que ya empezaron se hicieron, así que no se
+        tocan: quedan para finalizar.
+
+        El evento NO se cierra: sigue Activo hasta que se finalice, porque los
+        locales todavía pueden tener tickets por rendir. Así Finalizado
+        siempre significa "no queda nada pendiente". Las jornadas en Borrador
+        tampoco se tocan: las resuelve finalizar, como en cualquier otro cierre.
+    */
+    async cancelar(id: number) {
         const evento = await this.obtenerEvento(id);
 
         if (evento.estado !== 'Activo') {
             throw new ConflictException('Solo se pueden cancelar eventos que estén Activos');
         }
+        const ahora = new Date();
         const idsACancelar = evento.jornadas
-            .filter((j) => j.estado === 'Activo' || j.estado === 'Suspendido')
+            .filter((j) => j.estado === 'Suspendido' || (j.estado === 'Activo' && j.fechaHoraInicio > ahora))
             .map((j) => j.id);
         if (idsACancelar.length === 0) {
-            throw new ConflictException('El evento no tiene jornadas para cancelar: si ya terminó, finalizalo');
+            throw new ConflictException('El evento no tiene jornadas para cancelar: las que ya empezaron se finalizan');
         }
 
         await this.prisma.$transaction(async (tx) => {
-            await this.resolverBorradores(tx, id, descartarBorradores);
             // Mismo criterio que cancelar una jornada (ver JornadasService.cancelar)
             await tx.entrada.deleteMany({
                 where: { idJornada: { in: idsACancelar }, estado: 'Borrador', tickets: { none: {} } }
             });
             await anularTicketsSinVender(tx, idsACancelar);
             await tx.jornada.updateMany({ where: { id: { in: idsACancelar } }, data: { estado: 'Cancelado' } });
-            await tx.evento.update({ where: { id }, data: { estado: 'Finalizado' } });
         });
         return this.obtenerEvento(id);
     }

@@ -22,7 +22,6 @@ import { ImagenEventoModule } from './imagen-evento/imagen-evento.module';
 import { ProductosModule } from './productos/productos.module';
 import { ProductoEventoModule } from './producto-evento/producto-evento.module';
 import { VentaBuffetModule } from './venta-buffet/venta-buffet.module';
-import { DetalleVentaBuffetModule } from './detalle-venta-buffet/detalle-venta-buffet.module';
 import { RubrosModule } from './rubros/rubros.module';
 import { ProveedoresModule } from './proveedores/proveedores.module';
 import { ProveedorRubroModule } from './proveedor-rubro/proveedor-rubro.module';
@@ -31,9 +30,10 @@ import { AuthModule } from './auth/auth.module';
 import { FuentesIngresoModule } from './fuentes-ingreso/fuentes-ingreso.module';
 import { ComprasModule } from './compras/compras.module';
 import { MercadoPagoModule } from './mercado-pago/mercado-pago.module';
+import { InformesModule } from './informes/informes.module';
 
 @Module({
-  imports: [PrismaModule, PuntoVentaModule, UsuariosModule, PerfilesModule, UsuarioPerfilModule, PermisoPerfilModule, PermisosModule, AuditoriasModule, EventosModule, EntradasModule, ClientesModule, OrdenCompraModule, TicketEventoModule, ReembolsosModule, AccesosModule, ImagenEventoModule, ProductosModule, ProductoEventoModule, VentaBuffetModule, DetalleVentaBuffetModule, RubrosModule, ProveedoresModule, ProveedorRubroModule, MovimientoFinancieroModule, AuthModule, FuentesIngresoModule, ComprasModule, RendicionesModule, EntregasModule, MercadoPagoModule],
+  imports: [PrismaModule, PuntoVentaModule, UsuariosModule, PerfilesModule, UsuarioPerfilModule, PermisoPerfilModule, PermisosModule, AuditoriasModule, EventosModule, EntradasModule, ClientesModule, OrdenCompraModule, TicketEventoModule, ReembolsosModule, AccesosModule, ImagenEventoModule, ProductosModule, ProductoEventoModule, VentaBuffetModule, RubrosModule, ProveedoresModule, ProveedorRubroModule, MovimientoFinancieroModule, AuthModule, FuentesIngresoModule, ComprasModule, RendicionesModule, EntregasModule, MercadoPagoModule, InformesModule],
   controllers: [AppController],
   providers: [AppService],
 })

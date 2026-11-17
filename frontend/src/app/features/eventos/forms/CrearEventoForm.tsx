@@ -123,8 +123,8 @@ const CrearEventoForm = ({ onCreated }: CrearEventoFormProps) => {
 
     return (
         // noValidate: las validaciones son las de onSubmit, así no aparecen también los globos del navegador por los `required`
+        // El título "Nuevo evento" lo pone el encabezado de la página (EventoPage)
         <Formulario autoComplete="off" noValidate onSubmit={onSubmit}>
-            <h1 className="mb-6 text-2xl font-bold">Nuevo evento</h1>
 
             {/*
                 Dos columnas en PC (se apilan en pantallas chicas): a la

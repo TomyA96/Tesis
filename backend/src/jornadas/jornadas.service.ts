@@ -271,6 +271,14 @@ export class JornadasService {
             throw new ConflictException('No es posible cancelar esta jornada');
         }
         /*
+            Una jornada que ya empezó no se cancela: se hizo, aunque sea en
+            parte. Si hay que cortarla (lluvia, un corte de luz) se suspende,
+            y recién suspendida se decide: reprogramar, cancelar o finalizar.
+        */
+        if (jornada.estado === 'Activo' && jornada.fechaHoraInicio <= new Date()) {
+            throw new ConflictException('La jornada ya empezó: no se puede cancelar. Suspendela o finalizala');
+        }
+        /*
             Una entrada en Borrador nunca se publicó — no tuvo existencia
             pública, no pudo venderse, y la jornada ya no va a volver a estar
             activa. Se borra en cascada, no queda como residuo inservible.
@@ -303,12 +311,20 @@ export class JornadasService {
     async finalizar(id: number) {
         const jornada = await this.findOne(id);
 
-        if (jornada.estado !== 'Activo') {
+        /*
+            Finalizar es "ya se hizo". Una suspendida también se puede
+            finalizar si había llegado a empezar: por ejemplo, se suspendió
+            por lluvia una hora antes del cierre y no se va a retomar. Mientras
+            está suspendida conserva sus fechas originales, así que "empezó"
+            se sabe por su hora de inicio.
+        */
+        if (jornada.estado !== 'Activo' && jornada.estado !== 'Suspendido') {
             throw new ConflictException('No es posible finalizar esta jornada');
         }
-        // Finalizar es "ya se hizo": antes de que empiece, lo que corresponde es suspender o cancelar
         if (jornada.fechaHoraInicio > new Date()) {
-            throw new ConflictException('La jornada todavía no empezó: si no se va a realizar, suspendela o cancelala');
+            throw new ConflictException(jornada.estado === 'Suspendido'
+                ? 'La jornada se suspendió antes de empezar: reprogramala o cancelala'
+                : 'La jornada todavía no empezó: si no se va a realizar, suspendela o cancelala');
         }
         // Mismo criterio que cancelar — ver el comentario ahí.
         return this.prisma.$transaction(async (tx) => {

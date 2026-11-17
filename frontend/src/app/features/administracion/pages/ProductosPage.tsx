@@ -1,5 +1,6 @@
 import Btn from "../../../ui/componentes/Btn";
-import Header from "../../../ui/componentes/Header";
+import EncabezadoPagina from "../../../ui/componentes/EncabezadoPagina";
+import { PencilLine } from "lucide-react";
 import ContenedorDatos from "../../../ui/componentes/ContenedorDatos";
 import GenericTable from "../../../ui/componentes/GenericTable/GenericTable";
 import ConfirmarAccion from "../../../ui/componentes/ConfirmarAccion";
@@ -50,12 +51,14 @@ const ProductosPage = () => {
     );
 
     return (
-        <main className="gap-6 px-8">
+        <main className="flex flex-col gap-6 px-6 pb-8">
+            <EncabezadoPagina
+                icono={<PencilLine />}
+                seccion="Administración"
+                titulo="Productos"
+                acciones={<Btn onClick={() => setActivarModal("crearProducto")}>+ Agregar Producto</Btn>}
+            />
             <ContenedorDatos>
-                <Header
-                    titulo="Gestión de Productos"
-                    action={<Btn onClick={() => setActivarModal("crearProducto")}>+ Agregar Producto</Btn>}
-                />
 
                 {error && <p className="px-6 pt-4 text-sm text-red-600">{error}</p>}
 

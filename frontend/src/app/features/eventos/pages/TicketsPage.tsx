@@ -1,6 +1,8 @@
 import { useCallback, useEffect, useState } from "react";
-import { Link, useParams, useSearchParams } from "react-router-dom";
+import { useParams, useSearchParams } from "react-router-dom";
 import Header from "../../../ui/componentes/Header";
+import EncabezadoPagina from "../../../ui/componentes/EncabezadoPagina";
+import { CalendarDays } from "lucide-react";
 import LinkBtn from "../../../ui/componentes/LinkBtn";
 import Btn from "../../../ui/componentes/Btn";
 import ContenedorDatos from "../../../ui/componentes/ContenedorDatos";
@@ -77,31 +79,26 @@ const TicketsPage = () => {
     const jornadaDelLote = lote && evento.jornadas.find((j) => j.id === lote.idJornada);
 
     return (
-        <main className="flex flex-col gap-6 px-8">
-            <ContenedorDatos>
-                <Header
-                    titulo={
-                        <span className="flex items-center gap-2">
-                            <Link to={RUTAS.eventos.detalle(evento.id)} className="text-gray-500 hover:underline">
-                                {evento.nombre}
-                            </Link>
-                            <span className="text-gray-300">›</span>
-                            {lote && jornadaDelLote ? `${lote.descripcion} · ${titulos[jornadaDelLote.id]}` : "Entregar tickets"}
-                        </span>
-                    }
-                    action={
-                        <div className="flex gap-2">
-                            {lote && (
-                                <LinkBtn to={RUTAS.eventos.tickets(evento.id)} variant="outline" size="sm">
-                                    ← Entregar por cantidad
-                                </LinkBtn>
-                            )}
-                            <LinkBtn to={RUTAS.eventos.rendiciones(evento.id)} variant="outline" size="sm">
-                                Rendiciones
+        <main className="flex flex-col gap-6 px-6 pb-8">
+            <EncabezadoPagina
+                volver={{ to: RUTAS.eventos.detalle(evento.id), label: evento.nombre }}
+                icono={<CalendarDays />}
+                seccion="Eventos"
+                titulo={lote && jornadaDelLote ? `${lote.descripcion} · ${titulos[jornadaDelLote.id]}` : "Entregar tickets"}
+                acciones={
+                    <>
+                        {lote && (
+                            <LinkBtn to={RUTAS.eventos.tickets(evento.id)} variant="outline" size="sm">
+                                ← Entregar por cantidad
                             </LinkBtn>
-                        </div>
-                    }
-                />
+                        )}
+                        <LinkBtn to={RUTAS.eventos.rendiciones(evento.id)} variant="outline" size="sm">
+                            Rendiciones
+                        </LinkBtn>
+                    </>
+                }
+            />
+            <ContenedorDatos>
 
                 {idLote && !lote && <p className="p-6 text-sm text-gray-500">Ese lote no es de este evento.</p>}
                 {lote && !lote.esFisica && (

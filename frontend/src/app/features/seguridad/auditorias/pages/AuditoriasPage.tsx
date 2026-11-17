@@ -1,5 +1,6 @@
 import GenericTable from "../../../../ui/componentes/GenericTable/GenericTable";
-import Header from "../../../../ui/componentes/Header";
+import EncabezadoPagina from "../../../../ui/componentes/EncabezadoPagina";
+import { Shield } from "lucide-react";
 import ContenedorDatos from "../../../../ui/componentes/ContenedorDatos";
 import FiltroAuditorias from "../components/FiltroAuditorias";
 import { auditoriasMock } from "../auditorias.mock";
@@ -38,9 +39,9 @@ const columnasAuditorias: Column<Auditoria>[] = [
 
 const AuditoriasPage = () => {
   return (
-    <main className="flex flex-col gap-6 px-6">
+    <main className="flex flex-col gap-6 px-6 pb-8">
+      <EncabezadoPagina icono={<Shield />} seccion="Seguridad" titulo="Auditorías" />
       <ContenedorDatos>
-        <Header titulo="Auditorias" />
 
         <div className="px-6 pt-2 pb-4">
           <FiltroAuditorias

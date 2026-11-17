@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
-import Header from "../../../ui/componentes/Header";
+import { Wrench } from "lucide-react";
+import EncabezadoPagina from "../../../ui/componentes/EncabezadoPagina";
 import ContenedorDatos from "../../../ui/componentes/ContenedorDatos";
 import CardJornadaOperacion from "../componentes/CardJornadaOperacion";
 import { ACCIONES_OPERACION } from "../operaciones.config";
@@ -122,13 +123,10 @@ const OperacionesHomePage = () => {
     };
 
     return (
-        <main>
+        <main className="flex flex-col gap-6 px-6 pb-8">
+            <EncabezadoPagina icono={<Wrench />} seccion="Operaciones" titulo="Elegí una jornada" />
             <ContenedorDatos>
-                <Header titulo={<span className="text-2xl font-semibold text-gray-800">Operaciones</span>} />
                 <div className="flex flex-col gap-6 p-6">
-                    <p className="text-sm text-gray-500">
-                        Elegí la jornada sobre la que vas a trabajar.
-                    </p>
                     {contenido()}
                 </div>
             </ContenedorDatos>

@@ -71,10 +71,10 @@ const Card = ({ title, content, icono, colorIcono = "blue" }: CardProps) => {
                     {content}
                 </span>
                 {/*
-                    truncate: si el título es muy largo, se corta con "..."
-                    en lugar de romper el layout de la card
+                    line-clamp-2: si el título es muy largo, pasa a una segunda línea
+                    y recién ahí se corta con "...", sin romper el layout de la card
                 */}
-                <span className="text-sm text-gray-500 mt-1 truncate  ">
+                <span className="text-sm leading-snug text-gray-500 mt-1 line-clamp-2">
                     {title}
                 </span>
             </div>

@@ -81,6 +81,19 @@ enum EstadoPuntoVenta {
   Inactivo
 }
 
+// Cómo se cobró una venta del buffet: sirve para el cierre de caja (cuánto efectivo tiene que haber)
+enum MedioPagoBuffet {
+  Efectivo
+  Tarjeta
+  QR
+}
+
+// Una venta equivocada no se borra: se anula, y deja de contar en los totales y los informes
+enum EstadoVentaBuffet {
+  Registrada
+  Anulada
+}
+
 enum TipoProducto {
   Comida
   Bebida
@@ -128,14 +141,15 @@ model Usuario {
   eliminado    Boolean       @default(false)
   ultimoAcceso DateTime?
 
-  perfiles     UsuarioPerfil[]
-  auditorias   Auditoria[]
-  reembolsos   Reembolso[]
-  accesos      Acceso[]
-  ventasBuffet    VentaBuffet[]
-  ticketsVendidos TicketEvento[]
-  rendiciones     Rendicion[]
-  entregas        Entrega[]
+  perfiles             UsuarioPerfil[]
+  auditorias           Auditoria[]
+  reembolsos           Reembolso[]
+  accesos              Acceso[]
+  ventasBuffet         VentaBuffet[]   @relation("VentasBuffetRegistradas")
+  ventasBuffetAnuladas VentaBuffet[]   @relation("VentasBuffetAnuladas")
+  ticketsVendidos      TicketEvento[]
+  rendiciones          Rendicion[]
+  entregas             Entrega[]
 
   @@map("usuarios")
 }
@@ -466,15 +480,22 @@ model ProductoEvento {
 }
 
 model VentaBuffet {
-  id        Int      @id @default(autoincrement())
-  idJornada Int
-  idUsuario Int
-  fechaHora DateTime @default(now())
-  total     Decimal
+  id                 Int               @id @default(autoincrement())
+  idJornada          Int
+  idUsuario          Int
+  fechaHora          DateTime          @default(now())
+  total              Decimal
+  // El default es solo para las ventas que ya existían: al registrar una, el medio de pago se pide siempre
+  medioPago          MedioPagoBuffet   @default(Efectivo)
+  estado             EstadoVentaBuffet @default(Registrada)
+  // Quién la anuló y cuándo (vacíos mientras esté Registrada)
+  idUsuarioAnulacion Int?
+  fechaAnulacion     DateTime?
 
-  jornada      Jornada              @relation(fields: [idJornada], references: [id])
-  usuario      Usuario              @relation(fields: [idUsuario], references: [id])
-  detalleVenta DetalleVentaBuffet[]
+  jornada          Jornada              @relation(fields: [idJornada], references: [id])
+  usuario          Usuario              @relation("VentasBuffetRegistradas", fields: [idUsuario], references: [id])
+  usuarioAnulacion Usuario?             @relation("VentasBuffetAnuladas", fields: [idUsuarioAnulacion], references: [id])
+  detalleVenta     DetalleVentaBuffet[]
 
   @@map("ventas_buffet")
 }

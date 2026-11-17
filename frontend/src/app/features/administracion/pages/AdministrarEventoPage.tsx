@@ -8,7 +8,9 @@ import { useEffect, useState } from "react";
 import GastoModal from "../modales/GastoModal";
 import IngresoModal from "../modales/IngresoModal";
 import ModificarListaModal from "../modales/ModificarListaModal";
-import { CalendarDays } from "lucide-react";
+import { CalendarDays, PencilLine } from "lucide-react";
+import EncabezadoPagina from "../../../ui/componentes/EncabezadoPagina";
+import { RUTAS } from "../../../constantes/Rutas";
 import { useParams } from "react-router-dom";
 import { getEvento, type Evento } from "../../../services/eventosService";
 import {
@@ -97,7 +99,7 @@ const AdministrarEventoPage = () => {
     }, []);
 
     return (
-        <main className="flex flex-col gap-6 p-8">
+        <main className="flex flex-col gap-6 px-6 pb-8">
 
             {/* ── MODALES ─────────────────────────────────────────────────────
                 Agrupados arriba, fuera del layout visual.
@@ -158,23 +160,22 @@ const AdministrarEventoPage = () => {
             />
 
             {/* ── HEADER DEL EVENTO ─────────────────────────────────────────── */}
-            <ContenedorDatos>
-                <Header
-                    titulo={evento?.nombre ?? "Cargando evento..."}
-                    action={
-                        evento && (
-                            <div className="flex items-center gap-3">
-                                <div className="flex items-center gap-1.5 text-sm text-gray-400">
-                                    <CalendarDays className="w-4 h-4" />
-                                    <span>{fechaArgentina(evento.fechaHoraInicio)}</span>
-                                </div>
-                                <Etiqueta color={coloresEstadoEvento[evento.estado]}>{evento.estado}</Etiqueta>
-                            </div>
-                        )
-                    }
-                />
-                {error && <p className="px-7 pb-4 text-sm text-red-600">{error}</p>}
-            </ContenedorDatos>
+            <EncabezadoPagina
+                volver={{ to: RUTAS.administracion.inicio, label: "Administración" }}
+                icono={<PencilLine />}
+                seccion="Administración"
+                titulo={evento?.nombre ?? "Cargando evento..."}
+                etiqueta={evento && <Etiqueta color={coloresEstadoEvento[evento.estado]}>{evento.estado}</Etiqueta>}
+                detalle={
+                    evento && (
+                        <span className="inline-flex items-center gap-1.5">
+                            <CalendarDays className="h-4 w-4" />
+                            {fechaArgentina(evento.fechaHoraInicio)}
+                        </span>
+                    )
+                }
+            />
+            {error && <p className="rounded-lg bg-rose-50 px-4 py-3 text-sm text-rose-700">{error}</p>}
 
             {/* ── LAYOUT PRINCIPAL ────────────────────────────────────────────
                 lg:flex-row: en pantallas grandes van lado a lado

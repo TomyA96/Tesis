@@ -1,5 +1,6 @@
 import Btn from "../../../../ui/componentes/Btn";
-import Header from "../../../../ui/componentes/Header";
+import EncabezadoPagina from "../../../../ui/componentes/EncabezadoPagina";
+import { Shield } from "lucide-react";
 import GenericTable from "../../../../ui/componentes/GenericTable/GenericTable";
 import FiltroPerfiles from "../components/FiltroPerfiles";
 import CrearPerfilModal from "../modals/CrearPerfilModal";
@@ -46,17 +47,20 @@ const PerfilesPage = () => {
     const [activarModal, setActivarModal] = useState<ModalPerfiles>(null);
     
     return (
-        <main className=" gap-6 px-8 ">  
-                
-            <ContenedorDatos>
-                <Header titulo="Gestion de Perfiles"
-                action={
+        <main className="flex flex-col gap-6 px-6 pb-8">
+            <EncabezadoPagina
+                icono={<Shield />}
+                seccion="Seguridad"
+                titulo="Perfiles"
+                acciones={
                     <Btn onClick={() => setActivarModal("crearPerfil")}>
                         + Crear perfil
                     </Btn>
                 }
-                />
-                
+            />
+
+            <ContenedorDatos>
+
                 {error && (
                     <p className="px-6 pt-4 text-sm text-red-600">{error}</p>
                 )}

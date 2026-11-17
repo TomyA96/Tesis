@@ -1,4 +1,5 @@
-import Header from "../../../ui/componentes/Header";
+import EncabezadoPagina from "../../../ui/componentes/EncabezadoPagina";
+import { PencilLine } from "lucide-react";
 import ContenedorDatos from "../../../ui/componentes/ContenedorDatos";
 import CardEvent from "../componentes/CardEvent";
 import LinkBtn from "../../../ui/componentes/LinkBtn";
@@ -62,18 +63,24 @@ useEffect(() => {
 }, []);
 
     return (
-        <main>    
+        <main className="flex flex-col gap-6 px-6 pb-8">
+            <EncabezadoPagina
+                icono={<PencilLine />}
+                seccion="Administración"
+                titulo="Gastos e ingresos por evento"
+                acciones={
+                    <DropdownAnio
+                        años={cargarAñosEventos(eventos, añoActual)}
+                        value={añoSeleccionado}
+                        onChange={setAñoSeleccionado}
+                    />
+                }
+            />
+            {/* Si falla rubros, proveedores o fuentes, no se van a poder cargar movimientos */}
+            {Object.values(errorDeCarga).filter(Boolean).map((mensaje) => (
+                <p key={mensaje} role="alert" className="text-sm text-red-600">{mensaje}</p>
+            ))}
             <ContenedorDatos className="max-h-[800px]" >
-                <Header
-                    titulo={<h1 className="text-2xl font-semibold text-gray-800">Administración</h1>}
-                    action={
-                        <DropdownAnio
-                            años={cargarAñosEventos(eventos, añoActual)}
-                            value={añoSeleccionado}
-                            onChange={setAñoSeleccionado}
-                        />
-                    }
-                />
                 <div className="flex">
                     <div className={cn("flex-1 max-h-[650px] overflow-y-auto overflow-x-hidden gap-6 p-4 ", eventosDelAño.length > 0 ? 'flex flex-wrap content-start gap-6 justify-center' : 'flex flex-col justify-center items-center')}>
                         {error && <p className="text-red-500">{error}</p>}

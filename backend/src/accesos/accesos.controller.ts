@@ -3,25 +3,33 @@ import { AccesosService } from './accesos.service';
 import { CreateAccesoDto } from './dtos/create.acceso.dto';
 import { CreateAccesoManualDto } from './dtos/create.acceso-manual.dto';
 import { AuthGuard } from '../auth/guards/auth.guard';
+import { PermissionsGuard } from '../auth/guards/permissions.guard';
+import { Permisos } from '../auth/decorators/permisos.decorator';
 
 /*
     Los accesos se registran sobre una jornada. No hay forma de editar ni borrar
-    un ingreso: es un registro de auditoría.
-
-    TODO: PermissionsGuard con @Permisos('accesos.registrar') en el POST y
-    @Permisos('accesos.ver') en el GET. Por ahora solo está AuthGuard, que es lo
-    que permite saber QUIÉN registra el ingreso (se toma del token).
+    un ingreso: es un registro de auditoría. AuthGuard además dice QUIÉN
+    registra el ingreso (se toma del token).
 */
-@UseGuards(AuthGuard)
+@UseGuards(AuthGuard, PermissionsGuard)
 @Controller('jornadas/:idJornada/accesos')
 export class AccesosController {
     constructor(private accesosService: AccesosService) {}
 
+    @Permisos('accesos.ver')
     @Get()
     findByJornada(@Param('idJornada', ParseIntPipe) idJornada: number) {
         return this.accesosService.findByJornada(idJornada);
     }
 
+    // Cuántos entraron, para el contador de la pantalla de la puerta
+    @Permisos('accesos.ver')
+    @Get('resumen')
+    resumen(@Param('idJornada', ParseIntPipe) idJornada: number) {
+        return this.accesosService.resumen(idJornada);
+    }
+
+    @Permisos('accesos.registrar')
     @Post()
     registrar(
         @Param('idJornada', ParseIntPipe) idJornada: number,
@@ -34,6 +42,7 @@ export class AccesosController {
     }
 
     // Para supervisores, cuando el QR no se puede leer (ver el TODO del servicio sobre su permiso propio)
+    @Permisos('accesos.registrar')
     @Post('manual')
     registrarManual(
         @Param('idJornada', ParseIntPipe) idJornada: number,

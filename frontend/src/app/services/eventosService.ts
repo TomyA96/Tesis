@@ -4,7 +4,9 @@ import type { CreateJornada, Jornada } from "./jornadasService";
 
 export const ESTADOS_EVENTO = ["Activo", "Cancelado", "Finalizado", "Suspendido", "Borrador"] as const;
 export type EstadoEvento = typeof ESTADOS_EVENTO[number];
-export const opcionesEstadoEvento = ESTADOS_EVENTO.map((estado) => ({ label: estado, value: estado }));
+// El evento solo pasa por estos tres: Suspendido y Cancelado se usan en las jornadas
+export const ESTADOS_DEL_EVENTO = ["Borrador", "Activo", "Finalizado"] as const;
+export const opcionesEstadoEvento = ESTADOS_DEL_EVENTO.map((estado) => ({ label: estado, value: estado }));
 
 /*
     Lo que devuelve la API. Las fechas llegan como string ISO
@@ -90,6 +92,20 @@ export function getEventos() {
     return api.get<Evento[]>("/eventos");
 }
 
+// Un evento activo que ya concluyó todas sus jornadas, con lo que le falta para poder finalizarse
+export interface EventoPendienteDeCierre {
+    id: number;
+    nombre: string;
+    fechaHoraFin: string;
+    jornadasSinFinalizar: { id: number; nombre: string }[];
+    ticketsSinRendir: { puntoVenta: { id: number; nombre: string }; cantidad: number }[];
+    jornadasBorrador: number;
+}
+
+export function getPendientesDeCierre() {
+    return api.get<EventoPendienteDeCierre[]>("/eventos/pendientes-de-cierre");
+}
+
 export function getEvento(id:number){
     return api.get<Evento>(`/eventos/${id}`)
 }
@@ -137,13 +153,14 @@ export function suspenderEvento(id: number) {
 }
 
 /*
-    Finalizar y cancelar descartan las jornadas en Borrador. Es irreversible:
-    el backend lo rechaza salvo que se mande descartarBorradores.
+    Finalizar descarta las jornadas en Borrador. Es irreversible: el backend
+    lo rechaza salvo que se mande descartarBorradores.
 */
 export function finalizarEvento(id: number, descartarBorradores = false) {
     return api.put<Evento>(`/eventos/${id}/finalizar`, { descartarBorradores });
 }
 
-export function cancelarEvento(id: number, descartarBorradores = false) {
-    return api.put<Evento>(`/eventos/${id}/cancelar`, { descartarBorradores });
+// Cancela todas las jornadas activas o suspendidas; el evento sigue Activo hasta que se finalice
+export function cancelarEvento(id: number) {
+    return api.put<Evento>(`/eventos/${id}/cancelar`, {});
 }

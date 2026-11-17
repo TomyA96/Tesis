@@ -28,6 +28,13 @@ export class EventosController {
         return this.eventosService.findAllPublicados();
     }
 
+    // Va antes de ':id' para que "pendientes-de-cierre" no se tome como un id
+    @Permisos('eventos.ver')
+    @Get('pendientes-de-cierre')
+    pendientesDeCierre() {
+        return this.eventosService.pendientesDeCierre();
+    }
+
     @Permisos('eventos.ver')
     @Get(':id')
     findOne(@Param('id') id: string) {
@@ -94,11 +101,11 @@ export class EventosController {
         return this.eventosService.finalizar(Number(id), data?.descartarBorradores);
     }
 
-    // Cancela todas las jornadas y deja el evento Finalizado
+    // Cancela todas las jornadas activas o suspendidas; el evento sigue Activo hasta que se finalice
     @Permisos('eventos.concluir')
     @Put(':id/cancelar')
-    cancelar(@Param('id') id: string, @Body() data?: ConcluirEventoDto) {
-        return this.eventosService.cancelar(Number(id), data?.descartarBorradores);
+    cancelar(@Param('id') id: string) {
+        return this.eventosService.cancelar(Number(id));
     }
 
     @Permisos('eventos.eliminar')

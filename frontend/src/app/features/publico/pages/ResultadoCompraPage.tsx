@@ -6,6 +6,7 @@ import Btn from "../../../ui/componentes/Btn";
 import ContenedorDatos from "../../../ui/componentes/ContenedorDatos";
 import FondoMosaico from "../../../ui/componentes/FondoMosaico";
 import { getEstadoCompra, type EstadoOrden } from "../../../services/comprasService";
+import EntradasCompradas from "../componentes/EntradasCompradas";
 
 // Cada cuánto se vuelve a preguntar mientras el pago sigue pendiente, y cuántas veces
 const SEGUNDOS_ENTRE_CONSULTAS = 3;
@@ -21,6 +22,8 @@ const MAX_CONSULTAS = 20;
 const ResultadoCompraPage = () => {
     const [params] = useSearchParams();
     const idOrden = Number(params.get("orden"));
+    // La pone el backend en la URL de vuelta de Mercado Pago: permite ver las entradas con sus QR
+    const clave = params.get("clave");
     const ordenValida = Number.isInteger(idOrden) && idOrden > 0;
 
     const [estado, setEstado] = useState<EstadoOrden | null>(null);
@@ -67,7 +70,7 @@ const ResultadoCompraPage = () => {
     return (
         <main className="relative isolate flex-1 bg-gray-300 flex justify-center p-4 md:p-8">
             <FondoMosaico />
-            <ContenedorDatos className="max-w-xl h-fit p-6 md:p-8 gap-6 items-center text-center">
+            <ContenedorDatos className="max-w-2xl h-fit p-6 md:p-8 gap-6 items-center text-center">
                 {!ordenValida ? (
                     <Mensaje
                         icono={<CircleX className="h-12 w-12 text-red-600" />}
@@ -90,11 +93,14 @@ const ResultadoCompraPage = () => {
                         texto="Esto toma unos segundos. No cierres esta página."
                     />
                 ) : estado === "Aprobada" ? (
-                    <Mensaje
-                        icono={<CircleCheck className="h-12 w-12 text-green-600" />}
-                        titulo="¡Compra confirmada!"
-                        texto={`Tu pago se acreditó y tus entradas quedaron a tu nombre. Número de compra: ${idOrden}.`}
-                    />
+                    <>
+                        <Mensaje
+                            icono={<CircleCheck className="h-12 w-12 text-green-600" />}
+                            titulo="¡Compra confirmada!"
+                            texto={`Tu pago se acreditó y tus entradas quedaron a tu nombre. Número de compra: ${idOrden}.`}
+                        />
+                        {clave && <EntradasCompradas idOrden={idOrden} clave={clave} />}
+                    </>
                 ) : estado === "Pendiente" ? (
                     <>
                         <Mensaje

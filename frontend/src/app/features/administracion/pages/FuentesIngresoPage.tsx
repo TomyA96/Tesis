@@ -1,5 +1,6 @@
 import Btn from "../../../ui/componentes/Btn";
-import Header from "../../../ui/componentes/Header";
+import EncabezadoPagina from "../../../ui/componentes/EncabezadoPagina";
+import { PencilLine } from "lucide-react";
 import ContenedorDatos from "../../../ui/componentes/ContenedorDatos";
 import GenericTable from "../../../ui/componentes/GenericTable/GenericTable";
 import ConfirmarAccion from "../../../ui/componentes/ConfirmarAccion";
@@ -57,12 +58,14 @@ const FuentesIngresoPage = () => {
     );
 
     return (
-        <main className="gap-6 px-8">
+        <main className="flex flex-col gap-6 px-6 pb-8">
+            <EncabezadoPagina
+                icono={<PencilLine />}
+                seccion="Administración"
+                titulo="Fuentes de ingreso"
+                acciones={<Btn onClick={() => setActivarModal("crearFuente")}>+ Agregar Fuente</Btn>}
+            />
             <ContenedorDatos>
-                <Header
-                    titulo="Gestión de Fuentes de Ingreso"
-                    action={<Btn onClick={() => setActivarModal("crearFuente")}>+ Agregar Fuente</Btn>}
-                />
 
                 {error && <p className="px-6 pt-4 text-sm text-red-600">{error}</p>}
 

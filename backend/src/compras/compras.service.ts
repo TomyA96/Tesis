@@ -5,6 +5,8 @@ import { EstadoOrden, Prisma } from '@prisma/client';
 import { limiteVentaOnline } from '../jornadas/utils/venta-online';
 import { liberarReservasVencidas } from '../entradas/utils/tickets';
 import { MercadoPagoService } from '../mercado-pago/mercado-pago.service';
+import * as QRCode from 'qrcode';
+import { esClaveDeOrden } from './utils/clave-orden';
 
 // Cuánto tiempo quedan reservadas las entradas de una compra con pago pendiente
 const MINUTOS_RESERVA = 10;
@@ -217,6 +219,53 @@ export class ComprasService {
     async estadoDeCompra(idOrden: number) {
         const estado = await this.sincronizarPago(idOrden);
         return { id: idOrden, estado };
+    }
+
+    /*
+        Lo que el comprador presenta en la puerta: cada ticket con su QR, ya
+        como imagen (data URL), así la pantalla no necesita una librería para
+        dibujarlo. Con una clave equivocada se responde lo mismo que si la
+        orden no existiera: no se le confirma a nadie qué números de orden hay.
+    */
+    async entradasDeCompra(idOrden: number, clave: string) {
+        if (!clave || !esClaveDeOrden(idOrden, clave)) {
+            throw new NotFoundException('No encontramos esa compra');
+        }
+        const orden = await this.prisma.ordenCompra.findUnique({
+            where: { id: idOrden },
+            include: {
+                tickets: {
+                    orderBy: { id: 'asc' },
+                    include: {
+                        entrada: {
+                            select: {
+                                descripcion: true,
+                                jornada: { select: { nombre: true, fechaHoraInicio: true, direccion: true, evento: { select: { nombre: true } } } },
+                            },
+                        },
+                    },
+                },
+            },
+        });
+        if (!orden) {
+            throw new NotFoundException('No encontramos esa compra');
+        }
+        if (orden.estado !== 'Aprobada') {
+            throw new ConflictException('La compra todavía no está aprobada');
+        }
+
+        return Promise.all(orden.tickets.map(async (ticket) => ({
+            id: ticket.id,
+            numero: ticket.numero,
+            estado: ticket.estado,
+            entrada: ticket.entrada.descripcion,
+            evento: ticket.entrada.jornada.evento.nombre,
+            jornada: ticket.entrada.jornada.nombre,
+            fechaHoraInicio: ticket.entrada.jornada.fechaHoraInicio,
+            direccion: ticket.entrada.jornada.direccion,
+            codigoQR: ticket.codigoQR,
+            imagenQR: await QRCode.toDataURL(ticket.codigoQR, { margin: 1, width: 240 }),
+        })));
     }
 
     // El aviso (webhook) de Mercado Pago dice que algo cambió en una order suya: se busca la nuestra.

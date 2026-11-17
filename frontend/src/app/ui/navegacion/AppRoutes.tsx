@@ -36,6 +36,8 @@ const ProductosPage = lazy(() => import("../../features/administracion/pages/Pro
 const RubrosPage = lazy(() => import("../../features/administracion/pages/RubrosPage"));
 const AdministrarEventoPage = lazy(() => import("../../features/administracion/pages/AdministrarEventoPage"));
 const InformesHomePage = lazy(() => import("../../features/informes/pages/InformesHomePage"));
+const InformeEventoLayout = lazy(() => import("../../features/informes/pages/InformeEventoLayout"));
+const InformeGeneralEventoPage = lazy(() => import("../../features/informes/pages/InformeGeneralEventoPage"));
 const InformeEntradasEventoPage = lazy(() => import("../../features/informes/pages/InformeEntradasEventoPage"));
 const InformeBuffetEventoPage = lazy(() => import("../../features/informes/pages/InformeBuffetEventoPage"));
 const FinanzasEventoPage = lazy(() => import("../../features/informes/pages/FinanzasEventoPage"));
@@ -82,9 +84,13 @@ const AppRoutes = () => {
                         <Route path=":idEvento/tickets" element={<TicketsPage />} />
                         <Route path=":idEvento/rendiciones" element={<RendicionesPage />} />
                         <Route path=":idEvento/administracion" element={<AdministrarEventoPage />} />
-                        <Route path=":idEvento/informes/entradas" element={<InformeEntradasEventoPage />} />
-                        <Route path=":idEvento/informes/buffet" element={<InformeBuffetEventoPage />} />
-                        <Route path=":idEvento/informes/finanzas" element={<FinanzasEventoPage />} />
+                        {/* El layout carga el informe una vez y se lo pasa a las cuatro pestañas */}
+                        <Route path=":idEvento/informes" element={<InformeEventoLayout />}>
+                            <Route index element={<InformeGeneralEventoPage />} />
+                            <Route path="entradas" element={<InformeEntradasEventoPage />} />
+                            <Route path="buffet" element={<InformeBuffetEventoPage />} />
+                            <Route path="finanzas" element={<FinanzasEventoPage />} />
+                        </Route>
                     </Route>
                         <Route path="administracion">
                         <Route index element={<AdministracionHomePage />} />
@@ -95,7 +101,6 @@ const AppRoutes = () => {
                     </Route>
                     <Route path="informes">
                         <Route index element={<InformesHomePage />} />
-                        <Route path="resumen-anual" element={<InformesHomePage />} />
                     </Route>
                     <Route path="operaciones">
                         <Route index element={<OperacionesHomePage />} />

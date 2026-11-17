@@ -2,6 +2,8 @@ import { useCallback, useEffect, useState } from "react";
 import { Link, useLocation, useNavigate, useParams } from "react-router-dom";
 import Btn from "../../../ui/componentes/Btn";
 import ContenedorDatos from "../../../ui/componentes/ContenedorDatos";
+import EncabezadoPagina, { LinkVolver } from "../../../ui/componentes/EncabezadoPagina";
+import { CalendarDays } from "lucide-react";
 import Etiqueta from "../../../ui/componentes/Etiqueta";
 import Modal from "../../../ui/componentes/Modal";
 import ConfirmarAccion from "../../../ui/componentes/ConfirmarAccion";
@@ -11,6 +13,7 @@ import MiniaturaImagenEvento from "../componentes/MiniaturaImagenEvento";
 import TarjetaJornada from "../componentes/TarjetaJornada";
 import ResumenLotesJornada from "../componentes/ResumenLotesJornada";
 import PuntosVentaDelEvento from "../componentes/PuntosVentaDelEvento";
+import InformesDelEvento from "../componentes/InformesDelEvento";
 import PublicarEventoModal from "../modales/PublicarEventoModal";
 import AgregarJornadasModal from "../modales/AgregarJornadasModal";
 import LoteEntradasModal from "../modales/LoteEntradasModal";
@@ -96,7 +99,13 @@ const EventoPage = () => {
 
     if (!idEvento) {
         return (
-            <main>
+            <main className="flex flex-col gap-6 px-6 pb-8">
+                <EncabezadoPagina
+                    volver={{ to: RUTAS.eventos.inicio, label: "Eventos" }}
+                    icono={<CalendarDays />}
+                    seccion="Eventos"
+                    titulo="Nuevo evento"
+                />
                 <ContenedorDatos className="p-6">
                     <CrearEventoForm
                         onCreated={(nuevo, avisoImagen) =>
@@ -133,6 +142,16 @@ const EventoPage = () => {
     // Las que todavía no tienen cierre: el evento no se puede finalizar con alguna así
     const abiertas = jornadas.filter((j) => j.estado === "Activo" || j.estado === "Suspendido");
     const hayActivas = jornadas.some((j) => j.estado === "Activo");
+    /*
+        Cancelar el evento sigue la regla de cada jornada: se cancelan las
+        suspendidas y las activas que todavía no empezaron. Las que ya
+        empezaron se hicieron: quedan para finalizar.
+    */
+    const ahora = new Date();
+    const cancelables = jornadas.filter(
+        (j) => j.estado === "Suspendido" || (j.estado === "Activo" && new Date(j.fechaHoraInicio) > ahora),
+    );
+    const paraFinalizar = jornadas.filter((j) => j.estado === "Activo" && new Date(j.fechaHoraInicio) <= ahora);
     // Las que todavía pueden recibir entradas: ni finalizadas ni canceladas
     const conEntradas = jornadas.filter((j) => j.estado !== "Finalizado" && j.estado !== "Cancelado");
     const finalizado = evento.estado === "Finalizado";
@@ -143,7 +162,9 @@ const EventoPage = () => {
         borradores > 0 ? ` y descartar ${borradores} jornada(s) en borrador que nunca se publicaron` : "";
 
     return (
-        <main className="flex flex-col gap-4">
+        <main className="flex flex-col gap-6 px-6 pb-8">
+            <LinkVolver to={RUTAS.eventos.inicio} label="Eventos" />
+
             {avisoImagen && (
                 <p className="rounded-lg border border-amber-300 bg-amber-50 px-4 py-3 text-sm text-amber-800">
                     El evento se creó, pero no se pudo subir la imagen ({avisoImagen}). Podés volver a subirla desde la
@@ -152,13 +173,15 @@ const EventoPage = () => {
             )}
 
             {/* ── CABECERA: datos del evento en chico ─────────────────────── */}
-            <ContenedorDatos className="gap-3 p-5">
+            {/* Misma caja y mismo título que EncabezadoPagina; en vez del ícono, la imagen del evento */}
+            <ContenedorDatos className="gap-3 border border-slate-200 px-6 py-5">
                 <div className="flex flex-col gap-4 md:flex-row md:items-start">
                     <MiniaturaImagenEvento idEvento={evento.id} bloqueado={finalizado} onCambio={setTieneImagen} />
 
                     <div className="flex min-w-0 flex-1 flex-col gap-1">
+                        <p className="text-xs font-semibold uppercase tracking-[0.18em] text-slate-400">Eventos</p>
                         <div className="flex flex-wrap items-center gap-2">
-                            <h1 className="text-2xl font-bold">{evento.nombre}</h1>
+                            <h1 className="text-2xl font-bold tracking-tight text-slate-900">{evento.nombre}</h1>
                             <Etiqueta color={coloresEstadoEvento[evento.estado]}>{evento.estado}</Etiqueta>
                         </div>
                         <span className="text-sm text-gray-500">
@@ -205,7 +228,7 @@ const EventoPage = () => {
                                 Finalizar
                             </Btn>
                         )}
-                        {evento.estado === "Activo" && abiertas.length > 0 && (
+                        {evento.estado === "Activo" && cancelables.length > 0 && (
                             <Btn variant="danger" size="sm" onClick={() => setModal("cancelar")}>
                                 Cancelar evento
                             </Btn>
@@ -259,6 +282,9 @@ const EventoPage = () => {
 
             {/* ── PUNTOS DE VENTA: a quién se le entregaron tickets y qué falta rendir ── */}
             {evento.estado !== "Borrador" && <PuntosVentaDelEvento idEvento={evento.id} locales={locales} />}
+
+            {/* ── INFORMES: un evento en Borrador todavía no tiene nada que informar ── */}
+            {evento.estado !== "Borrador" && <InformesDelEvento idEvento={evento.id} />}
 
             {/* ── VENTANAS ─────────────────────────────────────────────────── */}
             {/* El Modal no renderiza nada cerrado: cada vez que se abre, el formulario arranca con los datos actuales */}
@@ -343,9 +369,9 @@ const EventoPage = () => {
             <ConfirmarAccion
                 isOpen={modal === "cancelar"}
                 title="Cancelar evento"
-                mensaje={`Cancelar el evento y sus ${abiertas.length} jornada(s) activas o suspendidas${avisoBorradores} (los tickets asignados a locales quedan pendientes de su rendición; no se puede deshacer)`}
+                mensaje={`Cancelar ${cancelables.map((j) => titulos[j.id]).join(", ")} (no se puede deshacer). Los tickets sin vender se anulan y los asignados a locales quedan pendientes de rendición.${paraFinalizar.length > 0 ? ` ${paraFinalizar.map((j) => titulos[j.id]).join(", ")} ${paraFinalizar.length === 1 ? "ya empezó: no se cancela, queda" : "ya empezaron: no se cancelan, quedan"} para finalizar.` : ""} El evento sigue activo: cuando esté todo rendido, finalizalo`}
                 onConfirmar={async () => {
-                    await cancelarEvento(evento.id, borradores > 0);
+                    await cancelarEvento(evento.id);
                     setModal(null);
                     await recargar();
                 }}

@@ -1,4 +1,5 @@
 import Header from "../../../ui/componentes/Header";
+import EncabezadoPagina from "../../../ui/componentes/EncabezadoPagina";
 import Btn from "../../../ui/componentes/Btn";
 import LinkBtn from "../../../ui/componentes/LinkBtn";
 import Card from "../../../ui/componentes/Card";
@@ -6,15 +7,16 @@ import GenericTable from "../../../ui/componentes/GenericTable/GenericTable";
 import ContenedorDatos from "../../../ui/componentes/ContenedorDatos";
 import FiltroEventos, { aplicarFiltrosEventos, filtrosEventosVacios, type FiltrosEventos } from "../componentes/FiltroEventos";
 import { useEffect, useMemo, useState } from "react";
-import { getEventos, type Evento } from "../../../services/eventosService"
+import { getEventos, getPendientesDeCierre, type Evento, type EventoPendienteDeCierre } from "../../../services/eventosService"
 import ConfirmarAccion from "../../../ui/componentes/ConfirmarAccion";
 import { RUTAS } from "../../../constantes/Rutas";
 import { CalendarDays } from "lucide-react";
+import PanelPendientesCierre from "../componentes/PanelPendientesCierre";
 import { columnasEventos } from "../eventos.columns";
 import { deleteEvento } from "../../../services/eventosService";
 import { cn } from "../../../../lib/cn";
 import {cargarAñosEventos} from "../../../utils/cargarAñosEventos";
-import {contarEventosPorEstado} from "../utils/contarEventosPorEstado";
+import { resumirJornadas } from "../utils/resumenJornadas";
 import DropdownAnio from "../../../ui/componentes/DropdownAnio";
 
 // ── TIPOS ─────────────────────────────────────────────────────────────────────
@@ -32,6 +34,7 @@ const EventosHomePage = () => {
     const [eventos, setEventos] = useState<Evento[]>([])
     const [confirmandoEliminar, setConfirmandoEliminar] = useState(false);
     const [error, setError] = useState("")
+    const [pendientesCierre, setPendientesCierre] = useState<EventoPendienteDeCierre[]>([]);
 
     const eventosPorAño = useMemo(
         () => eventos.filter(
@@ -44,8 +47,9 @@ const EventosHomePage = () => {
         [eventosPorAño, filtros]
     );
 
-    const conteoPorEstado = useMemo(
-        () => contarEventosPorEstado(eventosPorAño),
+    // Los cards cuentan las jornadas de los eventos del año elegido
+    const resumen = useMemo(
+        () => resumirJornadas(eventosPorAño, new Date()),
         [eventosPorAño]
     );
 
@@ -54,7 +58,11 @@ const EventosHomePage = () => {
             .then((response) => {
                 setEventos(response)
             })
-            .catch(() => setError("No se pudieron cargar los permisos"));
+            .catch(() => setError("No se pudieron cargar los eventos"));
+        // No depende del año: un evento viejo sin cerrar tiene que seguir apareciendo
+        getPendientesDeCierre()
+            .then(setPendientesCierre)
+            .catch(() => setError("No se pudieron cargar los eventos por finalizar"));
     }, [])
 
   
@@ -63,18 +71,19 @@ const EventosHomePage = () => {
 
 
     return (
-        <main className="flex flex-col gap-6 px-8">
+        <main className="flex flex-col gap-6 px-6 pb-8">
 
             {/* ── HEADER ────────────────────────────────────────────────────── */}
-            {/* 
+            {/*
                 El dropdown de año va en el header porque filtra toda la página,
                 no solo la tabla. Es un filtro global de la vista.
             */}
-            <ContenedorDatos>
-                <Header
-                titulo="Eventos"
-                action={
-                    <div className="flex items-center gap-4">
+            <EncabezadoPagina
+                icono={<CalendarDays />}
+                seccion="Eventos"
+                titulo="Eventos del año"
+                acciones={
+                    <>
                         <DropdownAnio
                             años={cargarAñosEventos(eventos, añoActual)}
                             value={añoSeleccionado}
@@ -83,20 +92,26 @@ const EventosHomePage = () => {
                         <LinkBtn to={RUTAS.eventos.crear}>
                             + Nuevo Evento
                         </LinkBtn>
-                    </div>
+                    </>
                 }
             />
-            </ContenedorDatos>
             
+
+            {error && <p role="alert" className="text-sm text-red-600">{error}</p>}
 
             {/* ── CARDS DE MÉTRICAS ─────────────────────────────────────────── */}
             <section aria-label="Resumen de eventos">
-                <div className="grid grid-cols-1 sm:grid-cols-2  lg:grid-cols-5 gap-4">
-                    <Card title="Eventos Activos"    icono={<CalendarDays/>} colorIcono="green"  content={conteoPorEstado["Activo"]} />
-                    <Card title="Eventos Borradores"  icono={<CalendarDays/>} colorIcono="indigo"  content={conteoPorEstado["Borrador"]} />
-                    <Card title="Eventos Finalizados" icono={<CalendarDays/>} content={conteoPorEstado["Finalizado"]} />
-                    <Card title="Eventos Suspendidos"  icono={<CalendarDays/>} colorIcono="yellow"  content={conteoPorEstado["Suspendido"]} />
-                    <Card title="Eventos Cancelados"  icono={<CalendarDays/>} colorIcono="red"  content={conteoPorEstado["Cancelado"]} />
+                {/* Las 6 de jornadas (del año elegido) a la izquierda y el panel de eventos por finalizar al lado, ocupando las dos filas */}
+                <div className="grid grid-cols-1 gap-4 xl:grid-cols-[minmax(0,1fr)_20rem]">
+                    <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
+                        <Card title="Jornadas próximas"      icono={<CalendarDays />} colorIcono="green"  content={resumen.proximas} />
+                        <Card title="Jornadas sin finalizar" icono={<CalendarDays />} colorIcono="orange" content={resumen.sinFinalizar} />
+                        <Card title="Jornadas en borrador"   icono={<CalendarDays />} colorIcono="indigo" content={resumen.borrador} />
+                        <Card title="Jornadas finalizadas"   icono={<CalendarDays />}                     content={resumen.finalizadas} />
+                        <Card title="Jornadas suspendidas"   icono={<CalendarDays />} colorIcono="yellow" content={resumen.suspendidas} />
+                        <Card title="Jornadas canceladas"    icono={<CalendarDays />} colorIcono="red"    content={resumen.canceladas} />
+                    </div>
+                    <PanelPendientesCierre eventos={pendientesCierre} />
                 </div>
             </section>
 

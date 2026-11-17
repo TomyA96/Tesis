@@ -1,5 +1,6 @@
 import Btn from "../../../ui/componentes/Btn";
-import Header from "../../../ui/componentes/Header";
+import EncabezadoPagina from "../../../ui/componentes/EncabezadoPagina";
+import { CalendarDays } from "lucide-react";
 import ContenedorDatos from "../../../ui/componentes/ContenedorDatos";
 import GenericTable from "../../../ui/componentes/GenericTable/GenericTable";
 import ConfirmarAccion from "../../../ui/componentes/ConfirmarAccion";
@@ -44,12 +45,14 @@ const PuntosVentaPage = () => {
     };
 
     return (
-        <main className="gap-6 px-8">
+        <main className="flex flex-col gap-6 px-6 pb-8">
+            <EncabezadoPagina
+                icono={<CalendarDays />}
+                seccion="Eventos"
+                titulo="Puntos de venta"
+                acciones={<Btn onClick={() => abrir("guardar")}>+ Agregar Punto de Venta</Btn>}
+            />
             <ContenedorDatos>
-                <Header
-                    titulo="Gestión de Puntos de Venta"
-                    action={<Btn onClick={() => abrir("guardar")}>+ Agregar Punto de Venta</Btn>}
-                />
 
                 {error && <p className="px-6 pt-4 text-sm text-red-600">{error}</p>}
 
