@@ -31,14 +31,19 @@ const InformeGeneralEventoPage = () => {
     const vendidasRealizadas = realizadas.reduce((suma, j) => suma + j.entradas.vendidas, 0);
     const vendidasUsadas = realizadas.reduce((suma, j) => suma + j.entradas.vendidas - j.entradas.vendidasSinUsar, 0);
     const porPersona = (monto: number) => (asistentes === 0 ? "—" : formatPesosEnteros(monto / asistentes));
+    /*
+        Gasto promedio: lo que gastó cada persona que vino (entrada + buffet).
+        No usa todo lo recaudado: los otros ingresos (un sponsor, por ejemplo)
+        no salen del bolsillo de los asistentes.
+        Promedio de asistencia: de las entradas vendidas para jornadas que ya
+        pasaron, cuántas se usaron.
+    */
     const indicadores = [
-        { titulo: "Ingreso por asistente", valor: porPersona(finanzas.recaudado), ayuda: "Todo lo recaudado, dividido por los que vinieron" },
-        { titulo: "Buffet por asistente", valor: porPersona(finanzas.buffet), ayuda: "Lo que consumió en el buffet cada persona" },
-        { titulo: "Costo por asistente", valor: porPersona(finanzas.gastado), ayuda: "Lo gastado, dividido por los que vinieron" },
+        { titulo: "Gasto promedio", valor: porPersona(finanzas.entradas + finanzas.buffet) },
+        { titulo: "Gasto en buffet", valor: porPersona(finanzas.buffet) },
         {
-            titulo: "Compraron y fueron",
+            titulo: "Promedio de asistencia",
             valor: vendidasRealizadas === 0 ? "—" : formatoPorcentaje((vendidasUsadas / vendidasRealizadas) * 100),
-            ayuda: `${vendidasUsadas.toLocaleString("es-AR")} de ${vendidasRealizadas.toLocaleString("es-AR")} entradas vendidas`,
         },
     ];
 
@@ -79,12 +84,11 @@ const InformeGeneralEventoPage = () => {
             </section>
 
             <ChartCard titulo="Indicadores por persona">
-                <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
+                <div className="grid gap-3 sm:grid-cols-3">
                     {indicadores.map((i) => (
                         <div key={i.titulo} className="rounded-xl border border-slate-100 bg-slate-50/60 p-4">
                             <p className="text-xs font-semibold uppercase tracking-[0.12em] text-slate-500">{i.titulo}</p>
                             <p className="mt-2 text-xl font-bold tabular-nums text-slate-900">{i.valor}</p>
-                            <p className="mt-1 text-xs leading-snug text-slate-400">{i.ayuda}</p>
                         </div>
                     ))}
                 </div>
