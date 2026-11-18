@@ -9,7 +9,7 @@ import ResumenOrdenItem from "../componentes/ResumenOrdenItem";
 import VentasDeLaJornada from "../componentes/VentasDeLaJornada";
 import { cn } from "../../../../lib/cn";
 import { formatPrecio } from "../../../utils/formatoPrecio";
-import type { Producto } from "../../../services/productosService";
+import type { Producto, TipoProducto } from "../../../services/productosService";
 import type { Jornada } from "../../../services/jornadasService";
 import {
   anularVentaBuffet,
@@ -29,6 +29,12 @@ const iconoMedio: Record<MedioPagoBuffet, React.ReactNode> = {
 // El más común en un buffet: queda elegido de entrada y después de cada venta
 const MEDIO_POR_DEFECTO: MedioPagoBuffet = "Efectivo";
 
+// Las pestañas del catálogo, en el orden en que se muestran
+const PESTANAS: { tipo: TipoProducto; titulo: string; vacio: string }[] = [
+  { tipo: "Comida", titulo: "Comidas", vacio: "No hay comidas asignadas a este evento." },
+  { tipo: "Bebida", titulo: "Bebidas", vacio: "No hay bebidas asignadas a este evento." },
+];
+
 /*
     La caja del buffet en una jornada. El catálogo son los productos
     asignados al evento de la jornada (se asignan desde Administración) que
@@ -38,6 +44,11 @@ const MEDIO_POR_DEFECTO: MedioPagoBuffet = "Efectivo";
     La venta se arma en pantalla y al registrarla solo se mandan productos,
     cantidades y medio de pago: los precios y el total los pone el backend.
     Arriba, desplegable, las ventas de la jornada (con la opción de anular).
+
+    El catálogo se separa en pestañas (Comidas y Bebidas) para no scrollear
+    buscando un producto: se cambia de una a otra con un toque y lo cargado
+    en la venta se mantiene. Cada pestaña dice cuántas unidades de ese tipo
+    hay en la venta en curso, así no se pierde de vista lo del otro lado.
 */
 const PanelVentas = () => {
   const jornada = useOutletContext<Jornada>();
@@ -50,6 +61,8 @@ const PanelVentas = () => {
   const [registrando, setRegistrando] = useState(false);
   const [aviso, setAviso] = useState<{ tipo: "ok" | "error"; texto: string } | null>(null);
   const [ventas, setVentas] = useState<VentasDeJornada | null>(null);
+  // null = todavía no se eligió: se muestra la primera pestaña que tenga productos
+  const [pestanaElegida, setPestanaElegida] = useState<TipoProducto | null>(null);
 
   const cargarVentas = useCallback(async () => {
     try {
@@ -86,8 +99,10 @@ const PanelVentas = () => {
   const total = lineas.reduce((suma, l) => suma + l.precio * l.cantidad, 0);
   const unidades = lineas.reduce((suma, l) => suma + l.cantidad, 0);
 
-  const comidas = (productos ?? []).filter((p) => p.tipo === "Comida");
-  const bebidas = (productos ?? []).filter((p) => p.tipo === "Bebida");
+  const delTipo = (tipo: TipoProducto) => (productos ?? []).filter((p) => p.tipo === tipo);
+  const unidadesDelTipo = (tipo: TipoProducto) => lineas.filter((l) => l.producto.tipo === tipo).reduce((suma, l) => suma + l.cantidad, 0);
+  const pestana = pestanaElegida ?? PESTANAS.find((p) => delTipo(p.tipo).length > 0)?.tipo ?? "Comida";
+  const datosPestana = PESTANAS.find((p) => p.tipo === pestana)!;
 
   const limpiarVenta = () => {
     setCantidades({});
@@ -215,7 +230,7 @@ const PanelVentas = () => {
         {/* ── CATÁLOGO ────────────────────────────────────────────────── */}
         <ContenedorDatos className="h-fit">
           <Header titulo="Productos del evento" />
-          <div className="flex flex-col gap-8 p-6">
+          <div className="flex flex-col gap-6 p-6">
             {error ? (
               <p role="alert" className="text-sm text-red-600">{error}</p>
             ) : productos === null ? (
@@ -229,10 +244,42 @@ const PanelVentas = () => {
                 </p>
               </div>
             ) : (
-              <>
-                <CategoriaProductos titulo="Comidas" productos={comidas} cantidades={cantidades} onCambiarCantidad={cambiarCantidad} />
-                <CategoriaProductos titulo="Bebidas" productos={bebidas} cantidades={cantidades} onCambiarCantidad={cambiarCantidad} />
-              </>
+              <div className="flex flex-col gap-4">
+                <div role="tablist" aria-label="Tipo de producto" className="grid grid-cols-2 gap-1 rounded-xl bg-slate-100 p-1">
+                  {PESTANAS.map(({ tipo, titulo }) => {
+                    const activa = pestana === tipo;
+                    const enVenta = unidadesDelTipo(tipo);
+                    return (
+                      <button
+                        key={tipo}
+                        type="button"
+                        role="tab"
+                        aria-selected={activa}
+                        onClick={() => setPestanaElegida(tipo)}
+                        className={cn(
+                          "flex cursor-pointer flex-col items-center rounded-lg px-3 py-2 text-sm font-semibold transition-colors",
+                          activa ? "bg-white text-slate-900 shadow-sm" : "text-slate-500 hover:text-slate-800",
+                        )}
+                      >
+                        <span>
+                          {titulo} <span className="font-normal text-slate-400">({delTipo(tipo).length})</span>
+                        </span>
+                        <span className={cn("text-xs font-medium", enVenta > 0 ? "text-blue-600" : "text-transparent")}>
+                          {enVenta > 0 ? `${enVenta} en la venta` : "·"}
+                        </span>
+                      </button>
+                    );
+                  })}
+                </div>
+                <div role="tabpanel" aria-label={datosPestana.titulo}>
+                  <CategoriaProductos
+                    productos={delTipo(pestana)}
+                    cantidades={cantidades}
+                    onCambiarCantidad={cambiarCantidad}
+                    vacio={datosPestana.vacio}
+                  />
+                </div>
+              </div>
             )}
           </div>
         </ContenedorDatos>
