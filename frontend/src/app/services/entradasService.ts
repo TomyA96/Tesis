@@ -13,8 +13,10 @@ export interface Entrada {
     estado: EstadoEntrada;
     // Cuántos tickets tiene el lote: se crean todos al publicarlo o imprimirlo
     cantidad: number;
-    // Solo cuenta en un lote online publicado: false = venta pausada
+    // Solo cuenta en un lote online publicado o en la boletería: false = venta pausada
     habilitada: boolean;
+    // La boletería de la jornada ("General Boletería"): se configura desde el evento y se vende en la puerta
+    esBoleteria: boolean;
     vendidos: number;
     anulados: number;
     // Solo cuentan en un lote físico: los que tiene el organizador (Impreso) y los que están en locales (Asignado)
@@ -97,6 +99,14 @@ export async function imprimirEntrada(id: number, descripcion: string) {
     document.body.removeChild(link);
     window.open(url, '_blank');
     setTimeout(() => URL.revokeObjectURL(url), 8000);
+}
+
+/*
+    Configura la boletería en las jornadas elegidas: la crea en las que no la
+    tienen y le cambia el precio a las que sí. El nombre lo pone el backend.
+*/
+export function configurarBoleteria(idsJornadas: number[], precio: number) {
+    return api.post<Entrada[]>("/entradas/boleteria", { idsJornadas, precio });
 }
 
 export function deleteEntrada(id: number){

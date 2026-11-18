@@ -19,6 +19,7 @@ import type { EstadoEvento } from "../../../services/eventosService";
 import { accionesDeEntradas, type AccionEntrada } from "../utils/accionesParaEntradas";
 import { RUTAS } from "../../../constantes/Rutas";
 import LinkBtn from "../../../ui/componentes/LinkBtn";
+import { formatPrecio } from "../../../utils/formatoPrecio";
 
 // Las acciones que no tienen vuelta atrás pasan por una confirmación
 type AccionConfirmable = "publicar" | "imprimir" | "anular";
@@ -36,13 +37,20 @@ type ListarEntradasProps = {
 
 /*
     Lugares de la jornada que ya tienen dueño: un lote en Borrador reserva
-    su cantidad; uno publicado o impreso, sus tickets que no se anularon.
-    Es la misma cuenta que hace el backend para no pasarse de la capacidad.
+    su cantidad; uno publicado o impreso, sus tickets que no se anularon; la
+    boletería, lo que vendió en la puerta. Es la misma cuenta que hace el
+    backend para no pasarse de la capacidad.
 */
 const lugaresAsignados = (entradas: Entrada[]) =>
-    entradas.reduce((suma, e) => suma + (e.estado === "Borrador" ? e.cantidad : e.cantidad - e.anulados), 0);
+    entradas.reduce(
+        (suma, e) => suma + (e.esBoleteria ? e.vendidos : e.estado === "Borrador" ? e.cantidad : e.cantidad - e.anulados),
+        0,
+    );
 
-const ListaEntradas = ({ entradas, idEvento, idJornada, estadoEvento, capacidad, onEntradaGuardada }: ListarEntradasProps) => {
+const ListaEntradas = ({ entradas: todas, idEvento, idJornada, estadoEvento, capacidad, onEntradaGuardada }: ListarEntradasProps) => {
+    // La boletería no se maneja como un lote: se configura desde el evento y se muestra aparte
+    const boleteria = todas.find((e) => e.esBoleteria);
+    const entradas = todas.filter((e) => !e.esBoleteria);
     const [modalAbierto, setModalAbierto] = useState(false);
     // La que se está editando (undefined = crear una nueva)
     const [entradaSeleccionada, setEntradaSeleccionada] = useState<Entrada | undefined>(undefined);
@@ -134,7 +142,18 @@ const ListaEntradas = ({ entradas, idEvento, idJornada, estadoEvento, capacidad,
                 />
 
                 <p className="px-6 text-sm text-gray-500">
-                    Lugares asignados: <strong className="text-gray-800">{lugaresAsignados(entradas)}</strong> de {capacidad}
+                    Lugares asignados: <strong className="text-gray-800">{lugaresAsignados(todas)}</strong> de {capacidad}
+                </p>
+                <p className="px-6 pt-1 text-sm text-gray-500">
+                    Boletería:{" "}
+                    {boleteria ? (
+                        <>
+                            <strong className="text-gray-800">General Boletería</strong> a {formatPrecio(Number(boleteria.precio))} ·{" "}
+                            {boleteria.vendidos} vendidas en la puerta{!boleteria.habilitada && " · pausada"}
+                        </>
+                    ) : (
+                        "sin configurar (se configura desde la pantalla del evento)"
+                    )}
                 </p>
 
                 {error && <p role="alert" className="px-6 pt-2 text-sm text-red-600">{error}</p>}

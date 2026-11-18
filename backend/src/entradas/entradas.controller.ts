@@ -3,6 +3,7 @@ import { EstadoEntrada } from '@prisma/client';
 import { EntradasService } from './entradas.service';
 import { CreateEntradaDto } from './dtos/create.entrada.dto';
 import { CreateEntradasLoteDto } from './dtos/create.entradas-lote.dto';
+import { ConfigurarBoleteriaDto } from './dtos/configurar-boleteria.dto';
 import { UpdateEntradaDto } from './dtos/update.entrada.dto';
 import { Permisos } from '../auth/decorators/permisos.decorator';
 import { AuthGuard } from '../auth/guards/auth.guard';
@@ -42,6 +43,13 @@ export class EntradasController {
     @Post('lote')
     createLote(@Body() data: CreateEntradasLoteDto) {
         return this.entradasService.createLote(data)
+    }
+
+    // Crea la boletería en las jornadas que no la tienen y le cambia el precio a las que sí
+    @Permisos('entradas.crear')
+    @Post('boleteria')
+    configurarBoleteria(@Body() data: ConfigurarBoleteriaDto) {
+        return this.entradasService.configurarBoleteria(data)
     }
 
     @Permisos('entradas.editar')

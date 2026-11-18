@@ -3,9 +3,13 @@ import { PrismaService } from '../prisma/prisma.service';
 import { CreateEntradaDto } from './dtos/create.entrada.dto';
 import { CreateEntradasLoteDto } from './dtos/create.entradas-lote.dto';
 import { UpdateEntradaDto } from './dtos/update.entrada.dto';
-import PDFDocument from 'pdfkit';
-import { generarQR } from './utils/generarQR';
+import { ConfigurarBoleteriaDto } from './dtos/configurar-boleteria.dto';
 import { armarTicketsDelLote, liberarReservasVencidas, lugaresOcupados, publicarLoteOnline } from './utils/tickets';
+import { pdfDeTickets } from './utils/pdf-tickets';
+import { NOMBRE_BOLETERIA, esNombreReservado } from './utils/boleteria';
+
+// La boletería tiene su propio camino: se configura desde el evento y se vende en la puerta
+const SOLO_DESDE_BOLETERIA = 'La boletería no se maneja como un lote: se configura desde «Configurar boletería» en el evento';
 
 
 @Injectable()
@@ -87,6 +91,7 @@ export class EntradasService {
     */
     async createLote(data: CreateEntradasLoteDto) {
         const { idsJornadas, ...entrada } = data;
+        this.validarNombreNoReservado(entrada.descripcion);
 
         const jornadas = await this.prisma.jornada.findMany({
             where: { id: { in: idsJornadas } },
@@ -138,6 +143,9 @@ export class EntradasService {
     async updateEntrada(id: number, data: UpdateEntradaDto) {
         const entrada = await this.obtenerEntrada(id);
 
+        if (entrada.esBoleteria) {
+            throw new ConflictException(SOLO_DESDE_BOLETERIA);
+        }
         if (entrada.estado === 'Anulado') {
             throw new ConflictException('No se puede modificar un lote anulado');
         }
@@ -173,6 +181,9 @@ export class EntradasService {
     async publicarEntrada(id: number) {
         const entrada = await this.obtenerEntrada(id);
 
+        if (entrada.esBoleteria) {
+            throw new ConflictException(SOLO_DESDE_BOLETERIA);
+        }
         if (entrada.esFisica) {
             throw new ConflictException('Un lote físico no se publica: se imprime');
         }
@@ -189,10 +200,12 @@ export class EntradasService {
         Habilitar/deshabilitar pausa o reanuda la venta online de un lote ya
         publicado. En Borrador no cambia nada (todavía no está a la venta) y
         un lote físico no se vende por el sistema, así que en esos casos no
-        se permite.
+        se permite. La boletería sí: pausarla corta la venta en la puerta
+        (es lo que se hace con una que ya tuvo ventas, en vez de borrarla).
     */
     private async validarVentaPausable(id: number) {
         const entrada = await this.obtenerEntrada(id);
+        if (entrada.esBoleteria) return;
         if (entrada.esFisica || entrada.estado !== 'Disponible') {
             throw new ConflictException('Solo se puede pausar o reanudar la venta de un lote online publicado');
         }
@@ -223,6 +236,10 @@ export class EntradasService {
     async anularEntrada(id: number) {
         const entrada = await this.obtenerEntrada(id);
 
+        // La boletería no se anula: se pausa (sus ventas se anulan una por una desde la puerta)
+        if (entrada.esBoleteria) {
+            throw new ConflictException(SOLO_DESDE_BOLETERIA);
+        }
         if (entrada.estado !== 'Disponible') {
             throw new ConflictException('Solo se anulan lotes publicados o impresos: uno en borrador se elimina');
         }
@@ -265,6 +282,10 @@ export class EntradasService {
         if (!entrada) {
             throw new NotFoundException('La entrada no existe');
         }
+        // Los tickets de la boletería se imprimen de a uno, en cada venta en la puerta
+        if (entrada.esBoleteria) {
+            throw new ConflictException(SOLO_DESDE_BOLETERIA);
+        }
         if (!entrada.esFisica) {
             throw new ConflictException('Solo se imprimen los lotes físicos: uno online se publica');
         }
@@ -275,56 +296,10 @@ export class EntradasService {
             throw new ConflictException('No se puede imprimir un lote de una jornada que no está activa');
         }
         const nuevosTickets = armarTicketsDelLote(entrada, 'Impreso');
-
-        const QRsGenerados = await Promise.all(
-            nuevosTickets.map(async (ticket) => ({
-                ticket,
-                qr: await generarQR(ticket.codigoQR)
-        })));
-        function centrarX(doc: PDFKit.PDFDocument, texto: string, anchoPagina: number, ): number {
-            return (anchoPagina - doc.widthOfString(texto)) / 2;
-        }
-
-        function ajustarFontSize(doc: PDFKit.PDFDocument, texto: string, anchoMaximo: number, tamanoInicial: number, tamanoMinimo: number): number {
-            let tamano = tamanoInicial;
-            doc.fontSize(tamano);
-            while (doc.widthOfString(texto) > anchoMaximo && tamano > tamanoMinimo) {
-                tamano--;
-                doc.fontSize(tamano);
-            }
-            return tamano;
-        }
-
-        // Los tickets de distintas jornadas del mismo evento se distinguen por la fecha impresa
-        const fechaJornada = entrada.jornada.fechaHoraInicio.toLocaleDateString('es-AR', {
-            day: '2-digit',
-            month: '2-digit',
-            year: 'numeric',
-            timeZone: 'America/Argentina/Buenos_Aires',
-        });
-        const ticketsPDF = new PDFDocument({ autoFirstPage: false});
-        for (const { ticket, qr } of QRsGenerados) {
-
-            ticketsPDF.addPage({ size: [300, 300], margins: { top: 0, bottom: 0, left: 0, right: 0 }, });
-            ticketsPDF.font('Helvetica-Bold');
-            ajustarFontSize(ticketsPDF, `${entrada.jornada.evento.nombre}`, 280, 18, 10);
-            ticketsPDF.text(`${entrada.jornada.evento.nombre}`, centrarX(ticketsPDF, `${entrada.jornada.evento.nombre}`, 300), 20);
-            ticketsPDF.image(qr, (300-200)/2, 50, { width: 200, height: 200 });
-            const numeroYFecha = `#${ticket.numero} - ${fechaJornada}`;
-            ticketsPDF.font('Helvetica-Bold').fontSize(12).text(numeroYFecha, centrarX(ticketsPDF, numeroYFecha, 300), 250);
-            ajustarFontSize(ticketsPDF, `${entrada.descripcion}`, 280, 10, 8);
-            ticketsPDF.font('Helvetica').fontSize(12).text(`${entrada.descripcion}`,centrarX(ticketsPDF, `${entrada.descripcion}`, 300), 263);
-            
-        }
-        const bufferPDF = await new Promise<Buffer>((resolve, reject) => {
-            const chunks: Buffer[] = [];
-
-            ticketsPDF.on('data', (chunk) => chunks.push(chunk));
-            ticketsPDF.on('end', () => resolve(Buffer.concat(chunks)));
-            ticketsPDF.on('error', reject);
-
-            ticketsPDF.end();
-        });
+        const bufferPDF = await pdfDeTickets(
+            { evento: entrada.jornada.evento.nombre, descripcion: entrada.descripcion, fechaJornada: entrada.jornada.fechaHoraInicio },
+            nuevosTickets,
+        );
 
         // Con el PDF listo, se guardan los tickets y el lote queda impreso (todo o nada)
         await this.prisma.$transaction(async (tx) => {
@@ -349,14 +324,89 @@ export class EntradasService {
     */
     async deleteEntrada(id: number) {
         const entrada = await this.obtenerEntrada(id);
+        /*
+            La boletería se puede quitar mientras no haya vendido nada. Si ya
+            tuvo ventas, sus tickets la necesitan (y los informes también):
+            en vez de borrarla, se pausa.
+        */
+        if (entrada.esBoleteria) {
+            const tickets = await this.prisma.ticketEvento.count({ where: { idEntrada: id } });
+            if (tickets > 0) {
+                throw new ConflictException('La boletería ya tuvo ventas: no se puede quitar, pausala');
+            }
+            return this.prisma.entrada.delete({ where: { id } });
+        }
         if (entrada.estado !== "Borrador") {
             throw new ConflictException('Un lote publicado o impreso no se elimina: se anula');
         }
         return this.prisma.entrada.delete({ where: { id } });
     }
 
+    /*
+        Configura la boletería en las jornadas elegidas (todas juntas o una por
+        una, como un lote): si la jornada ya tiene, le cambia el precio; si
+        no, la crea. El nombre lo pone el sistema. No ocupa lugares al crearse
+        (cantidad 0): los ocupan los tickets que se venden en la puerta.
+        Todo o nada: si una jornada tiene un problema, no se toca ninguna.
+    */
+    async configurarBoleteria(data: ConfigurarBoleteriaDto) {
+        const jornadas = await this.prisma.jornada.findMany({
+            where: { id: { in: data.idsJornadas } },
+            orderBy: { fechaHoraInicio: 'asc' },
+        });
+        if (jornadas.length !== data.idsJornadas.length) {
+            throw new NotFoundException('Alguna de las jornadas elegidas no existe');
+        }
+        if (new Set(jornadas.map((j) => j.idEvento)).size > 1) {
+            throw new BadRequestException('Las jornadas elegidas tienen que ser del mismo evento');
+        }
+        const cerradas = jornadas.filter((j) => j.estado === 'Finalizado' || j.estado === 'Cancelado');
+        if (cerradas.length > 0) {
+            const nombres = cerradas.map((j) => j.nombre ?? j.fechaHoraInicio.toLocaleDateString('es-AR', { timeZone: 'America/Argentina/Buenos_Aires' }));
+            throw new ConflictException(`No se configura la boletería de jornadas finalizadas o canceladas: ${nombres.join(', ')}`);
+        }
+
+        return this.prisma.$transaction(async (tx) => {
+            const existentes = await tx.entrada.findMany({
+                where: { idJornada: { in: data.idsJornadas }, esBoleteria: true },
+            });
+            const boleteriaDe = new Map(existentes.map((e) => [e.idJornada, e]));
+
+            return Promise.all(
+                jornadas.map((jornada) => {
+                    const existente = boleteriaDe.get(jornada.id);
+                    if (existente) {
+                        // Las ventas anteriores guardaron su precio en cada ticket: cambiarlo no las toca
+                        return tx.entrada.update({ where: { id: existente.id }, data: { precio: data.precio } });
+                    }
+                    return tx.entrada.create({
+                        data: {
+                            idJornada: jornada.id,
+                            descripcion: NOMBRE_BOLETERIA,
+                            precio: data.precio,
+                            // Sus tickets se imprimen en papel en la boletería
+                            esFisica: true,
+                            esBoleteria: true,
+                            cantidad: 0,
+                            // No necesita publicarse: se vende cuando la jornada se puede operar
+                            estado: 'Disponible',
+                        },
+                    });
+                }),
+            );
+        });
+    }
+
+    // "General Boletería" es el nombre de la boletería: ningún lote común puede usarlo
+    private validarNombreNoReservado(descripcion: string) {
+        if (esNombreReservado(descripcion)) {
+            throw new ConflictException(`«${NOMBRE_BOLETERIA}» es el nombre reservado de la boletería: elegí otro nombre para el lote`);
+        }
+    }
+
     // El nombre solo tiene que ser único dentro de la jornada: "General" puede repetirse en cada día
     private async validarDescripcionDisponible(idJornada: number, descripcion: string, idIgnorado?: number) {
+        this.validarNombreNoReservado(descripcion);
         const existente = await this.prisma.entrada.findFirst({
             where: {
                 idJornada,

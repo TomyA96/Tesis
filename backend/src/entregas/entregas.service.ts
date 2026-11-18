@@ -57,6 +57,10 @@ export class EntregasService {
                 throw new NotFoundException('Alguno de los lotes no pertenece a este evento');
             }
             const nombre = `${lote.descripcion} (${lote.jornada.nombre ?? 'jornada'})`;
+            // La boletería no tiene tickets en mano: los suyos se crean y se venden en la puerta
+            if (lote.esBoleteria) {
+                throw new ConflictException('La boletería no se entrega a locales: sus tickets se venden en la puerta');
+            }
             if (!lote.esFisica) {
                 throw new ConflictException(`${nombre} es un lote online: solo se entregan tickets físicos`);
             }

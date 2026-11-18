@@ -85,7 +85,7 @@ export interface InformeJornada {
         recaudado: number;
         // canal: "Online", el nombre del local que la rindió, o "Venta en puerta"
         canales: { canal: string; tipo: CanalVenta; cantidad: number; monto: number }[];
-        lotes: { id: number; descripcion: string; esFisica: boolean; precio: number; emitidas: number; vendidas: number; recaudado: number }[];
+        lotes: { id: number; descripcion: string; esFisica: boolean; esBoleteria: boolean; precio: number; emitidas: number; vendidas: number; recaudado: number }[];
         pendienteRendir: { tickets: number; monto: number };
     };
     buffet: {

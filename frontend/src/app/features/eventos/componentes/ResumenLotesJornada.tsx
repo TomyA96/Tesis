@@ -1,5 +1,6 @@
 import LinkBtn from "../../../ui/componentes/LinkBtn";
 import { RUTAS } from "../../../constantes/Rutas";
+import { formatPrecio } from "../../../utils/formatoPrecio";
 import type { Entrada } from "../../../services/entradasService";
 import type { Jornada } from "../../../services/jornadasService";
 
@@ -22,7 +23,10 @@ type ResumenLotesJornadaProps = {
     lotes: Entrada[];
 };
 
-const ResumenLotesJornada = ({ idEvento, jornada, lotes }: ResumenLotesJornadaProps) => {
+const ResumenLotesJornada = ({ idEvento, jornada, lotes: todos }: ResumenLotesJornadaProps) => {
+    // La boletería no es un lote más: va aparte, al final, con su precio y lo vendido en la puerta
+    const boleteria = todos.find((l) => l.esBoleteria);
+    const lotes = todos.filter((l) => !l.esBoleteria);
     const abierta = jornada.estado === "Activo" || jornada.estado === "Suspendido";
     // Hay algo para entregar si algún lote físico impreso tiene tickets en mano
     const hayParaEntregar = abierta && lotes.some((l) => l.esFisica && l.estado === "Disponible" && l.enMano > 0);
@@ -42,6 +46,17 @@ const ResumenLotesJornada = ({ idEvento, jornada, lotes }: ResumenLotesJornadaPr
                     </div>
                 ))
             )}
+            <div className="flex items-baseline justify-between gap-3 border-t border-gray-200 pt-1.5">
+                <span className="font-medium text-gray-700">Boletería</span>
+                {boleteria ? (
+                    <span className="shrink-0 text-gray-500">
+                        {formatPrecio(Number(boleteria.precio))} · vendidas {boleteria.vendidos}
+                        {!boleteria.habilitada && " · pausada"}
+                    </span>
+                ) : (
+                    <span className="shrink-0 text-gray-400">Sin configurar</span>
+                )}
+            </div>
             {hayParaEntregar && (
                 <LinkBtn to={RUTAS.eventos.tickets(idEvento, { jornada: jornada.id })} variant="outline" size="sm" className="mt-1 w-fit">
                     Entregar tickets

@@ -30,6 +30,8 @@ const PublicarEventoModal = ({ isOpen, estadoEvento, revision, titulos, tieneIma
     // Se puede confirmar solo si hay algo para publicar y el evento tiene su imagen
     const sePuedePublicar = completas.length > 0 && tieneImagen;
     const incompletas = revision.filter((r) => r.faltantes.length > 0);
+    // Se publican igual, pero conviene que se sepa que en esas no hay venta anticipada
+    const soloPuerta = completas.filter((r) => r.soloBoleteria);
     const conEvento = estadoEvento === "Borrador";
 
     const cerrar = () => {
@@ -60,6 +62,16 @@ const PublicarEventoModal = ({ isOpen, estadoEvento, revision, titulos, tieneIma
                     <p className="text-gray-700">
                         {conEvento ? "Se va a publicar el evento junto con " : "Se van a publicar "}
                         <strong>{completas.length} jornada(s)</strong>: {completas.map((r) => titulos[r.id]).join(", ")}.
+                    </p>
+                )}
+
+                {soloPuerta.length > 0 && (
+                    <p className="rounded-lg border border-sky-200 bg-sky-50 px-4 py-3 text-sky-900">
+                        {soloPuerta.length === 1 ? (
+                            <><strong>{titulos[soloPuerta[0].id]}</strong> solo tiene configurada la boletería: no va a haber venta anticipada, solo venta en puerta.</>
+                        ) : (
+                            <><strong>{soloPuerta.map((r) => titulos[r.id]).join(", ")}</strong> solo tienen configurada la boletería: no va a haber venta anticipada, solo venta en puerta.</>
+                        )}
                     </p>
                 )}
 

@@ -141,15 +141,18 @@ model Usuario {
   eliminado    Boolean       @default(false)
   ultimoAcceso DateTime?
 
-  perfiles             UsuarioPerfil[]
-  auditorias           Auditoria[]
-  reembolsos           Reembolso[]
-  accesos              Acceso[]
-  ventasBuffet         VentaBuffet[]   @relation("VentasBuffetRegistradas")
-  ventasBuffetAnuladas VentaBuffet[]   @relation("VentasBuffetAnuladas")
-  ticketsVendidos      TicketEvento[]
-  rendiciones          Rendicion[]
-  entregas             Entrega[]
+  perfiles               UsuarioPerfil[]
+  auditorias             Auditoria[]
+  reembolsos             Reembolso[]
+  accesos                Acceso[]
+  ventasBuffet           VentaBuffet[]   @relation("VentasBuffetRegistradas")
+  ventasBuffetAnuladas   VentaBuffet[]   @relation("VentasBuffetAnuladas")
+  ventasPuerta           VentaPuerta[]   @relation("VentasPuertaRegistradas")
+  ventasPuertaAnuladas   VentaPuerta[]   @relation("VentasPuertaAnuladas")
+  ventasPuertaReemitidas VentaPuerta[]   @relation("VentasPuertaReemitidas")
+  ticketsVendidos        TicketEvento[]
+  rendiciones            Rendicion[]
+  entregas               Entrega[]
 
   @@map("usuarios")
 }
@@ -248,6 +251,7 @@ model Jornada {
   evento       Evento        @relation(fields: [idEvento], references: [id])
   entradas     Entrada[]
   ventasBuffet VentaBuffet[]
+  ventasPuerta VentaPuerta[]
 
   @@map("jornadas")
 }
@@ -259,8 +263,11 @@ model Entrada {
   precio      Decimal
   esFisica    Boolean
   estado      EstadoEntrada @default(Borrador)
-  cantidad    Int // cuántos tickets se crean al publicar o imprimir el lote
+  cantidad    Int // cuántos tickets se crean al publicar o imprimir el lote (0 en la boletería)
   habilitada  Boolean       @default(true)
+  // El lote de la boletería de la jornada (uno por jornada, nombre fijo "General Boletería"):
+  // no se publica ni se imprime en tanda; sus tickets se crean de a uno al vender en la puerta
+  esBoleteria Boolean       @default(false)
 
   jornada       Jornada              @relation(fields: [idJornada], references: [id])
   tickets       TicketEvento[]
@@ -321,30 +328,33 @@ model DetalleOrdenCompra {
 }
 
 model TicketEvento {
-  id           Int          @id @default(autoincrement())
-  idEntrada    Int
-  idOrden      Int?
-  idPuntoVenta Int?
+  id            Int          @id @default(autoincrement())
+  idEntrada     Int
+  idOrden       Int?
+  idPuntoVenta  Int?
   // Quién registró la venta en puerta; vacío en los tickets online y en los que todavía no se vendieron
-  idVendedor   Int?
+  idVendedor    Int?
   // La rendición en la que el local informó este ticket (vendido o devuelto). Null = pendiente de rendir.
-  idRendicion  Int?
+  idRendicion   Int?
   // La entrega en la que el organizador se lo dio al local (para el comprobante). Null = nunca se entregó.
-  idEntrega    Int?
-  codigoQR     String       @unique
-  numero       String
-  precio       Decimal
-  fechaHora    DateTime     @default(now())
-  estado       EstadoTicket
+  idEntrega     Int?
+  // La venta en puerta que lo generó (vacío en los online y en los de lotes físicos)
+  idVentaPuerta Int?
+  codigoQR      String       @unique
+  numero        String
+  precio        Decimal
+  fechaHora     DateTime     @default(now())
+  estado        EstadoTicket
 
-  entrada    Entrada      @relation(fields: [idEntrada], references: [id])
-  orden      OrdenCompra? @relation(fields: [idOrden], references: [id])
-  reembolso  Reembolso?
-  accesos    Acceso?
-  puntoVenta PuntoVenta?  @relation(fields: [idPuntoVenta], references: [id])
-  vendedor   Usuario?     @relation(fields: [idVendedor], references: [id])
-  rendicion  Rendicion?   @relation(fields: [idRendicion], references: [id])
-  entrega    Entrega?     @relation(fields: [idEntrega], references: [id])
+  entrada     Entrada      @relation(fields: [idEntrada], references: [id])
+  orden       OrdenCompra? @relation(fields: [idOrden], references: [id])
+  reembolso   Reembolso?
+  accesos     Acceso?
+  puntoVenta  PuntoVenta?  @relation(fields: [idPuntoVenta], references: [id])
+  vendedor    Usuario?     @relation(fields: [idVendedor], references: [id])
+  rendicion   Rendicion?   @relation(fields: [idRendicion], references: [id])
+  entrega     Entrega?     @relation(fields: [idEntrega], references: [id])
+  ventaPuerta VentaPuerta? @relation(fields: [idVentaPuerta], references: [id])
 
   @@unique([idEntrada, numero])
   @@map("tickets_evento")
@@ -498,6 +508,41 @@ model VentaBuffet {
   detalleVenta     DetalleVentaBuffet[]
 
   @@map("ventas_buffet")
+}
+
+/**
+ * Una venta de la boletería de una jornada: uno o varios tickets del lote
+ * "General Boletería" cobrados juntos. Como en el buffet, no se edita ni se
+ * borra: se anula. El medio de pago y el estado usan los mismos valores que
+ * el buffet (Efectivo/Tarjeta/QR, Registrada/Anulada).
+ */
+model VentaPuerta {
+  id                 Int               @id @default(autoincrement())
+  idJornada          Int
+  idUsuario          Int
+  fechaHora          DateTime          @default(now())
+  cantidad           Int
+  // Precio de cada ticket al momento de la venta (el de la boletería puede cambiar después)
+  precioUnitario     Decimal
+  total              Decimal
+  medioPago          MedioPagoBuffet
+  estado             EstadoVentaBuffet @default(Registrada)
+  // Se vendió con la jornada llena o pasada de su capacidad: quien la registró aceptó la sobreventa
+  esSobreventa       Boolean           @default(false)
+  idUsuarioAnulacion Int?
+  fechaAnulacion     DateTime?
+  // Reemitir anula los tickets de la venta y crea otros (sin cobrar de nuevo): queda la última vez y cuántas
+  reemisiones        Int               @default(0)
+  idUsuarioReemision Int?
+  fechaReemision     DateTime?
+
+  jornada          Jornada        @relation(fields: [idJornada], references: [id])
+  usuario          Usuario        @relation("VentasPuertaRegistradas", fields: [idUsuario], references: [id])
+  usuarioAnulacion Usuario?       @relation("VentasPuertaAnuladas", fields: [idUsuarioAnulacion], references: [id])
+  usuarioReemision Usuario?       @relation("VentasPuertaReemitidas", fields: [idUsuarioReemision], references: [id])
+  tickets          TicketEvento[]
+
+  @@map("ventas_puerta")
 }
 
 model DetalleVentaBuffet {

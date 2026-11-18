@@ -123,6 +123,10 @@ const JornadaPage = () => {
   // El backend no deja quitar la última jornada: para eso se elimina el evento
   const puedeEliminar = estado === "Borrador" && evento.jornadas.length > 1;
 
+  // Su única entrada es la boletería: se puede publicar, pero no va a haber venta anticipada
+  const soloBoleteria = entradas.length > 0 && entradas.every((e) => e.esBoleteria);
+  const avisoSoloBoleteria = "Solo tiene configurada la boletería: no va a haber venta anticipada, solo venta en puerta";
+
   // Lo que dice y hace cada confirmación. ConfirmarAccion envuelve el mensaje en "¿...?"
   const confirmaciones: Record<
     AccionJornada,
@@ -131,7 +135,9 @@ const JornadaPage = () => {
     publicar: {
       titulo: "Publicar jornada",
       mensaje:
-        "Publicar la jornada (se crean los tickets de sus lotes online y quedan a la venta; los lotes físicos se imprimen aparte)",
+        soloBoleteria
+          ? `Publicar la jornada (${avisoSoloBoleteria.charAt(0).toLowerCase()}${avisoSoloBoleteria.slice(1)})`
+          : "Publicar la jornada (se crean los tickets de sus lotes online y quedan a la venta; los lotes físicos se imprimen aparte)",
       ejecutar: () => publicarJornada(jornada.id),
     },
     suspender: {
@@ -302,9 +308,12 @@ const JornadaPage = () => {
                   </ul>
                 </>
               ) : (
-                <span className="font-medium">
-                  Está completa y lista para publicarse.
-                </span>
+                <>
+                  <span className="font-medium">
+                    Está completa y lista para publicarse.
+                  </span>
+                  {soloBoleteria && <p className="mt-1">{avisoSoloBoleteria}.</p>}
+                </>
               )}
               {evento.estado === "Borrador" && (
                 <p className="mt-1 text-xs">

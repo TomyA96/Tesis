@@ -17,6 +17,7 @@ import InformesDelEvento from "../componentes/InformesDelEvento";
 import PublicarEventoModal from "../modales/PublicarEventoModal";
 import AgregarJornadasModal from "../modales/AgregarJornadasModal";
 import LoteEntradasModal from "../modales/LoteEntradasModal";
+import ConfigurarBoleteriaModal from "../modales/ConfigurarBoleteriaModal";
 import { RUTAS } from "../../../constantes/Rutas";
 import {
     cancelarEvento,
@@ -35,7 +36,7 @@ import { nombreJornada } from "../utils/jornadaForm";
 import { fechaCortaConDia } from "../../../utils/zonaHoraria";
 
 // Qué ventana está abierta: una sola a la vez
-type ModalEvento = "editar" | "agregar" | "entradas" | "publicar" | "suspender" | "finalizar" | "cancelar" | "pendientes" | null;
+type ModalEvento = "editar" | "agregar" | "entradas" | "boleteria" | "publicar" | "suspender" | "finalizar" | "cancelar" | "pendientes" | null;
 
 /*
     Detalle de un evento: arriba sus datos en chico, abajo una tarjeta por
@@ -249,9 +250,14 @@ const EventoPage = () => {
                     <h2 className="text-lg font-semibold text-gray-900">Jornadas ({jornadas.length})</h2>
                     <div className="flex flex-wrap gap-2">
                         {conEntradas.length > 0 && (
-                            <Btn variant="outline" size="sm" onClick={() => setModal("entradas")}>
-                                + Lote de entradas
-                            </Btn>
+                            <>
+                                <Btn variant="outline" size="sm" onClick={() => setModal("entradas")}>
+                                    + Lote de entradas
+                                </Btn>
+                                <Btn variant="outline" size="sm" onClick={() => setModal("boleteria")}>
+                                    Configurar boletería
+                                </Btn>
+                            </>
                         )}
                         {!finalizado && (
                             <Btn size="sm" onClick={() => setModal("agregar")}>
@@ -323,6 +329,16 @@ const EventoPage = () => {
                     // Las entradas nuevas cambian lo que le falta a cada jornada para publicarse
                     await recargar();
                 }}
+                onCancelar={() => setModal(null)}
+            />
+
+            <ConfigurarBoleteriaModal
+                isOpen={modal === "boleteria"}
+                jornadas={conEntradas}
+                titulos={titulos}
+                boleterias={lotes.filter((l) => l.esBoleteria)}
+                // El modal queda abierto al pausar o quitar: solo se recargan los datos
+                onGuardado={recargar}
                 onCancelar={() => setModal(null)}
             />
 

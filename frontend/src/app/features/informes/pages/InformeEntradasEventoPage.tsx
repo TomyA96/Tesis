@@ -32,7 +32,7 @@ const InformeEntradasEventoPage = () => {
     const columnas: Column<FilaLote>[] = [
         { key: "descripcion", label: "Lote" },
         ...(variasJornadas ? [{ key: "jornada" as const, label: "Jornada" }] : []),
-        { key: "esFisica", label: "Tipo", render: (_, row) => (row.esFisica ? "Física" : "Online") },
+        { key: "esFisica", label: "Tipo", render: (_, row) => (row.esBoleteria ? "Boletería" : row.esFisica ? "Física" : "Online") },
         { key: "precio", label: "Precio", render: (_, row) => formatPrecioEntrada(row.precio) },
         { key: "emitidas", label: "Emitidas" },
         { key: "vendidas", label: "Vendidas" },

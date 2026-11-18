@@ -45,6 +45,8 @@ export interface RevisionJornada {
     nombre: string | null;
     fechaHoraInicio: string;
     faltantes: string[];
+    // Su única entrada es la boletería: se publica, pero solo va a haber venta en puerta
+    soloBoleteria: boolean;
 }
 
 // En las rutas públicas, jornadas trae solo las que están Activas

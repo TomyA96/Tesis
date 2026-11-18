@@ -22,6 +22,7 @@ import { ImagenEventoModule } from './imagen-evento/imagen-evento.module';
 import { ProductosModule } from './productos/productos.module';
 import { ProductoEventoModule } from './producto-evento/producto-evento.module';
 import { VentaBuffetModule } from './venta-buffet/venta-buffet.module';
+import { VentaPuertaModule } from './venta-puerta/venta-puerta.module';
 import { RubrosModule } from './rubros/rubros.module';
 import { ProveedoresModule } from './proveedores/proveedores.module';
 import { ProveedorRubroModule } from './proveedor-rubro/proveedor-rubro.module';
@@ -33,7 +34,7 @@ import { MercadoPagoModule } from './mercado-pago/mercado-pago.module';
 import { InformesModule } from './informes/informes.module';
 
 @Module({
-  imports: [PrismaModule, PuntoVentaModule, UsuariosModule, PerfilesModule, UsuarioPerfilModule, PermisoPerfilModule, PermisosModule, AuditoriasModule, EventosModule, EntradasModule, ClientesModule, OrdenCompraModule, TicketEventoModule, ReembolsosModule, AccesosModule, ImagenEventoModule, ProductosModule, ProductoEventoModule, VentaBuffetModule, RubrosModule, ProveedoresModule, ProveedorRubroModule, MovimientoFinancieroModule, AuthModule, FuentesIngresoModule, ComprasModule, RendicionesModule, EntregasModule, MercadoPagoModule, InformesModule],
+  imports: [PrismaModule, PuntoVentaModule, UsuariosModule, PerfilesModule, UsuarioPerfilModule, PermisoPerfilModule, PermisosModule, AuditoriasModule, EventosModule, EntradasModule, ClientesModule, OrdenCompraModule, TicketEventoModule, ReembolsosModule, AccesosModule, ImagenEventoModule, ProductosModule, ProductoEventoModule, VentaBuffetModule, VentaPuertaModule, RubrosModule, ProveedoresModule, ProveedorRubroModule, MovimientoFinancieroModule, AuthModule, FuentesIngresoModule, ComprasModule, RendicionesModule, EntregasModule, MercadoPagoModule, InformesModule],
   controllers: [AppController],
   providers: [AppService],
 })

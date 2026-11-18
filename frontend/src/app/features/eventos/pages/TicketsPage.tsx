@@ -42,7 +42,8 @@ const TicketsPage = () => {
             getEntregas(id).catch(() => []),
         ]);
         setEvento(eventoBuscado);
-        setLotes(lotesBuscados);
+        // La boletería no tiene tickets en mano: no se entrega ni se corrige desde acá
+        setLotes(lotesBuscados.filter((l) => !l.esBoleteria));
         setEntregas(entregasBuscadas);
     }, []);
 

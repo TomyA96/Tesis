@@ -14,6 +14,8 @@ export type RevisionJornada = {
     nombre: string | null;
     fechaHoraInicio: Date;
     faltantes: string[];
+    // Su única entrada es la boletería: se publica, pero solo va a haber venta en puerta
+    soloBoleteria: boolean;
 };
 
 @Injectable()
@@ -193,8 +195,10 @@ export class JornadasService {
 
     /*
         Revisa todas las jornadas en Borrador del evento y dice qué le falta a
-        cada una para publicarse. Una sola consulta: las entradas no se traen,
-        se cuentan en la base (_count con filtro).
+        cada una para publicarse. Una sola consulta: de las entradas solo se
+        trae si son de la boletería (para avisar si es lo único que tiene).
+        La boletería cuenta como entrada: una jornada que solo vende en la
+        puerta se puede publicar.
 
         Las canceladas no cuentan para "hay varias": ya no van a suceder, así
         que no hace falta distinguirse de ellas.
@@ -203,7 +207,7 @@ export class JornadasService {
         const jornadas = await this.prisma.jornada.findMany({
             where: { idEvento, estado: { not: 'Cancelado' } },
             orderBy: { fechaHoraInicio: 'asc' },
-            include: { _count: { select: { entradas: { where: { habilitada: true } } } } }
+            include: { entradas: { where: { habilitada: true }, select: { esBoleteria: true } } },
         });
         const hayVarias = jornadas.length > 1;
 
@@ -214,23 +218,25 @@ export class JornadasService {
                 nombre: jornada.nombre,
                 fechaHoraInicio: jornada.fechaHoraInicio,
                 faltantes: faltantesParaPublicar(
-                    { ...jornada, entradasHabilitadas: jornada._count.entradas },
+                    { ...jornada, entradasHabilitadas: jornada.entradas.length },
                     hayVarias
                 ),
+                soloBoleteria: jornada.entradas.length > 0 && jornada.entradas.every((e) => e.esBoleteria),
             }));
     }
 
     /*
         El cambio de estado en sí: la jornada pasa a Activo y sus lotes ONLINE
         se publican (con todos sus tickets creados, a la venta). Los físicos
-        quedan en Borrador hasta que se impriman. Recibe la transacción de
+        quedan en Borrador hasta que se impriman, y la boletería no se toca:
+        sus tickets se crean al vender en la puerta. Recibe la transacción de
         quien llama, así publicar una jornada sola y publicar varias junto con
         el evento usan exactamente el mismo paso. No valida nada: eso lo hace
         quien llama.
     */
     async publicarEnTransaccion(tx: Prisma.TransactionClient, id: number) {
         const lotesOnline = await tx.entrada.findMany({
-            where: { idJornada: id, estado: 'Borrador', habilitada: true, esFisica: false },
+            where: { idJornada: id, estado: 'Borrador', habilitada: true, esFisica: false, esBoleteria: false },
         });
         for (const lote of lotesOnline) {
             await publicarLoteOnline(tx, lote);

@@ -342,7 +342,7 @@ export class InformesService {
         const [lotes, vendidos, emitidosPorLote, accesosPorLote, sinRendir, ventasBuffet, movimientos, comisionesPorLocal] = await Promise.all([
             this.prisma.entrada.findMany({
                 where: { jornada: { idEvento } },
-                select: { id: true, idJornada: true, descripcion: true, esFisica: true, precio: true },
+                select: { id: true, idJornada: true, descripcion: true, esFisica: true, esBoleteria: true, precio: true },
                 orderBy: { id: 'asc' },
             }),
             // Uno por uno (no agrupados): de cada vendido hace falta saber por qué canal se vendió
@@ -458,6 +458,7 @@ export class InformesService {
                                 id: l.id,
                                 descripcion: l.descripcion,
                                 esFisica: l.esFisica,
+                                esBoleteria: l.esBoleteria,
                                 precio: plata(l.precio),
                                 emitidas: contar(emitidosPorLote, l.id),
                                 vendidas: delLote.length,
