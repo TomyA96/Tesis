@@ -15,6 +15,8 @@ import {
 
 // Cuánto queda a la vista el resultado de un escaneo antes de limpiarse para el siguiente
 const SEGUNDOS_RESULTADO = 4;
+// Cada cuánto se actualizan el contador y los últimos ingresos (mismo ritmo que la boletería)
+const REFRESCO_MS = 15_000;
 
 type Resultado =
     | { tipo: "pasa"; titulo: string; detalle: string }
@@ -63,8 +65,16 @@ const ControlAccesos = () => {
         }
     }, [id]);
 
+    /*
+        Además de recargar después de cada escaneo, se refresca solo cada
+        tantos segundos: si hay otra puerta (u otro dispositivo) registrando
+        ingresos, el contador y la lista muestran los de todas. No toca el
+        campo de lectura, así que no le saca el foco al portero.
+    */
     useEffect(() => {
         recargar();
+        const intervalo = window.setInterval(recargar, REFRESCO_MS);
+        return () => window.clearInterval(intervalo);
     }, [recargar]);
 
     // El resultado se limpia solo; si llega otro escaneo antes, el temporizador vuelve a empezar
