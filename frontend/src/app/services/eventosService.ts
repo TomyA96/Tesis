@@ -67,6 +67,8 @@ export interface EntradaPublica {
 */
 export interface JornadaConEntradas extends Jornada {
     ventaOnlineAbierta: boolean;
+    // Tiene la boletería configurada y habilitada: se vende en la puerta
+    ventaEnPuerta: boolean;
     entradas: EntradaPublica[];
 }
 

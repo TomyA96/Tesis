@@ -1,10 +1,11 @@
-import { Body, Controller, Get, Param, ParseIntPipe, Post, Request, UseGuards } from '@nestjs/common';
+import { Body, Controller, Get, Param, Post, Request, UseGuards } from '@nestjs/common';
 import { AccesosService } from './accesos.service';
 import { CreateAccesoDto } from './dtos/create.acceso.dto';
 import { CreateAccesoManualDto } from './dtos/create.acceso-manual.dto';
 import { AuthGuard } from '../auth/guards/auth.guard';
 import { PermissionsGuard } from '../auth/guards/permissions.guard';
 import { Permisos } from '../auth/decorators/permisos.decorator';
+import { ParseIdPipe } from '../utils/parse-id.pipe';
 
 /*
     Los accesos se registran sobre una jornada. No hay forma de editar ni borrar
@@ -18,21 +19,21 @@ export class AccesosController {
 
     @Permisos('accesos.ver')
     @Get()
-    findByJornada(@Param('idJornada', ParseIntPipe) idJornada: number) {
+    findByJornada(@Param('idJornada', ParseIdPipe) idJornada: number) {
         return this.accesosService.findByJornada(idJornada);
     }
 
     // Cuántos entraron, para el contador de la pantalla de la puerta
     @Permisos('accesos.ver')
     @Get('resumen')
-    resumen(@Param('idJornada', ParseIntPipe) idJornada: number) {
+    resumen(@Param('idJornada', ParseIdPipe) idJornada: number) {
         return this.accesosService.resumen(idJornada);
     }
 
     @Permisos('accesos.registrar')
     @Post()
     registrar(
-        @Param('idJornada', ParseIntPipe) idJornada: number,
+        @Param('idJornada', ParseIdPipe) idJornada: number,
         @Body() data: CreateAccesoDto,
         @Request() request: any,
     ) {
@@ -45,7 +46,7 @@ export class AccesosController {
     @Permisos('accesos.registrar')
     @Post('manual')
     registrarManual(
-        @Param('idJornada', ParseIntPipe) idJornada: number,
+        @Param('idJornada', ParseIdPipe) idJornada: number,
         @Body() data: CreateAccesoManualDto,
         @Request() request: any,
     ) {

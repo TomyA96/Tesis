@@ -6,18 +6,34 @@ import { CreateGastoDto } from './dtos/create.gasto.dto';
 import { UpdateIngresoDto } from './dtos/update.ingreso.dto';
 import { UpdateGastoDto } from './dtos/update.gasto.dto';
 
+const ZONA_ARGENTINA = 'America/Argentina/Buenos_Aires';
+
+// Cuánto antes del evento y cuánto después se pueden fechar sus gastos e ingresos
+const MESES_ANTES = 6;
+const MESES_DESPUES = 2;
+
+// Día "AAAA-MM-DD" de un momento, en hora argentina (una jornada a las 23hs no se corre al día siguiente)
+const diaArgentino = (momento: Date) => momento.toLocaleDateString('en-CA', { timeZone: ZONA_ARGENTINA });
+
+// La fecha de un movimiento es solo un día (columna Date): se guarda como medianoche UTC
+const diaDeMovimiento = (fecha: Date) => fecha.toISOString().slice(0, 10);
+
+/*
+    Suma meses a un día "AAAA-MM-DD". Si el día no existe en el mes de
+    destino se queda en el último: 31/08 menos 6 meses es 28/02 (o 29), no 03/03.
+*/
+function sumarMeses(dia: string, meses: number): string {
+    const [anio, mes, d] = dia.split('-').map(Number);
+    const ultimoDelMes = new Date(Date.UTC(anio, mes - 1 + meses + 1, 0)).getUTCDate();
+    return new Date(Date.UTC(anio, mes - 1 + meses, Math.min(d, ultimoDelMes))).toISOString().slice(0, 10);
+}
+
+const formatoArgentino = (dia: string) => dia.split('-').reverse().join('/');
+
 
 @Injectable()
 export class MovimientoFinancieroService {
     constructor(private prisma: PrismaService) {}
-
-    findAll() {
-        return this.prisma.movimientoFinanciero.findMany();
-    }
-
-    findOne(id: number) {
-        return this.prisma.movimientoFinanciero.findUnique({ where: { id } });
-    }
 
     /*
         Se aplanan rubro y proveedor a su nombre (mismo criterio que ProveedoresService)
@@ -55,6 +71,7 @@ export class MovimientoFinancieroService {
 
     async createIngreso(data: CreateIngresoDto) {
         await this.validarEvento(data.idEvento);
+        await this.validarFecha(data.idEvento, data.fecha);
         await this.validarRubro(data.idRubro, 'Ingreso');
         await this.validarFuente(data.idFuente, data.idRubro);
 
@@ -63,6 +80,7 @@ export class MovimientoFinancieroService {
 
     async createGasto(data: CreateGastoDto) {
         await this.validarEvento(data.idEvento);
+        await this.validarFecha(data.idEvento, data.fecha);
         await this.validarRubro(data.idRubro, 'Gasto');
         await this.validarProveedor(data.idProveedor, data.idRubro);
 
@@ -77,6 +95,7 @@ export class MovimientoFinancieroService {
     */
     async updateIngreso(id: number, data: UpdateIngresoDto) {
         const actual = await this.buscarMovimiento(id, 'Ingreso');
+        await this.validarCambioDeFecha(actual, data.fecha);
 
         const idRubroFinal = data.idRubro ?? actual.idRubro;
         const idFuenteFinal = data.idFuente ?? actual.idFuente;
@@ -99,6 +118,7 @@ export class MovimientoFinancieroService {
 
     async updateGasto(id: number, data: UpdateGastoDto) {
         const actual = await this.buscarMovimiento(id, 'Gasto');
+        await this.validarCambioDeFecha(actual, data.fecha);
 
         const idRubroFinal = data.idRubro ?? actual.idRubro;
         const idProveedorFinal = data.idProveedor ?? actual.idProveedor;
@@ -147,6 +167,40 @@ export class MovimientoFinancieroService {
             throw new ConflictException('No se pueden registrar movimientos en un evento en borrador');
         }
         
+    }
+
+    /*
+        La fecha de un gasto o ingreso tiene que caer entre 6 meses antes del
+        primer día del evento y 2 meses después del último (contando todas sus
+        jornadas). Fuera de esa ventana es casi seguro un error de tipeo
+        (ej: el año 1900 o 2062) y desarma los informes por año.
+    */
+    private async validarFecha(idEvento: number, fecha: Date) {
+        const { _min, _max } = await this.prisma.jornada.aggregate({
+            where: { idEvento },
+            _min: { fechaHoraInicio: true },
+            _max: { fechaHoraFin: true },
+        });
+        // Un evento publicado siempre tiene jornadas; si no las tuviera no hay contra qué comparar
+        if (!_min.fechaHoraInicio || !_max.fechaHoraFin) return;
+
+        const desde = sumarMeses(diaArgentino(_min.fechaHoraInicio), -MESES_ANTES);
+        const hasta = sumarMeses(diaArgentino(_max.fechaHoraFin), MESES_DESPUES);
+        const dia = diaDeMovimiento(fecha);
+
+        if (dia < desde || dia > hasta) {
+            throw new BadRequestException(
+                `La fecha tiene que estar entre el ${formatoArgentino(desde)} y el ${formatoArgentino(hasta)} ` +
+                `(desde ${MESES_ANTES} meses antes del evento hasta ${MESES_DESPUES} meses después)`,
+            );
+        }
+    }
+
+    // Al editar solo se revisa si la fecha cambia: un movimiento viejo se puede corregir sin tocarla
+    private async validarCambioDeFecha(actual: { idEvento: number; fecha: Date }, fechaNueva?: Date) {
+        if (fechaNueva && diaDeMovimiento(fechaNueva) !== diaDeMovimiento(actual.fecha)) {
+            await this.validarFecha(actual.idEvento, fechaNueva);
+        }
     }
 
     private async validarRubro(idRubro: number, tipo: TipoMovimiento) {

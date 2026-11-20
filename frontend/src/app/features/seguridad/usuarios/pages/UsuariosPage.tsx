@@ -11,6 +11,7 @@ import { useState, useEffect, useMemo } from "react";
 import { deleteUsuario, getUsuarios } from "../../../../services/usuariosService.ts";
 import type { Usuario } from "../../../../services/usuariosService.ts";
 import { columnasUsuario } from "../usuarios.columns.ts";
+import { useAuth } from "../../../../context/AuthContext";
 import { getPerfiles, type Perfil } from "../../../../services/perfilesService.ts";
 
 // ── TIPOS ────────────────────────────────────────────────────────────────────
@@ -19,6 +20,8 @@ type ModalUsuarios = "crearUsuario" | "editarUsuario" | "eliminarUsuario" | null
 
 // ── COMPONENTE PRINCIPAL ─────────────────────────────────────────────────────
 const UsuariosPage = () => {
+    // El usuario logueado no puede eliminarse a sí mismo (el backend también lo impide)
+    const { user } = useAuth();
     const [activarModal, setActivarModal] = useState<ModalUsuarios>(null);
     const [usuarios, setUsuarios] = useState<Usuario[]>([]);
     const [error, setError] = useState("");
@@ -100,7 +103,7 @@ const UsuariosPage = () => {
                             >
                                 Editar
                             </Btn>
-                            <Btn
+                            {row.id !== user?.id && <Btn
                                 size="sm"
                                 variant="danger"
                                 onClick={() => {
@@ -109,7 +112,7 @@ const UsuariosPage = () => {
                                 }}
                             >
                                 Eliminar
-                            </Btn>
+                            </Btn>}
                         </div>
                     )}
                 />

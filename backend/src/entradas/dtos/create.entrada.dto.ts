@@ -1,4 +1,4 @@
-import { IsInt, IsString, IsNumber, IsBoolean, Min, IsNotEmpty } from "class-validator";
+import { IsInt, IsString, IsNumber, IsBoolean, Min, Max, IsNotEmpty } from "class-validator";
 import { Transform } from "class-transformer";
 import { limpiarTexto } from "../../jornadas/dtos/create.jornada.dto";
 
@@ -17,6 +17,8 @@ export class CreateEntradaDto {
 
     @IsNumber({ maxDecimalPlaces: 2 })
     @Min(0)
+    // Mismo tope que la boletería: más que esto no entra en la base (y daba un error 500)
+    @Max(100_000_000, { message: 'El precio no puede superar los $100.000.000' })
     precio!: number;
 
     @IsBoolean()

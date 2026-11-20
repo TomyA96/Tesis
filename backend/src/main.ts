@@ -2,6 +2,7 @@ import 'dotenv/config'
 import { NestFactory } from '@nestjs/core';
 import { AppModule } from './app.module';
 import { ValidationPipe } from '@nestjs/common';
+import { errorDeValidacion } from './utils/mensajes-validacion';
 import { join } from 'path';
 import { NestExpressApplication } from '@nestjs/platform-express';
 
@@ -16,6 +17,7 @@ async function bootstrap() {
     whitelist: true,              // elimina campos no declarados en el DTO
     forbidNonWhitelisted: true,    // rechaza el request si vienen campos extra
     transform: true,
+    exceptionFactory: errorDeValidacion, // mensajes en castellano (ver utils/mensajes-validacion.ts)
   }));
 
   app.useStaticAssets(join(process.cwd(), 'uploads'), {

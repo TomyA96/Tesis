@@ -52,8 +52,8 @@ const permisos = [
     { codigo: 'ventas.ver', descripcion: 'Ver las ventas y la recaudación de un evento' },
 
     // Reembolsos (el schema modela un paso de aprobación: Pendiente → Procesado / Rechazado)
-    { codigo: 'reembolsos.solicitar', descripcion: 'Cargar un pedido de devolución de entrada' },
-    { codigo: 'reembolsos.aprobar', descripcion: 'Aprobar o rechazar devoluciones de entradas' },
+    // Las devoluciones las pide el comprador (o se generan al cancelar): en el sistema solo se gestionan
+    { codigo: 'reembolsos.aprobar', descripcion: 'Gestionar devoluciones de entradas: cargar, aprobar o rechazar' },
 
     // Rubros
     { codigo: 'rubros.ver', descripcion: 'Ver rubros' },
@@ -112,6 +112,9 @@ const permisos = [
     { codigo: 'accesos.registrar', descripcion: 'Escanear QR y registrar el ingreso al evento' },
     { codigo: 'accesos.ver', descripcion: 'Consultar los ingresos registrados' },
 
+    // Auditoría (solo consulta: los registros los crea el sistema)
+    { codigo: 'auditorias.ver', descripcion: 'Consultar el registro de auditoría' },
+
     
 ]
 
@@ -132,8 +135,32 @@ async function seedPermisos() {
   }
 }
 
+/*
+    El perfil Administrador del sistema (esAdministrador = true). Si no existe
+    se crea; si existe, se le cargan los permisos que le falten. El sistema ya
+    le da todos los permisos aunque no tenga las filas (ver
+    UsuariosService.getPermissionsUser), pero así la pantalla de perfiles los
+    muestra marcados.
+*/
+async function seedAdministrador() {
+  let perfil = await prisma.perfil.findFirst({ where: { esAdministrador: true } });
+  if (!perfil) {
+    perfil = await prisma.perfil.upsert({
+      where: { nombre: 'Administrador' },
+      update: { esAdministrador: true },
+      create: { nombre: 'Administrador', descripcion: 'Acceso total al sistema', esAdministrador: true },
+    });
+  }
+  const todos = await prisma.permiso.findMany({ select: { id: true } });
+  await prisma.permisoPerfil.createMany({
+    data: todos.map((permiso) => ({ idPerfil: perfil.id, idPermiso: permiso.id })),
+    skipDuplicates: true,
+  });
+}
+
 async function main() {
     await seedPermisos()
+    await seedAdministrador()
     console.log('Carga de permisos completada.')
 }
 

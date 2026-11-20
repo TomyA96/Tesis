@@ -2,6 +2,7 @@ import { ConflictException, Injectable, NotFoundException } from '@nestjs/common
 import { PrismaService } from '../prisma/prisma.service';
 import { CreatePuntoVentaDto } from './dtos/create.punto-venta.dto';
 import { UpdatePuntoVentaDto } from './dtos/update.punto-venta.dto';
+import { mismoNombre } from '../utils/texto';
 
 /*
     Los puntos de venta son los locales (quioscos, tiendas, la municipalidad)
@@ -28,16 +29,14 @@ export class PuntoVentaService {
         return puntoVenta;
     }
 
-    // PuntoVenta.nombre no es @unique: se controla acá, sin distinguir mayúsculas (igual que proveedores)
+    // PuntoVenta.nombre no es @unique: se controla acá, sin distinguir mayúsculas ni tildes (igual que proveedores)
     private async validarNombreDisponible(nombre: string, idIgnorado?: number) {
-        const existente = await this.prisma.puntoVenta.findFirst({
-            where: {
-                nombre: { equals: nombre, mode: 'insensitive' },
-                id: idIgnorado ? { not: idIgnorado } : undefined,
-            },
+        const otros = await this.prisma.puntoVenta.findMany({
+            where: { id: idIgnorado ? { not: idIgnorado } : undefined },
+            select: { nombre: true },
         });
 
-        if (existente) {
+        if (otros.some((otro) => mismoNombre(otro.nombre, nombre))) {
             throw new ConflictException('Ya existe un punto de venta con ese nombre');
         }
     }

@@ -4,6 +4,7 @@ import Btn from "../../../../ui/componentes/Btn";
 import Select from "../../../../ui/componentes/Select";
 import { useState, type FormEvent } from "react";
 import SelectorPerfiles from "../components/SelectorPerfiles";
+import { validarNombreCompleto } from "../utils/usuarioForm";
 import type { Perfil } from "../../../../services/perfilesService";
 import { opcionesEstadoUsuario, updateUsuario, type EstadoUsuario, type Usuario , type UpdateUsuario} from "../../../../services/usuariosService";
 
@@ -42,15 +43,21 @@ const EditarUsuarioForm = ({usuario, perfiles, onCancel, onUpdated}: EditarUsuar
 
   const onSubmit = async (e:FormEvent) => {
         e.preventDefault();
+        setError("");
 
+        const problemaNombre = validarNombreCompleto(nombre);
+        if (problemaNombre) {
+            setError(problemaNombre);
+            return;
+        }
         if (camposEditables.password && password !== confirmPassword) {
             setError("Las contraseñas no coinciden");
             return;
         }
         const newData: UpdateUsuario = {}
 
-        if (nombre !== usuario.nombre) {
-            newData.nombre = nombre;
+        if (nombre.trim() !== usuario.nombre) {
+            newData.nombre = nombre.trim();
         }
         if (camposEditables.password && password) {
             newData.password = password;

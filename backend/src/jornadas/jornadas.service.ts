@@ -7,6 +7,7 @@ import { ReprogramarJornadaDto } from './dtos/reprogramar.jornada.dto';
 import { hallarSuperposiciones, seSuperponen, type Tramo } from './utils/superposicion';
 import { faltantesParaPublicar } from './utils/publicacion';
 import { anularTicketsSinVender, lugaresOcupados, publicarLoteOnline } from '../entradas/utils/tickets';
+import { generarDevolucionesPorCancelacion } from '../reembolsos/utils/devoluciones';
 
 // Una jornada en Borrador y lo que le falta para publicarse (vacío = está completa)
 export type RevisionJornada = {
@@ -95,6 +96,19 @@ export class JornadasService {
         }
         if (evento.estado === 'Finalizado') {
             throw new ConflictException('No se pueden agregar jornadas a un evento finalizado');
+        }
+        /*
+            Si todas las jornadas que siguen en pie están suspendidas, el evento
+            entero está frenado: agregar una fecha nueva sería saltearse la
+            reprogramación. Con solo algunas suspendidas, el resto sigue y se
+            le pueden sumar jornadas.
+        */
+        const vigentes = await this.prisma.jornada.findMany({
+            where: { idEvento, estado: { in: ['Borrador', 'Activo', 'Suspendido'] } },
+            select: { estado: true },
+        });
+        if (vigentes.length > 0 && vigentes.every((j) => j.estado === 'Suspendido')) {
+            throw new ConflictException('Todas las jornadas del evento están suspendidas: reprogramalas en vez de agregar una nueva');
         }
     }
 
@@ -301,6 +315,8 @@ export class JornadasService {
                 su rendición (pudieron haber vendido algunos).
             */
             await anularTicketsSinVender(tx, [id]);
+            // Lo vendido online queda pendiente de devolución (ver generarDevolucionesPorCancelacion)
+            await generarDevolucionesPorCancelacion(tx, [id]);
             return tx.jornada.update({ where: { id }, data: { estado: 'Cancelado' } });
         });
     }
@@ -361,13 +377,12 @@ export class JornadasService {
         }
         await this.validarSinSuperposicion(jornada.idEvento, [data], id);
 
-        const entradasVendibles = await this.prisma.entrada.count({
-            where: { idJornada: id, habilitada: true }
-        });
-        if (entradasVendibles === 0) {
-            throw new ConflictException('No se puede reprogramar una jornada sin entradas disponibles para la venta');
-        }
-
+        /*
+            No se exige tener entradas a la venta: lo vendido pasa a la fecha
+            nueva igual, y vender más es otra decisión. Mientras está
+            suspendida no se le pueden cargar lotes; ya reprogramada (activa),
+            sí.
+        */
         return this.prisma.jornada.update({
             where: { id },
             data: { ...data, estado: 'Activo' }

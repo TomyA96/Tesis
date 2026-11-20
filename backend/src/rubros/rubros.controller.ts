@@ -5,6 +5,7 @@ import { UpdateRubroDto } from './dtos/update.rubro.dto';
 import { AuthGuard } from '../auth/guards/auth.guard';
 import { PermissionsGuard } from '../auth/guards/permissions.guard';
 import { Permisos } from '../auth/decorators/permisos.decorator';
+import { ParseIdPipe } from '../utils/parse-id.pipe';
 
 @UseGuards(AuthGuard, PermissionsGuard)
 @Controller('rubros')
@@ -17,16 +18,10 @@ export class RubrosController {
         return this.rubrosService.findAll()
     }
 
-    //@Permisos('')
-    @Get('ingresos')
-    findByIngresos(){
-        return this.rubrosService.findByIngresos()
-    }
-
     @Permisos('rubros.ver')
     @Get(':id')
-    findOne(@Param('id') id: string) {
-        return this.rubrosService.findOne(Number(id))
+    findOne(@Param('id', ParseIdPipe) id: number) {
+        return this.rubrosService.findOne(id)
     }
 
     @Permisos('rubros.crear')
@@ -37,13 +32,13 @@ export class RubrosController {
 
     @Permisos('rubros.editar')
     @Put(':id')
-    update(@Param('id') id: string, @Body() data: UpdateRubroDto) {
-        return this.rubrosService.update(Number(id), data)
+    update(@Param('id', ParseIdPipe) id: number, @Body() data: UpdateRubroDto) {
+        return this.rubrosService.update(id, data)
     }
 
     @Permisos('rubros.eliminar')
     @Delete(':id')
-    remove(@Param('id') id: string) {
-        return this.rubrosService.remove(Number(id))
+    remove(@Param('id', ParseIdPipe) id: number) {
+        return this.rubrosService.remove(id)
     }
 }

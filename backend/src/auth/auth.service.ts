@@ -19,6 +19,8 @@ export class AuthService {
         //const user = await this.userService.findByUser(data.usuario)
         const user = await this.prisma.usuario.findFirst({
             where: { usuario: data.usuario, eliminado: false },
+            // El único lugar que lee la contraseña: la conexión la oculta en todas las demás consultas (ver PrismaService)
+            omit: { password: false },
             include: { _count: { select: { perfiles: true } }}
         })
 

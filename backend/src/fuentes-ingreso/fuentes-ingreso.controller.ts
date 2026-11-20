@@ -5,6 +5,7 @@ import { UpdateFuenteDto } from './dtos/update.fuente.dto';
 import { AuthGuard } from '../auth/guards/auth.guard';
 import { PermissionsGuard } from '../auth/guards/permissions.guard';
 import { Permisos } from '../auth/decorators/permisos.decorator';
+import { ParseIdPipe } from '../utils/parse-id.pipe';
 
 @UseGuards(AuthGuard, PermissionsGuard)
 @Controller('fuentes-ingreso')
@@ -19,8 +20,8 @@ export class FuentesIngresoController {
 
     @Permisos('fuentes.ver')
     @Get(':id')
-    findOne(@Param('id') id: string) {
-        return this.fuentesIngresoService.findOne(Number(id))
+    findOne(@Param('id', ParseIdPipe) id: number) {
+        return this.fuentesIngresoService.findOne(id)
     }
 
     @Permisos('fuentes.crear')
@@ -31,13 +32,13 @@ export class FuentesIngresoController {
 
     @Permisos('fuentes.editar')
     @Put(':id')
-    update(@Param('id') id: string, @Body() data: UpdateFuenteDto) {
-        return this.fuentesIngresoService.update(Number(id), data)
+    update(@Param('id', ParseIdPipe) id: number, @Body() data: UpdateFuenteDto) {
+        return this.fuentesIngresoService.update(id, data)
     }
 
     @Permisos('fuentes.eliminar')
     @Delete(':id')
-    remove(@Param('id') id: string) {
-        return this.fuentesIngresoService.remove(Number(id))
+    remove(@Param('id', ParseIdPipe) id: number) {
+        return this.fuentesIngresoService.remove(id)
     }
 }

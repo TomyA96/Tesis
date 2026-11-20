@@ -7,6 +7,9 @@ import { ConfigurarBoleteriaDto } from './dtos/configurar-boleteria.dto';
 import { armarTicketsDelLote, liberarReservasVencidas, lugaresOcupados, publicarLoteOnline } from './utils/tickets';
 import { pdfDeTickets } from './utils/pdf-tickets';
 import { NOMBRE_BOLETERIA, esNombreReservado } from './utils/boleteria';
+import { mismoNombre } from '../utils/texto';
+
+const JORNADA_SUSPENDIDA = 'La jornada está suspendida: reprogramala para cargar entradas';
 
 // La boletería tiene su propio camino: se configura desde el evento y se vende en la puerta
 const SOLO_DESDE_BOLETERIA = 'La boletería no se maneja como un lote: se configura desde «Configurar boletería» en el evento';
@@ -75,6 +78,10 @@ export class EntradasService {
         if (jornada.estado === "Finalizado" || jornada.estado === "Cancelado") {
             throw new ConflictException('No se puede crear una entrada para una jornada finalizada o cancelada');
         }
+        // Suspendida no vende hasta que se reprograme: recién ahí, ya activa, se le cargan entradas
+        if (jornada.estado === "Suspendido") {
+            throw new ConflictException(JORNADA_SUSPENDIDA);
+        }
         const ocupados = (await lugaresOcupados(this.prisma, [jornada.id])).get(jornada.id) ?? 0;
         if (ocupados + data.cantidad > jornada.capacidad) {
             throw new ConflictException(`La cantidad de entradas excede la capacidad de la jornada. Capacidad restante: ${jornada.capacidad - ocupados}`);
@@ -106,11 +113,13 @@ export class EntradasService {
         }
 
         // Una sola consulta para todas: qué jornadas ya tienen una entrada con ese nombre
-        const conMismoNombre = await this.prisma.entrada.findMany({
-            where: { idJornada: { in: idsJornadas }, descripcion: { equals: entrada.descripcion, mode: 'insensitive' } },
-            select: { idJornada: true },
+        const lotesExistentes = await this.prisma.entrada.findMany({
+            where: { idJornada: { in: idsJornadas } },
+            select: { idJornada: true, descripcion: true },
         });
-        const nombreOcupado = new Set(conMismoNombre.map((e) => e.idJornada));
+        const nombreOcupado = new Set(
+            lotesExistentes.filter((e) => mismoNombre(e.descripcion, entrada.descripcion)).map((e) => e.idJornada),
+        );
 
         // Cuántos lugares tiene ya comprometidos cada jornada
         const yaAsignadas = await lugaresOcupados(this.prisma, idsJornadas);
@@ -119,7 +128,7 @@ export class EntradasService {
         for (const jornada of jornadas) {
             const cual = jornada.nombre || `La jornada del ${jornada.fechaHoraInicio.toLocaleDateString('es-AR', { timeZone: 'America/Argentina/Buenos_Aires' })}`;
 
-            if (jornada.estado === 'Finalizado' || jornada.estado === 'Cancelado') {
+            if (jornada.estado === 'Finalizado' || jornada.estado === 'Cancelado' || jornada.estado === 'Suspendido') {
                 problemas.push(`${cual}: está ${jornada.estado.toLowerCase()}`);
                 continue;
             }
@@ -360,10 +369,11 @@ export class EntradasService {
         if (new Set(jornadas.map((j) => j.idEvento)).size > 1) {
             throw new BadRequestException('Las jornadas elegidas tienen que ser del mismo evento');
         }
-        const cerradas = jornadas.filter((j) => j.estado === 'Finalizado' || j.estado === 'Cancelado');
-        if (cerradas.length > 0) {
-            const nombres = cerradas.map((j) => j.nombre ?? j.fechaHoraInicio.toLocaleDateString('es-AR', { timeZone: 'America/Argentina/Buenos_Aires' }));
-            throw new ConflictException(`No se configura la boletería de jornadas finalizadas o canceladas: ${nombres.join(', ')}`);
+        // Igual que los lotes: no en jornadas cerradas, ni en suspendidas (se configura al reprogramarla)
+        const noAptas = jornadas.filter((j) => j.estado === 'Finalizado' || j.estado === 'Cancelado' || j.estado === 'Suspendido');
+        if (noAptas.length > 0) {
+            const nombres = noAptas.map((j) => j.nombre ?? j.fechaHoraInicio.toLocaleDateString('es-AR', { timeZone: 'America/Argentina/Buenos_Aires' }));
+            throw new ConflictException(`No se configura la boletería de jornadas finalizadas, canceladas o suspendidas: ${nombres.join(', ')}`);
         }
 
         return this.prisma.$transaction(async (tx) => {
@@ -407,14 +417,11 @@ export class EntradasService {
     // El nombre solo tiene que ser único dentro de la jornada: "General" puede repetirse en cada día
     private async validarDescripcionDisponible(idJornada: number, descripcion: string, idIgnorado?: number) {
         this.validarNombreNoReservado(descripcion);
-        const existente = await this.prisma.entrada.findFirst({
-            where: {
-                idJornada,
-                descripcion: { equals: descripcion, mode: 'insensitive' },
-                id: idIgnorado ? { not: idIgnorado } : undefined,
-            },
+        const otros = await this.prisma.entrada.findMany({
+            where: { idJornada, id: idIgnorado ? { not: idIgnorado } : undefined },
+            select: { descripcion: true },
         });
-        if (existente) {
+        if (otros.some((otro) => mismoNombre(otro.descripcion, descripcion))) {
             throw new ConflictException('Ya existe una entrada con ese nombre para esta jornada');
         }
     }

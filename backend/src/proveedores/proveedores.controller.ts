@@ -5,6 +5,7 @@ import { UpdateProveedorDto } from './dtos/update.proveedor.dto';
 import { AuthGuard } from '../auth/guards/auth.guard';
 import { PermissionsGuard } from '../auth/guards/permissions.guard';
 import { Permisos } from '../auth/decorators/permisos.decorator';
+import { ParseIdPipe } from '../utils/parse-id.pipe';
 
 @UseGuards(AuthGuard, PermissionsGuard)
 @Controller('proveedores')
@@ -19,8 +20,8 @@ export class ProveedoresController {
 
     @Permisos('proveedores.ver')
     @Get(':id')
-    findOne(@Param('id') id: string) {
-        return this.proveedoresService.findOne(Number(id))
+    findOne(@Param('id', ParseIdPipe) id: number) {
+        return this.proveedoresService.findOne(id)
     }
 
     @Permisos('proveedores.crear')
@@ -31,13 +32,13 @@ export class ProveedoresController {
 
     @Permisos('proveedores.editar')
     @Put(':id')
-    update(@Param('id') id: string, @Body() data: UpdateProveedorDto) {
-        return this.proveedoresService.update(Number(id), data)
+    update(@Param('id', ParseIdPipe) id: number, @Body() data: UpdateProveedorDto) {
+        return this.proveedoresService.update(id, data)
     }
 
     @Permisos('proveedores.eliminar')
     @Delete(':id')
-    remove(@Param('id') id: string) {
-        return this.proveedoresService.remove(Number(id))
+    remove(@Param('id', ParseIdPipe) id: number) {
+        return this.proveedoresService.remove(id)
     }
 }

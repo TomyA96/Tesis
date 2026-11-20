@@ -5,6 +5,7 @@ import { UpdatePuntoVentaDto } from './dtos/update.punto-venta.dto';
 import { AuthGuard } from '../auth/guards/auth.guard';
 import { PermissionsGuard } from '../auth/guards/permissions.guard';
 import { Permisos } from '../auth/decorators/permisos.decorator';
+import { ParseIdPipe } from '../utils/parse-id.pipe';
 
 @UseGuards(AuthGuard, PermissionsGuard)
 @Controller('puntos-venta')
@@ -19,8 +20,8 @@ export class PuntoVentaController {
 
     @Permisos('puntosVenta.ver')
     @Get(':id')
-    findOne(@Param('id') id: string) {
-        return this.puntoVentaService.findOne(Number(id));
+    findOne(@Param('id', ParseIdPipe) id: number) {
+        return this.puntoVentaService.findOne(id);
     }
 
     @Permisos('puntosVenta.crear')
@@ -31,13 +32,13 @@ export class PuntoVentaController {
 
     @Permisos('puntosVenta.editar')
     @Put(':id')
-    update(@Param('id') id: string, @Body() data: UpdatePuntoVentaDto) {
-        return this.puntoVentaService.update(Number(id), data);
+    update(@Param('id', ParseIdPipe) id: number, @Body() data: UpdatePuntoVentaDto) {
+        return this.puntoVentaService.update(id, data);
     }
 
     @Permisos('puntosVenta.eliminar')
     @Delete(':id')
-    remove(@Param('id') id: string) {
-        return this.puntoVentaService.remove(Number(id));
+    remove(@Param('id', ParseIdPipe) id: number) {
+        return this.puntoVentaService.remove(id);
     }
 }

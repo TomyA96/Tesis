@@ -3,6 +3,7 @@ import { ProveedorRubroService } from './proveedor-rubro.service';
 import { AuthGuard } from '../auth/guards/auth.guard';
 import { PermissionsGuard } from '../auth/guards/permissions.guard';
 import { Permisos } from '../auth/decorators/permisos.decorator';
+import { ParseIdPipe } from '../utils/parse-id.pipe';
 
 /*
     El alta y la edición de proveedores ya manejan sus rubros solos (dentro de la
@@ -17,14 +18,14 @@ export class ProveedorRubroController {
 
     @Permisos('proveedores.ver')
     @Get('proveedor/:idProveedor')
-    findByProveedor(@Param('idProveedor') idProveedor: string) {
-        return this.proveedorRubroService.findByProveedor(Number(idProveedor))
+    findByProveedor(@Param('idProveedor', ParseIdPipe) idProveedor: number) {
+        return this.proveedorRubroService.findByProveedor(idProveedor)
     }
 
     @Permisos('proveedores.ver')
     @Get('rubro/:idRubro')
-    findByRubro(@Param('idRubro') idRubro: string) {
-        return this.proveedorRubroService.findByRubro(Number(idRubro))
+    findByRubro(@Param('idRubro', ParseIdPipe) idRubro: number) {
+        return this.proveedorRubroService.findByRubro(idRubro)
     }
 
     @Permisos('proveedores.editar')
@@ -35,7 +36,7 @@ export class ProveedorRubroController {
 
     @Permisos('proveedores.editar')
     @Delete(':idProveedor/:idRubro')
-    remove(@Param('idProveedor') idProveedor: string, @Param('idRubro') idRubro: string) {
-        return this.proveedorRubroService.remove(Number(idProveedor), Number(idRubro))
+    remove(@Param('idProveedor', ParseIdPipe) idProveedor: number, @Param('idRubro', ParseIdPipe) idRubro: number) {
+        return this.proveedorRubroService.remove(idProveedor, idRubro)
     }
 }

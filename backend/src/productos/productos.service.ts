@@ -2,6 +2,7 @@ import { Injectable, ConflictException, NotFoundException } from '@nestjs/common
 import { PrismaService } from '../prisma/prisma.service';
 import { CreateProductoDto } from './dtos/create.producto.dto';
 import { UpdateProductoDto } from './dtos/update.producto.dto';
+import { mismoNombre } from '../utils/texto';
 
 @Injectable()
 export class ProductosService {
@@ -15,16 +16,14 @@ export class ProductosService {
         return this.prisma.producto.findUnique({ where: { id } });
     }
 
-    // Producto.nombre no es @unique en el schema: mismo criterio que rubros y proveedores.
+    // Producto.nombre no es @unique en el schema: mismo criterio que rubros ("Choripan" = "Choripán").
     private async validarNombreDisponible(nombre: string, idIgnorado?: number) {
-        const existente = await this.prisma.producto.findFirst({
-            where: {
-                nombre: { equals: nombre, mode: 'insensitive' },
-                id: idIgnorado ? { not: idIgnorado } : undefined,
-            },
+        const otros = await this.prisma.producto.findMany({
+            where: { id: idIgnorado ? { not: idIgnorado } : undefined },
+            select: { nombre: true },
         });
 
-        if (existente) {
+        if (otros.some((otro) => mismoNombre(otro.nombre, nombre))) {
             throw new ConflictException('Ya existe un producto con ese nombre');
         }
     }

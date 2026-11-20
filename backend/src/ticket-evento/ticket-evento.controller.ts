@@ -1,9 +1,10 @@
-import { Body, Controller, Get, ParseIntPipe, Put, Query, Request, UseGuards } from '@nestjs/common';
+import { Body, Controller, Get, Put, Query, Request, UseGuards } from '@nestjs/common';
 import { TicketEventoService } from './ticket-evento.service';
 import { AsignarTicketsDto, IdsTicketsDto } from './dtos/tickets.dto';
 import { AuthGuard } from '../auth/guards/auth.guard';
 import { PermissionsGuard } from '../auth/guards/permissions.guard';
 import { Permisos } from '../auth/decorators/permisos.decorator';
+import { ParseIdPipe } from '../utils/parse-id.pipe';
 
 /*
     Los tickets no se crean ni se editan sueltos: nacen al publicar o
@@ -18,7 +19,7 @@ export class TicketEventoController {
     // GET /tickets?idJornada=5 → todos los tickets de los lotes de esa jornada
     @Permisos('tickets.ver')
     @Get()
-    findDeJornada(@Query('idJornada', ParseIntPipe) idJornada: number) {
+    findDeJornada(@Query('idJornada', ParseIdPipe) idJornada: number) {
         return this.ticketEventoService.findDeJornada(idJornada);
     }
 

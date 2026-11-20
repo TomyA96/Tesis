@@ -3,6 +3,7 @@ import { InformesService } from './informes.service';
 import { AuthGuard } from '../auth/guards/auth.guard';
 import { PermissionsGuard } from '../auth/guards/permissions.guard';
 import { Permisos } from '../auth/decorators/permisos.decorator';
+import { ParseIdPipe } from '../utils/parse-id.pipe';
 
 @UseGuards(AuthGuard, PermissionsGuard)
 @Controller('informes')
@@ -26,7 +27,7 @@ export class InformesController {
     // GET /informes/eventos/5 → informe del evento: entradas y buffet por jornada, finanzas del evento completo
     @Permisos('informes.ver')
     @Get('eventos/:id')
-    informeEvento(@Param('id', ParseIntPipe) id: number) {
+    informeEvento(@Param('id', ParseIdPipe) id: number) {
         return this.informesService.informeEvento(id);
     }
 }

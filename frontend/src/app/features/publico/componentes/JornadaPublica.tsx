@@ -34,14 +34,20 @@ const avisos: Partial<Record<JornadaConEntradas["estado"], { etiqueta: string; e
     Una jornada del evento en el detalle público: una card que se despliega
     y muestra sus entradas para elegir. Arriba, lo que hace falta para ir:
     fecha, hora de inicio y dirección. Si no le queda nada para vender
-    online, se ve como "Agotada" y no se despliega. Si está suspendida o
-    cancelada, tampoco: muestra el aviso.
+    online no se despliega, y dice por qué: si hay boletería, "Venta solo en
+    puerta"; si la venta online ya cerró por horario, "Venta online cerrada";
+    si no, "Agotada". Si está suspendida o cancelada, muestra el aviso.
 */
 const JornadaPublica = ({ jornada, titulo, abierta, onAlternar, cantidades, onCambiarCantidad }: JornadaPublicaProps) => {
     const aviso = avisos[jornada.estado];
     const agotada = jornada.entradas.length === 0;
     const elegidas = jornada.entradas.reduce((suma, e) => suma + (cantidades[e.id] ?? 0), 0);
     const desplegada = abierta && !agotada;
+    const etiquetaSinVenta = jornada.ventaEnPuerta
+        ? { texto: "Venta solo en puerta", estilo: "bg-sky-100 text-sky-800" }
+        : !jornada.ventaOnlineAbierta
+          ? { texto: "Venta online cerrada", estilo: "bg-gray-200 text-gray-600" }
+          : { texto: "Agotada", estilo: "bg-gray-200 text-gray-600" };
 
     return (
         <article className={cn("rounded-2xl border bg-white transition-shadow", desplegada ? "border-marca/40 shadow-sm" : "border-gray-200")}>
@@ -60,8 +66,8 @@ const JornadaPublica = ({ jornada, titulo, abierta, onAlternar, cantidades, onCa
                                 {aviso.etiqueta}
                             </span>
                         ) : agotada && (
-                            <span className="rounded-full bg-gray-200 px-2.5 py-0.5 text-xs font-semibold uppercase tracking-wide text-gray-600">
-                                Agotada
+                            <span className={cn("rounded-full px-2.5 py-0.5 text-xs font-semibold uppercase tracking-wide", etiquetaSinVenta.estilo)}>
+                                {etiquetaSinVenta.texto}
                             </span>
                         )}
                         {elegidas > 0 && (

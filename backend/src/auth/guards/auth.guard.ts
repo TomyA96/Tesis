@@ -27,7 +27,12 @@ export class AuthGuard implements CanActivate {
     }
 
     const usuario = await this.usuariosService.findOne(payload.sub);
-    if (!usuario || usuario.estado === 'Bloqueado') {
+    /*
+      Mismo criterio que el login: solo entra un usuario Activo. Así, pasar a
+      alguien a Inactivo o Bloqueado le corta también la sesión que ya tenía
+      abierta, sin esperar a que venza el token (8 h).
+    */
+    if (!usuario || usuario.estado !== 'Activo') {
       throw new UnauthorizedException('Usuario no encontrado');
     }
 

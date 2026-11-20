@@ -1,9 +1,10 @@
-import { Body, Controller, Get, ParseIntPipe, Post, Query, Request, UseGuards } from '@nestjs/common';
+import { Body, Controller, Get, Post, Query, Request, UseGuards } from '@nestjs/common';
 import { RendicionesService } from './rendiciones.service';
 import { CreateRendicionDto } from './dtos/create.rendicion.dto';
 import { AuthGuard } from '../auth/guards/auth.guard';
 import { PermissionsGuard } from '../auth/guards/permissions.guard';
 import { Permisos } from '../auth/decorators/permisos.decorator';
+import { ParseIdPipe } from '../utils/parse-id.pipe';
 
 @UseGuards(AuthGuard, PermissionsGuard)
 @Controller('rendiciones')
@@ -13,14 +14,14 @@ export class RendicionesController {
     // GET /rendiciones?idEvento=5 → historial de rendiciones del evento
     @Permisos('rendiciones.ver')
     @Get()
-    findDeEvento(@Query('idEvento', ParseIntPipe) idEvento: number) {
+    findDeEvento(@Query('idEvento', ParseIdPipe) idEvento: number) {
         return this.rendicionesService.findDeEvento(idEvento);
     }
 
     // GET /rendiciones/locales?idEvento=5 → locales con tickets del evento, pendientes y saldo
     @Permisos('rendiciones.ver')
     @Get('locales')
-    localesDeEvento(@Query('idEvento', ParseIntPipe) idEvento: number) {
+    localesDeEvento(@Query('idEvento', ParseIdPipe) idEvento: number) {
         return this.rendicionesService.localesDeEvento(idEvento);
     }
 
@@ -28,8 +29,8 @@ export class RendicionesController {
     @Permisos('rendiciones.ver')
     @Get('pendiente')
     pendiente(
-        @Query('idEvento', ParseIntPipe) idEvento: number,
-        @Query('idPuntoVenta', ParseIntPipe) idPuntoVenta: number,
+        @Query('idEvento', ParseIdPipe) idEvento: number,
+        @Query('idPuntoVenta', ParseIdPipe) idPuntoVenta: number,
     ) {
         return this.rendicionesService.pendiente(idEvento, idPuntoVenta);
     }

@@ -27,7 +27,8 @@ const ResumenLotesJornada = ({ idEvento, jornada, lotes: todos }: ResumenLotesJo
     // La boletería no es un lote más: va aparte, al final, con su precio y lo vendido en la puerta
     const boleteria = todos.find((l) => l.esBoleteria);
     const lotes = todos.filter((l) => !l.esBoleteria);
-    const abierta = jornada.estado === "Activo" || jornada.estado === "Suspendido";
+    // Solo una jornada activa entrega tickets (una suspendida espera a que se reprograme)
+    const abierta = jornada.estado === "Activo";
     // Hay algo para entregar si algún lote físico impreso tiene tickets en mano
     const hayParaEntregar = abierta && lotes.some((l) => l.esFisica && l.estado === "Disponible" && l.enMano > 0);
 

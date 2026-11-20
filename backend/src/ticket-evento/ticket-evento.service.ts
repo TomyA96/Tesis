@@ -102,6 +102,14 @@ export class TicketEventoService {
             if (tickets.some((t) => !t.entrada.esFisica)) {
                 throw new ConflictException('Solo los tickets físicos se asignan a un punto de venta');
             }
+            /*
+                Igual que la entrega por cantidad: no se reparten tickets de una
+                jornada suspendida. Quitar una asignación sí se puede: es
+                corregir algo que ya se hizo, no repartir papeles nuevos.
+            */
+            if (tickets.some((t) => t.entrada.jornada.estado === 'Suspendido')) {
+                throw new ConflictException('La jornada está suspendida: reprogramala para asignar tickets a puntos de venta');
+            }
             const noAsignables = tickets.filter((t) => t.estado !== 'Impreso' && t.estado !== 'Asignado');
             if (noAsignables.length > 0) {
                 throw new ConflictException(

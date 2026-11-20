@@ -1,9 +1,10 @@
-import { Body, Controller, Get, Param, ParseIntPipe, Post, Put, Request, UseGuards } from '@nestjs/common';
+import { Body, Controller, Get, Param, Post, Put, Request, UseGuards } from '@nestjs/common';
 import { VentaBuffetService } from './venta-buffet.service';
 import { CreateVentaBuffetDto } from './dtos/create.venta-buffet.dto';
 import { AuthGuard } from '../auth/guards/auth.guard';
 import { PermissionsGuard } from '../auth/guards/permissions.guard';
 import { Permisos } from '../auth/decorators/permisos.decorator';
+import { ParseIdPipe } from '../utils/parse-id.pipe';
 
 /*
     La caja del buffet de una jornada. Todo pide buffet.vender: quien atiende
@@ -17,18 +18,18 @@ export class VentaBuffetController {
     constructor(private ventaBuffetService: VentaBuffetService) {}
 
     @Get('productos')
-    productos(@Param('idJornada', ParseIntPipe) idJornada: number) {
+    productos(@Param('idJornada', ParseIdPipe) idJornada: number) {
         return this.ventaBuffetService.productos(idJornada);
     }
 
     @Get('ventas')
-    ventas(@Param('idJornada', ParseIntPipe) idJornada: number) {
+    ventas(@Param('idJornada', ParseIdPipe) idJornada: number) {
         return this.ventaBuffetService.ventas(idJornada);
     }
 
     @Post('ventas')
     registrar(
-        @Param('idJornada', ParseIntPipe) idJornada: number,
+        @Param('idJornada', ParseIdPipe) idJornada: number,
         @Body() data: CreateVentaBuffetDto,
         @Request() request: any,
     ) {
@@ -37,8 +38,8 @@ export class VentaBuffetController {
 
     @Put('ventas/:idVenta/anular')
     anular(
-        @Param('idJornada', ParseIntPipe) idJornada: number,
-        @Param('idVenta', ParseIntPipe) idVenta: number,
+        @Param('idJornada', ParseIdPipe) idJornada: number,
+        @Param('idVenta', ParseIdPipe) idVenta: number,
         @Request() request: any,
     ) {
         return this.ventaBuffetService.anular(idJornada, idVenta, request.user.sub);

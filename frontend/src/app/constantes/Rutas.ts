@@ -52,6 +52,8 @@ export const RUTAS = {
             `/admin/eventos/${idEvento}/tickets${conQuery(filtros)}`,
         rendiciones: (idEvento: number | string, idLocal?: number) =>
             `/admin/eventos/${idEvento}/rendiciones${conQuery({ local: idLocal })}`,
+        // Devoluciones de tickets de las jornadas suspendidas o canceladas del evento
+        reembolsos: (idEvento: number | string) => `/admin/eventos/${idEvento}/reembolsos`,
     },
 
     informes: {

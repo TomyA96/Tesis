@@ -82,7 +82,12 @@ const PerfilesPage = () => {
                     columns={columnasPerfiles}
                     data={perfiles}  
                     
-                    actions={(row) => (
+                    actions={(row) => row.esAdministrador ? (
+                        // Perfil del sistema: siempre tiene todos los permisos, no se toca
+                        <span className="rounded-full bg-slate-100 px-3 py-1 text-xs font-semibold text-slate-600" title="Tiene todos los permisos del sistema">
+                            Perfil del sistema
+                        </span>
+                    ) : (
                         <div>
                             <Btn size="sm" className="mr-2 min-w-20" 
                               onClick={() => {

@@ -1,4 +1,4 @@
-import { IsDate, IsInt, IsNotEmpty, IsOptional, IsString, MaxLength, Min } from "class-validator";
+import { IsDate, IsInt, IsNotEmpty, IsOptional, IsString, Max, MaxLength, Min } from "class-validator";
 import { Transform, Type } from "class-transformer";
 
 /*
@@ -32,5 +32,7 @@ export class CreateJornadaDto {
 
     @IsInt()
     @Min(1)
+    // Tope razonable: más que esto no entra en la base (y daba un error 500)
+    @Max(100_000, { message: 'La capacidad no puede superar las 100.000 personas' })
     capacidad!: number;
 }

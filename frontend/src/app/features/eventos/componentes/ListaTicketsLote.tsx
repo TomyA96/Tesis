@@ -54,6 +54,8 @@ const ListaTicketsLote = ({ lote, jornada, puntos, onCambio }: ListaTicketsLoteP
     const [entregaNueva, setEntregaNueva] = useState<{ id: number; puntoVenta: { nombre: string } } | null>(null);
 
     const terminada = jornada.estado === "Finalizado" || jornada.estado === "Cancelado";
+    // Suspendida: no se entregan tickets (sí se puede quitar una asignación o anular, que es corregir)
+    const suspendida = jornada.estado === "Suspendido";
 
     const cargar = async () => {
         try {
@@ -229,26 +231,30 @@ const ListaTicketsLote = ({ lote, jornada, puntos, onCambio }: ListaTicketsLoteP
                     </div>
 
                     <div className="flex flex-wrap items-end gap-2">
-                        <Select
-                            label="Entregar a"
-                            name="localDestino"
-                            className="min-w-[180px]"
-                            opciones={[
-                                { label: "Elegí un local", value: "" },
-                                ...puntos.filter((p) => p.estado === "Activo").map((p) => ({ label: p.nombre, value: p.id })),
-                            ]}
-                            value={localDestino}
-                            onChange={(e) => setLocalDestino(e.target.value ? Number(e.target.value) : "")}
-                        />
-                        <Btn
-                            size="sm"
-                            className="mb-1"
-                            disabled={!posibles.asignar || localDestino === ""}
-                            title={n > 0 && !posibles.asignar ? "Solo se asignan tickets en mano o ya asignados" : undefined}
-                            onClick={() => setConfirmacion("asignar")}
-                        >
-                            Entregar
-                        </Btn>
+                        {!suspendida && (
+                            <>
+                                <Select
+                                    label="Entregar a"
+                                    name="localDestino"
+                                    className="min-w-[180px]"
+                                    opciones={[
+                                        { label: "Elegí un local", value: "" },
+                                        ...puntos.filter((p) => p.estado === "Activo").map((p) => ({ label: p.nombre, value: p.id })),
+                                    ]}
+                                    value={localDestino}
+                                    onChange={(e) => setLocalDestino(e.target.value ? Number(e.target.value) : "")}
+                                />
+                                <Btn
+                                    size="sm"
+                                    className="mb-1"
+                                    disabled={!posibles.asignar || localDestino === ""}
+                                    title={n > 0 && !posibles.asignar ? "Solo se asignan tickets en mano o ya asignados" : undefined}
+                                    onClick={() => setConfirmacion("asignar")}
+                                >
+                                    Entregar
+                                </Btn>
+                            </>
+                        )}
                         <Btn
                             variant="outline"
                             size="sm"
@@ -282,6 +288,13 @@ const ListaTicketsLote = ({ lote, jornada, puntos, onCambio }: ListaTicketsLoteP
                         )}
                     </div>
                 </div>
+            )}
+
+            {suspendida && (
+                <p className="px-6 pt-3 text-sm text-amber-700">
+                    La jornada está suspendida: sus tickets se entregan a los locales cuando se reprograme. Mientras tanto se
+                    pueden quitar asignaciones o anular.
+                </p>
             )}
 
             {error && <p role="alert" className="px-6 pt-3 text-sm text-red-600">{error}</p>}

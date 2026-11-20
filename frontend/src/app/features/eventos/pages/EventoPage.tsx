@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useState } from "react";
 import { Link, useLocation, useNavigate, useParams } from "react-router-dom";
 import Btn from "../../../ui/componentes/Btn";
+import LinkBtn from "../../../ui/componentes/LinkBtn";
 import ContenedorDatos from "../../../ui/componentes/ContenedorDatos";
 import EncabezadoPagina, { LinkVolver } from "../../../ui/componentes/EncabezadoPagina";
 import { CalendarDays } from "lucide-react";
@@ -154,8 +155,14 @@ const EventoPage = () => {
     );
     const paraFinalizar = jornadas.filter((j) => j.estado === "Activo" && new Date(j.fechaHoraInicio) <= ahora);
     // Las que todavía pueden recibir entradas: ni finalizadas ni canceladas
-    const conEntradas = jornadas.filter((j) => j.estado !== "Finalizado" && j.estado !== "Cancelado");
+    // Ni las suspendidas: se les cargan entradas recién al reprogramarlas (vuelven a estar activas)
+    const conEntradas = jornadas.filter((j) => j.estado === "Borrador" || j.estado === "Activo");
+    // Las que siguen en pie están todas suspendidas: el evento está frenado y se reprograma, no se le suman fechas
+    const vigentes = jornadas.filter((j) => j.estado === "Borrador" || j.estado === "Activo" || j.estado === "Suspendido");
+    const todasSuspendidas = vigentes.length > 0 && vigentes.every((j) => j.estado === "Suspendido");
     const finalizado = evento.estado === "Finalizado";
+    // Solo los tickets de jornadas que no se hicieron en su fecha se pueden devolver
+    const hayDevoluciones = jornadas.some((j) => j.estado === "Suspendido" || j.estado === "Cancelado");
     const sePuedePublicar = (evento.estado === "Borrador" || evento.estado === "Activo") && revision.length > 0;
 
     // Avisa cuántas jornadas en Borrador se pierden al cerrar el evento (el backend lo exige confirmado)
@@ -259,7 +266,12 @@ const EventoPage = () => {
                                 </Btn>
                             </>
                         )}
-                        {!finalizado && (
+                        {hayDevoluciones && (
+                            <LinkBtn to={RUTAS.eventos.reembolsos(evento.id)} variant="outline" size="sm">
+                                Reembolsos
+                            </LinkBtn>
+                        )}
+                        {!finalizado && !todasSuspendidas && (
                             <Btn size="sm" onClick={() => setModal("agregar")}>
                                 + Agregar jornadas
                             </Btn>

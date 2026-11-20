@@ -3,6 +3,7 @@ import { PrismaService } from '../prisma/prisma.service';
 import { Prisma } from '@prisma/client';
 import { CreateFuenteDto } from './dtos/create.fuente.dto';
 import { UpdateFuenteDto } from './dtos/update.fuente.dto';
+import { mismoNombre } from '../utils/texto';
 
 /*
     Espejo de ProveedoresService, del lado de los ingresos: una fuente es quien
@@ -37,14 +38,12 @@ export class FuentesIngresoService {
     }
 
     private async validarNombreDisponible(nombre: string, idIgnorado?: number) {
-        const existente = await this.prisma.fuenteIngreso.findFirst({
-            where: {
-                nombre: { equals: nombre, mode: 'insensitive' },
-                id: idIgnorado ? { not: idIgnorado } : undefined,
-            },
+        const otros = await this.prisma.fuenteIngreso.findMany({
+            where: { id: idIgnorado ? { not: idIgnorado } : undefined },
+            select: { nombre: true },
         });
 
-        if (existente) {
+        if (otros.some((otro) => mismoNombre(otro.nombre, nombre))) {
             throw new ConflictException('Ya existe una fuente de ingreso con ese nombre');
         }
     }
@@ -59,6 +58,23 @@ export class FuentesIngresoService {
         if (rubrosInvalidos.length > 0) {
             throw new BadRequestException(
                 `Una fuente de ingreso solo puede tener rubros de tipo Ingreso o Mixto. No corresponde: ${rubrosInvalidos.map((r) => r.nombre).join(', ')}`,
+            );
+        }
+    }
+
+    // Igual que en proveedores: no se saca un rubro donde la fuente ya tiene ingresos registrados
+    private async validarRubrosQuitados(idFuente: number, quitados: { id: number; nombre: string }[]) {
+        if (quitados.length === 0) return;
+        const conIngresos = await this.prisma.movimientoFinanciero.groupBy({
+            by: ['idRubro'],
+            where: { idFuente, idRubro: { in: quitados.map((r) => r.id) } },
+        });
+        if (conIngresos.length > 0) {
+            const nombres = quitados.filter((r) => conIngresos.some((g) => g.idRubro === r.id)).map((r) => r.nombre);
+            throw new ConflictException(
+                nombres.length === 1
+                    ? `No se puede quitar el rubro ${nombres[0]}: la fuente tiene ingresos registrados en él`
+                    : `No se pueden quitar los rubros ${nombres.join(', ')}: la fuente tiene ingresos registrados en ellos`,
             );
         }
     }
@@ -109,6 +125,7 @@ export class FuentesIngresoService {
         }
         if (idsRubros) {
             await this.validarTiposRubros(idsRubros);
+            await this.validarRubrosQuitados(id, fuente.rubros.filter((r) => !idsRubros.includes(r.id)));
         }
 
         try {

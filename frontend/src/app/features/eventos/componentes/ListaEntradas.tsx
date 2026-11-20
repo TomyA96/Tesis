@@ -117,7 +117,8 @@ const ListaEntradas = ({ entradas: todas, idEvento, idJornada, estadoEvento, cap
         },
     };
 
-    const sePuedeCrear = estadoEvento !== "Finalizado" && estadoEvento !== "Cancelado";
+    // Suspendida no: se le cargan entradas recién al reprogramarla (vuelve a estar activa)
+    const sePuedeCrear = estadoEvento === "Borrador" || estadoEvento === "Activo";
 
     return (
         <>
@@ -155,6 +156,12 @@ const ListaEntradas = ({ entradas: todas, idEvento, idJornada, estadoEvento, cap
                         "sin configurar (se configura desde la pantalla del evento)"
                     )}
                 </p>
+
+                {estadoEvento === "Suspendido" && (
+                    <p className="mx-6 mt-2 rounded-lg bg-amber-50 px-4 py-2 text-sm text-amber-800">
+                        La jornada está suspendida: reprogramala para cargar entradas.
+                    </p>
+                )}
 
                 {error && <p role="alert" className="px-6 pt-2 text-sm text-red-600">{error}</p>}
 

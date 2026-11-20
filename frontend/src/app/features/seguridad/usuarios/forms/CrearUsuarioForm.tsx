@@ -7,6 +7,7 @@ import { createUsuario } from "../../../../services/usuariosService";
 import { useState } from "react";
 import type { Perfil } from "../../../../services/perfilesService";
 import SelectorPerfiles from "../components/SelectorPerfiles";
+import { normalizarUsuario, validarNombreCompleto, validarUsuario } from "../utils/usuarioForm";
 
 type CreateUsuarioFormProps = {
     onCreated: () => void;
@@ -26,12 +27,20 @@ const CrearUsuarioForm = ({ onCreated, perfiles }: CreateUsuarioFormProps) => {
 
     const onSubmit = async (e: FormEvent) => {
         e.preventDefault();
+        setError("");
+        // Se manda como se va a guardar: sin espacios en los extremos y en minúsculas
+        const usuarioNormalizado = normalizarUsuario(usuario);
+        const problema = validarUsuario(usuarioNormalizado) ?? validarNombreCompleto(nombre);
+        if (problema) {
+            setError(problema);
+            return;
+        }
         if (password !== confirmPassword) {
             setError("Las contraseñas no coinciden");
             return;
         }
         try {
-            await createUsuario({ usuario, nombre, password, idPerfiles: seleccionados });
+            await createUsuario({ usuario: usuarioNormalizado, nombre: nombre.trim(), password, idPerfiles: seleccionados });
             
             onCreated(); 
         } catch (err) {
@@ -47,9 +56,10 @@ const CrearUsuarioForm = ({ onCreated, perfiles }: CreateUsuarioFormProps) => {
             <Input 
                 label="Usuario" 
                 name="username" 
-                placeholder="Introduzca el nombre de usuario" 
+                placeholder="Ej: juan.perez (se guarda en minúsculas)" 
                 type="text" 
                 required 
+                autoComplete="off"
                 value={usuario}
                 onChange={(e) => setUsuario(e.target.value)}
             />

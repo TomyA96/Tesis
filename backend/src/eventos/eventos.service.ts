@@ -7,6 +7,7 @@ import { ImagenEventoService } from '../imagen-evento/imagen-evento.service';
 import { JornadasService } from '../jornadas/jornadas.service';
 import { limiteVentaOnline } from '../jornadas/utils/venta-online';
 import { anularTicketsSinVender, ticketsSinRendir } from '../entradas/utils/tickets';
+import { generarDevolucionesPorCancelacion } from '../reembolsos/utils/devoluciones';
 
 // Cuántos días después de su fecha original se sigue mostrando al público una jornada cancelada
 const DIAS_CANCELADA_VISIBLE = 7;
@@ -149,7 +150,9 @@ export class EventosService {
                             },
                             select: { id: true, descripcion: true, precio: true },
                             orderBy: { precio: 'asc' }
-                        }
+                        },
+                        // Si tiene boletería habilitada: sin nada online, se avisa "venta solo en puerta" en vez de "agotada"
+                        _count: { select: { entradas: { where: { esBoleteria: true, habilitada: true } } } },
                     }
                 }
             }
@@ -160,9 +163,10 @@ export class EventosService {
         }
         // Con la venta online cerrada (o la jornada suspendida o cancelada) sus lotes no se ofrecen, aunque les queden tickets
         const limite = limiteVentaOnline();
-        const jornadas = evento.jornadas.map((jornada) => {
+        const jornadas = evento.jornadas.map(({ _count, ...jornada }) => {
             const ventaOnlineAbierta = jornada.estado === 'Activo' && jornada.fechaHoraInicio > limite;
-            return { ...jornada, ventaOnlineAbierta, entradas: ventaOnlineAbierta ? jornada.entradas : [] };
+            const ventaEnPuerta = jornada.estado === 'Activo' && _count.entradas > 0;
+            return { ...jornada, ventaOnlineAbierta, ventaEnPuerta, entradas: ventaOnlineAbierta ? jornada.entradas : [] };
         });
         return this.resumir({ ...evento, jornadas });
     }
@@ -441,6 +445,7 @@ export class EventosService {
                 where: { idJornada: { in: idsACancelar }, estado: 'Borrador', tickets: { none: {} } }
             });
             await anularTicketsSinVender(tx, idsACancelar);
+            await generarDevolucionesPorCancelacion(tx, idsACancelar);
             await tx.jornada.updateMany({ where: { id: { in: idsACancelar } }, data: { estado: 'Cancelado' } });
         });
         return this.obtenerEvento(id);

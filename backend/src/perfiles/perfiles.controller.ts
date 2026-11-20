@@ -6,6 +6,7 @@ import { UpdatePerfilDto } from './dtos/update.perfil.dto';
 import { AuthGuard } from '../auth/guards/auth.guard';
 import { PermissionsGuard } from '../auth/guards/permissions.guard';
 import { Permisos } from '../auth/decorators/permisos.decorator';
+import { ParseIdPipe } from '../utils/parse-id.pipe';
 
 @UseGuards(AuthGuard, PermissionsGuard)
 @Controller('perfiles')
@@ -20,8 +21,8 @@ export class PerfilesController {
 
     @Permisos('perfiles.ver')
     @Get(':id')
-    findOne(@Param('id') id: string) {
-        return this.perfilesService.findOne(Number(id))
+    findOne(@Param('id', ParseIdPipe) id: number) {
+        return this.perfilesService.findOne(id)
     }
 
     @Permisos('perfiles.crear')
@@ -32,13 +33,13 @@ export class PerfilesController {
 
     @Permisos('perfiles.editar')
     @Put(':id')
-    updatePerfil(@Param('id') id: string, @Body() data: UpdatePerfilDto) {
-        return this.perfilesService.updatePerfil(Number(id), data)
+    updatePerfil(@Param('id', ParseIdPipe) id: number, @Body() data: UpdatePerfilDto) {
+        return this.perfilesService.updatePerfil(id, data)
     }
 
     @Permisos('perfiles.eliminar')
     @Delete(':id')
-    removePerfil(@Param('id') id: string) {
-        return this.perfilesService.removePerfil(Number(id))
+    removePerfil(@Param('id', ParseIdPipe) id: number) {
+        return this.perfilesService.removePerfil(id)
     }
 }

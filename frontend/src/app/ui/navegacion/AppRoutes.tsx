@@ -29,6 +29,7 @@ const FuentesIngresoPage = lazy(() => import("../../features/administracion/page
 const PuntosVentaPage = lazy(() => import("../../features/eventos/pages/PuntosVentaPage"));
 const TicketsPage = lazy(() => import("../../features/eventos/pages/TicketsPage"));
 const RendicionesPage = lazy(() => import("../../features/eventos/pages/RendicionesPage"));
+const ReembolsosPage = lazy(() => import("../../features/eventos/pages/ReembolsosPage"));
 const EventoPage = lazy(() => import("../../features/eventos/pages/EventoPage"));
 const JornadaPage = lazy(() => import("../../features/eventos/pages/JornadaPage"));
 const VentasPage = lazy(() => import("../../features/eventos/pages/VentasPage"));
@@ -83,6 +84,7 @@ const AppRoutes = () => {
                         <Route path=":idEvento/ventas" element={<VentasPage/>} />
                         <Route path=":idEvento/tickets" element={<TicketsPage />} />
                         <Route path=":idEvento/rendiciones" element={<RendicionesPage />} />
+                        <Route path=":idEvento/reembolsos" element={<ReembolsosPage />} />
                         <Route path=":idEvento/administracion" element={<AdministrarEventoPage />} />
                         {/* El layout carga el informe una vez y se lo pasa a las cuatro pestañas */}
                         <Route path=":idEvento/informes" element={<InformeEventoLayout />}>

@@ -56,9 +56,9 @@ const EntregaPorCantidad = ({ idEvento, jornadas, titulos, lotes, puntos, jornad
     const [registrando, setRegistrando] = useState(false);
     const [entregada, setEntregada] = useState<EntregaRegistrada | null>(null);
 
-    // Un lote físico impreso con tickets en mano, de una jornada que sigue abierta
+    // Un lote físico impreso con tickets en mano, de una jornada activa (una suspendida se entrega al reprogramarla)
     const entregable = (lote: Entrada, jornada: Jornada) =>
-        lote.esFisica && lote.estado === "Disponible" && lote.enMano > 0 && (jornada.estado === "Activo" || jornada.estado === "Suspendido");
+        lote.esFisica && lote.estado === "Disponible" && lote.enMano > 0 && jornada.estado === "Activo";
 
     const items = useMemo(
         () =>
@@ -178,6 +178,11 @@ const EntregaPorCantidad = ({ idEvento, jornadas, titulos, lotes, puntos, jornad
                                 <div className="flex flex-col divide-y divide-gray-100 border-t border-gray-200">
                                     {fisicos.length === 0 && (
                                         <p className="px-4 py-3 text-sm text-gray-400">Esta jornada no tiene lotes físicos impresos.</p>
+                                    )}
+                                    {fisicos.length > 0 && jornada.estado === "Suspendido" && (
+                                        <p className="px-4 py-3 text-sm text-amber-700">
+                                            La jornada está suspendida: sus tickets se entregan cuando se reprograme.
+                                        </p>
                                     )}
                                     {fisicos.map((lote) => (
                                         <div key={lote.id} className="flex flex-wrap items-center gap-x-6 gap-y-2 px-4 py-3 text-sm">

@@ -10,6 +10,7 @@ import { CreateJornadaDto } from '../jornadas/dtos/create.jornada.dto';
 import { CreateJornadasLoteDto } from '../jornadas/dtos/create.jornadas-lote.dto';
 import { ConcluirEventoDto } from './dtos/concluir.evento.dto';
 import { PublicarEventoDto } from './dtos/publicar.evento.dto';
+import { ParseIdPipe } from '../utils/parse-id.pipe';
 
 @UseGuards(AuthGuard, PermissionsGuard)
 @Controller('eventos')
@@ -37,15 +38,15 @@ export class EventosController {
 
     @Permisos('eventos.ver')
     @Get(':id')
-    findOne(@Param('id') id: string) {
-        return this.eventosService.findOne(Number(id));
+    findOne(@Param('id', ParseIdPipe) id: number) {
+        return this.eventosService.findOne(id);
     }
 
     // El estado de cada jornada (publicar, cancelar, etc.) se maneja en JornadasController
     @Permisos('eventos.ver')
     @Get(':id/jornadas')
-    findJornadas(@Param('id') id: string) {
-        return this.jornadasService.findAllByEvento(Number(id));
+    findJornadas(@Param('id', ParseIdPipe) id: number) {
+        return this.jornadasService.findAllByEvento(id);
     }
 
     @Permisos('eventos.crear')
@@ -56,61 +57,61 @@ export class EventosController {
 
     @Permisos('eventos.editar')
     @Post(':id/jornadas')
-    addJornada(@Param('id') id: string, @Body() data: CreateJornadaDto) {
-        return this.jornadasService.create(Number(id), data);
+    addJornada(@Param('id', ParseIdPipe) id: number, @Body() data: CreateJornadaDto) {
+        return this.jornadasService.create(id, data);
     }
 
     // Varias jornadas de una vez (todas o ninguna)
     @Permisos('eventos.editar')
     @Post(':id/jornadas/lote')
-    addJornadas(@Param('id') id: string, @Body() data: CreateJornadasLoteDto) {
-        return this.jornadasService.createVarias(Number(id), data.jornadas);
+    addJornadas(@Param('id', ParseIdPipe) id: number, @Body() data: CreateJornadasLoteDto) {
+        return this.jornadasService.createVarias(id, data.jornadas);
     }
 
     @Permisos('eventos.editar')
     @Put(':id')
-    async updateEvento(@Param('id') id: string, @Body() data: UpdateEventoDto) {
-        return this.eventosService.updateEvento(Number(id), data);
+    async updateEvento(@Param('id', ParseIdPipe) id: number, @Body() data: UpdateEventoDto) {
+        return this.eventosService.updateEvento(id, data);
     }
 
     // Qué le falta a cada jornada en Borrador para poder publicarse
     @Permisos('eventos.ver')
     @Get(':id/publicacion')
-    revisarPublicacion(@Param('id') id: string) {
-        return this.eventosService.revisarPublicacion(Number(id));
+    revisarPublicacion(@Param('id', ParseIdPipe) id: number) {
+        return this.eventosService.revisarPublicacion(id);
     }
 
     // Activa el evento (si está en Borrador) y publica sus jornadas completas
     @Permisos('eventos.publicar')
     @Put(':id/publicar')
-    publicar(@Param('id') id: string, @Body() data?: PublicarEventoDto) {
-        return this.eventosService.publicar(Number(id), data?.confirmarIncompletas);
+    publicar(@Param('id', ParseIdPipe) id: number, @Body() data?: PublicarEventoDto) {
+        return this.eventosService.publicar(id, data?.confirmarIncompletas);
     }
 
     // Suspende todas las jornadas activas del evento; el evento sigue Activo
     @Permisos('eventos.concluir')
     @Put(':id/suspender')
-    suspender(@Param('id') id: string) {
-        return this.eventosService.suspender(Number(id));
+    suspender(@Param('id', ParseIdPipe) id: number) {
+        return this.eventosService.suspender(id);
     }
 
     // Cierre manual del evento: ninguna jornada puede quedar activa o suspendida
     @Permisos('eventos.concluir')
     @Put(':id/finalizar')
-    finalizar(@Param('id') id: string, @Body() data?: ConcluirEventoDto) {
-        return this.eventosService.finalizar(Number(id), data?.descartarBorradores);
+    finalizar(@Param('id', ParseIdPipe) id: number, @Body() data?: ConcluirEventoDto) {
+        return this.eventosService.finalizar(id, data?.descartarBorradores);
     }
 
     // Cancela todas las jornadas activas o suspendidas; el evento sigue Activo hasta que se finalice
     @Permisos('eventos.concluir')
     @Put(':id/cancelar')
-    cancelar(@Param('id') id: string) {
-        return this.eventosService.cancelar(Number(id));
+    cancelar(@Param('id', ParseIdPipe) id: number) {
+        return this.eventosService.cancelar(id);
     }
 
     @Permisos('eventos.eliminar')
     @Delete(':id')
-    removeEvento(@Param('id') id: string) {
-        return this.eventosService.removeEvento(Number(id));
+    removeEvento(@Param('id', ParseIdPipe) id: number) {
+        return this.eventosService.removeEvento(id);
     }
 }

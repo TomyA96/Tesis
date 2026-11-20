@@ -3,6 +3,7 @@ import { PrismaService } from '../prisma/prisma.service';
 import { Prisma } from '@prisma/client';
 import { CreateProveedorDto } from './dtos/create.proveedor.dto';
 import { UpdateProveedorDto } from './dtos/update.proveedor.dto';
+import { mismoNombre } from '../utils/texto';
 
 @Injectable()
 export class ProveedoresService {
@@ -43,14 +44,12 @@ export class ProveedoresService {
 
     // Proveedor.nombre tampoco es @unique, mismo criterio que en rubros.
     private async validarNombreDisponible(nombre: string, idIgnorado?: number) {
-        const existente = await this.prisma.proveedor.findFirst({
-            where: {
-                nombre: { equals: nombre, mode: 'insensitive' },
-                id: idIgnorado ? { not: idIgnorado } : undefined,
-            },
+        const otros = await this.prisma.proveedor.findMany({
+            where: { id: idIgnorado ? { not: idIgnorado } : undefined },
+            select: { nombre: true },
         });
 
-        if (existente) {
+        if (otros.some((otro) => mismoNombre(otro.nombre, nombre))) {
             throw new ConflictException('Ya existe un proveedor con ese nombre');
         }
     }
@@ -65,6 +64,27 @@ export class ProveedoresService {
         if (rubrosInvalidos.length > 0) {
             throw new BadRequestException(
                 `Un proveedor solo puede tener rubros de tipo Gasto o Mixto. No corresponde: ${rubrosInvalidos.map((r) => r.nombre).join(', ')}`,
+            );
+        }
+    }
+
+    /*
+        No se le puede sacar a un proveedor un rubro donde ya tiene gastos
+        registrados: esos gastos quedarían en un rubro donde "no trabaja".
+        Agregar rubros nuevos no tiene restricción.
+    */
+    private async validarRubrosQuitados(idProveedor: number, quitados: { id: number; nombre: string }[]) {
+        if (quitados.length === 0) return;
+        const conGastos = await this.prisma.movimientoFinanciero.groupBy({
+            by: ['idRubro'],
+            where: { idProveedor, idRubro: { in: quitados.map((r) => r.id) } },
+        });
+        if (conGastos.length > 0) {
+            const nombres = quitados.filter((r) => conGastos.some((g) => g.idRubro === r.id)).map((r) => r.nombre);
+            throw new ConflictException(
+                nombres.length === 1
+                    ? `No se puede quitar el rubro ${nombres[0]}: el proveedor tiene gastos registrados en él`
+                    : `No se pueden quitar los rubros ${nombres.join(', ')}: el proveedor tiene gastos registrados en ellos`,
             );
         }
     }
@@ -120,6 +140,7 @@ export class ProveedoresService {
         }
         if (idsRubros) {
             await this.validarTiposRubros(idsRubros);
+            await this.validarRubrosQuitados(id, proveedor.rubros.filter((r) => !idsRubros.includes(r.id)));
         }
 
         try {

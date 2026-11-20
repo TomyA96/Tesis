@@ -70,6 +70,10 @@ export class EntregasService {
             if (lote.jornada.estado === 'Finalizado' || lote.jornada.estado === 'Cancelado') {
                 throw new ConflictException(`La jornada de ${nombre} ya terminó: no se entregan más tickets`);
             }
+            // No se reparten papeles de una fecha que todavía no existe: se entregan al reprogramarla
+            if (lote.jornada.estado === 'Suspendido') {
+                throw new ConflictException(`La jornada de ${nombre} está suspendida: reprogramala para entregar tickets`);
+            }
             if (lote.tickets.length < item.cantidad) {
                 throw new ConflictException(
                     `${nombre}: pediste ${item.cantidad} y hay ${lote.tickets.length} en mano`,

@@ -143,7 +143,8 @@ model Usuario {
 
   perfiles               UsuarioPerfil[]
   auditorias             Auditoria[]
-  reembolsos             Reembolso[]
+  reembolsos             Reembolso[]     @relation("ReembolsosResueltos")
+  reembolsosRegistrados  Reembolso[]     @relation("ReembolsosRegistrados")
   accesos                Acceso[]
   ventasBuffet           VentaBuffet[]   @relation("VentasBuffetRegistradas")
   ventasBuffetAnuladas   VentaBuffet[]   @relation("VentasBuffetAnuladas")
@@ -158,11 +159,14 @@ model Usuario {
 }
 
 model Perfil {
-  id          Int             @id @default(autoincrement())
-  nombre      String          @unique
-  descripcion String?
-  usuarios    UsuarioPerfil[]
-  permisos    PermisoPerfil[]
+  id              Int             @id @default(autoincrement())
+  nombre          String          @unique
+  descripcion     String?
+  // El perfil Administrador del sistema: tiene siempre todos los permisos y no se edita
+  // ni se borra. Lo marca el seed; no se puede crear ni cambiar desde la API.
+  esAdministrador Boolean         @default(false)
+  usuarios        UsuarioPerfil[]
+  permisos        PermisoPerfil[]
 
   @@map("perfiles")
 }
@@ -360,19 +364,49 @@ model TicketEvento {
   @@map("tickets_evento")
 }
 
+/**
+ * Una solicitud de devolución de un ticket (solo de jornadas suspendidas o
+ * canceladas). Nace Pendiente y el encargado la aprueba (Procesado: el ticket
+ * pasa a Reembolsado) o la rechaza. La plata se devuelve por fuera del
+ * sistema (Mercado Pago, efectivo o transferencia): acá queda registrado cómo.
+ */
 model Reembolso {
-  id        Int             @id @default(autoincrement())
-  idTicket  Int             @unique
-  idUsuario Int // quién lo procesó
-  motivo    String
-  monto     Decimal
-  fechaHora DateTime        @default(now())
-  estado    EstadoReembolso
+  id                Int              @id @default(autoincrement())
+  // Un ticket tiene como mucho una solicitud
+  idTicket          Int              @unique
+  // Cómo se originó: al cancelar la jornada (ventas online) o cargada por el encargado
+  origen            OrigenReembolso  @default(Presencial)
+  // Quién la cargó (vacío si la generó el sistema al cancelar)
+  idUsuarioRegistro Int?
+  motivo            String
+  // El precio del ticket
+  monto             Decimal
+  // Cuándo se solicitó
+  fechaHora         DateTime         @default(now())
+  estado            EstadoReembolso
+  // Quién la aprobó o rechazó, y cuándo (vacíos mientras está Pendiente)
+  idUsuario         Int?
+  fechaResolucion   DateTime?
+  medioDevolucion   MedioDevolucion?
+  // Por qué se rechazó, u otra aclaración al resolverla
+  comentario        String?
 
-  ticket  TicketEvento @relation(fields: [idTicket], references: [id])
-  usuario Usuario      @relation(fields: [idUsuario], references: [id])
+  ticket          TicketEvento @relation(fields: [idTicket], references: [id])
+  usuario         Usuario?     @relation("ReembolsosResueltos", fields: [idUsuario], references: [id])
+  usuarioRegistro Usuario?     @relation("ReembolsosRegistrados", fields: [idUsuarioRegistro], references: [id])
 
   @@map("reembolsos")
+}
+
+enum OrigenReembolso {
+  Cancelacion
+  Presencial
+}
+
+enum MedioDevolucion {
+  MercadoPago
+  Efectivo
+  Transferencia
 }
 
 model PuntoVenta {

@@ -4,6 +4,8 @@ export interface Perfil {
   id: number;
   nombre: string;
   descripcion: string | null;
+  // El perfil Administrador del sistema: tiene todos los permisos y no se edita ni se elimina
+  esAdministrador: boolean;
 }
 export interface CrearPerfil{
   nombre: string;
